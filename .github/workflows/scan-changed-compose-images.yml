@@ -154,8 +154,18 @@ jobs:
           # Start building the report
           echo "# Docker Image Vulnerability Report" > pr-trivy-report.md
           echo "" >> pr-trivy-report.md
+          
+          # We'll add the summary at the top later, after scanning
           echo "**Changed compose files:** $files" >> pr-trivy-report.md
-          echo "**Found images:** $images" >> pr-trivy-report.md
+          echo "" >> pr-trivy-report.md
+          echo "**Found images:**" >> pr-trivy-report.md
+          IFS=',' read -r -a img_array <<< "$images"
+          for img in "${img_array[@]}"; do
+            img_trimmed=$(echo "$img" | xargs)
+            if [ -n "$img_trimmed" ]; then
+              echo "- \`$img_trimmed\`" >> pr-trivy-report.md
+            fi
+          done
           echo "" >> pr-trivy-report.md
 
           IFS=',' read -r -a arr <<< "$images"
@@ -231,7 +241,7 @@ jobs:
                       fi
                       
                       # Start new section
-                      echo "#### $line" >> pr-trivy-report.md
+                      echo "### $line" >> pr-trivy-report.md
                       echo "" >> pr-trivy-report.md
                       current_section="$line"
                       in_section=true
@@ -280,11 +290,28 @@ jobs:
             trivy image --format json --output "trivy-${img_trimmed//[:\/]/_}.json" --quiet --no-progress "$img_trimmed" >/dev/null 2>&1 || true
           done
 
-          # Add summary
-          echo "" >> pr-trivy-report.md
-          echo "---" >> pr-trivy-report.md
-          echo "" >> pr-trivy-report.md
-          echo "**Summary:** Found $total_vulnerabilities HIGH/CRITICAL vulnerabilities across ${#arr[@]} image(s)." >> pr-trivy-report.md
+          # Add summary with GitHub alerts at the top
+          temp_file="temp_summary.md"
+          
+          # Create summary with appropriate GitHub alert
+          if [ "$total_vulnerabilities" -eq 0 ]; then
+            echo "> [!TIP]" > "$temp_file"
+            echo "> **Summary:** No HIGH/CRITICAL vulnerabilities found across ${#arr[@]} image(s). 🎉" >> "$temp_file"
+          elif [ "$total_vulnerabilities" -le 5 ]; then
+            echo "> [!NOTE]" > "$temp_file"
+            echo "> **Summary:** Found $total_vulnerabilities HIGH/CRITICAL vulnerabilities across ${#arr[@]} image(s)." >> "$temp_file"
+          elif [ "$total_vulnerabilities" -le 20 ]; then
+            echo "> [!WARNING]" > "$temp_file"
+            echo "> **Summary:** Found $total_vulnerabilities HIGH/CRITICAL vulnerabilities across ${#arr[@]} image(s)." >> "$temp_file"
+          else
+            echo "> [!CAUTION]" > "$temp_file"
+            echo "> **Summary:** Found $total_vulnerabilities HIGH/CRITICAL vulnerabilities across ${#arr[@]} image(s). Immediate attention required!" >> "$temp_file"
+          fi
+          echo "" >> "$temp_file"
+          
+          # Insert summary at the beginning of the report (after the title)
+          sed -i '2r '"$temp_file" pr-trivy-report.md
+          rm "$temp_file"
 
           echo "report_exists=true" >> $GITHUB_OUTPUT
 
