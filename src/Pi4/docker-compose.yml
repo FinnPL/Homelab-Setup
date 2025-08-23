@@ -144,7 +144,7 @@ services:
       - /cgroup:/cgroup:ro
 
   unpoller:
-    image: golift/unifi-poller:v2.11.2
+    image: golift/unifi-poller:v2.15.4
     container_name: unpoller
     restart: always
     environment:
@@ -156,7 +156,7 @@ services:
       - UP_PROMETHEUS_NAMESPACE=unpoller
 
   unpoller-remote:
-    image: golift/unifi-poller:v2.11.2
+    image: golift/unifi-poller:v2.15.4
     container_name: unpoller-remote
     restart: always
     environment:
