@@ -83,8 +83,8 @@ jobs:
           # uniq and format output
           IMGS=$(echo -e "$IMGS" | sed '/^\s*$/d' | sort -u | tr '\n' ',' | sed 's/,$//')
           FILES=$(echo "$FILES" | sed 's/,$//')
-          echo "::set-output name=images::$IMGS"
-          echo "::set-output name=files::$FILES"
+          echo "images=$IMGS" >> $GITHUB_OUTPUT
+          echo "files=$FILES" >> $GITHUB_OUTPUT
 
   scan-and-comment:
     name: Scan images with Trivy and comment PR
