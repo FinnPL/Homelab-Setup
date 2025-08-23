@@ -3,6 +3,11 @@ name: "Scan changed compose images (Trivy) and comment PR"
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - '**/docker-compose.yml'
+      - '**/docker-compose.yaml'
+      - '**/compose.yml'
+      - '**/compose.yaml'
 
 permissions:
   contents: read
@@ -43,37 +48,48 @@ jobs:
       - name: Setup yq
         uses: mikefarah/yq@v4.44.1
 
-      - name: Extract images from changed compose/YAML files
+      - name: Extract images from changed compose files
         id: get-images
         run: |
           CHANGED="${{ steps.changed.outputs.changed_files }}"
-          # fallback: if changed_files is empty, examine full repository for compose files (optional)
           IMGS=""
           FILES=""
           BASE=FETCH_HEAD
+          
           for f in $CHANGED; do
-            # only check yaml/yml – most compose files are yaml
-            if [[ "$f" =~ \.ya?ml$ ]]; then
+            # Only check files that are actually docker-compose files
+            # Look for docker-compose.yml, docker-compose.yaml, or compose.yml/compose.yaml
+            # Exclude .github/ directory files
+            if [[ "$f" =~ ^\.github/ ]]; then
+              echo "Skipping GitHub Actions file: $f"
+              continue
+            fi
+            
+            if [[ "$f" =~ (docker-)?compose\.ya?ml$ ]] || [[ "$f" == *"docker-compose"* && "$f" =~ \.ya?ml$ ]]; then
+              echo "Processing compose file: $f"
               FILES="${FILES}${f},"
-              # first attempt: yq - look under services.*.image
-              set +e
-              # yq query: get images under services.*.image (works for docker-compose format)
-              imgs_yq=$(yq e '.services[]? | .image // ""' "$f" 2>/dev/null || true)
-              set -e
-              # second attempt: grep image: lines from the PR diff to catch embedded images or unusual shapes
-              imgs_grep=$(git diff $BASE...HEAD -- "$f" 2>/dev/null | grep -oP 'image:\s*\K\S+' || true)
-              # combine
-              for i in $imgs_yq $imgs_grep; do
-                # basic cleanup
-                if [ -n "$i" ]; then
-                  # remove trailing commas or quotes
-                  i=$(echo "$i" | tr -d '"' | tr -d "'" | sed 's/[,:]$//')
-                  IMGS="${IMGS}${i}\n"
-                fi
-              done
+              
+              # Check if file exists and has services section
+              if [ -f "$f" ]; then
+                set +e
+                # yq query: get images under services.*.image (works for docker-compose format)
+                imgs_yq=$(yq e '.services[]? | .image // ""' "$f" 2>/dev/null | grep -v '^$' || true)
+                set -e
+                
+                for i in $imgs_yq; do
+                  # basic cleanup
+                  if [ -n "$i" ] && [ "$i" != "null" ]; then
+                    # remove trailing commas or quotes
+                    i=$(echo "$i" | tr -d '"' | tr -d "'" | sed 's/[,:]$//')
+                    if [ -n "$i" ]; then
+                      IMGS="${IMGS}${i}\n"
+                    fi
+                  fi
+                done
+              fi
             fi
           done
-          # If IMGS empty, optionally try to detect any compose files modified indirectly by searching all yaml files
+          
           # uniq and format output
           IMGS=$(echo -e "$IMGS" | sed '/^\s*$/d' | sort -u | tr '\n' ',' | sed 's/,$//')
           FILES=$(echo "$FILES" | sed 's/,$//')
@@ -104,38 +120,93 @@ jobs:
         run: |
           set -euo pipefail
           images="${IMAGES:-}"
+          files="${FILES:-}"
+          
+          if [ -z "$images" ] && [ -z "$files" ]; then
+            echo "No Docker Compose files changed in this PR."
+            echo "# Docker Image Vulnerability Report" > pr-trivy-report.md
+            echo "" >> pr-trivy-report.md
+            echo "No Docker Compose files were changed in this PR. Skipping vulnerability scan." >> pr-trivy-report.md
+            echo "report_exists=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
           if [ -z "$images" ]; then
-            echo "No images detected in changed compose files. Exiting."
-            echo "::set-output name=report::No images found in changed compose files."
+            echo "No Docker images found in changed compose files."
+            echo "# Docker Image Vulnerability Report" > pr-trivy-report.md
+            echo "" >> pr-trivy-report.md
+            echo "**Changed compose files:** $files" >> pr-trivy-report.md
+            echo "" >> pr-trivy-report.md
+            echo "No Docker images found in the changed compose files. This may be because:" >> pr-trivy-report.md
+            echo "- The compose files don't contain any \`image:\` declarations" >> pr-trivy-report.md
+            echo "- The compose files only use \`build:\` directives" >> pr-trivy-report.md
+            echo "- The files were deleted or moved" >> pr-trivy-report.md
+            echo "" >> pr-trivy-report.md
+            echo "Skipping vulnerability scan." >> pr-trivy-report.md
+            echo "report_exists=true" >> $GITHUB_OUTPUT
             exit 0
           fi
 
-          IFS=',' read -r -a arr <<< "$images"
-          REPORT="# Docker image vulnerability report\n\n"
-          REPORT="$REPORT**Detected changed compose files:** $FILES\n\n"
+          # Start building the report
+          echo "# Docker Image Vulnerability Report" > pr-trivy-report.md
+          echo "" >> pr-trivy-report.md
+          echo "**Changed compose files:** $files" >> pr-trivy-report.md
+          echo "**Found images:** $images" >> pr-trivy-report.md
+          echo "" >> pr-trivy-report.md
 
+          IFS=',' read -r -a arr <<< "$images"
+          total_vulnerabilities=0
+          
           for img in "${arr[@]}"; do
             img_trimmed=$(echo "$img" | xargs)
             if [ -z "$img_trimmed" ]; then
               continue
             fi
+            
             echo "Scanning image: $img_trimmed"
-            # run trivy; do not fail the job, always capture output
-            REPORT="$REPORT\n---\n\n### \`$img_trimmed\`\n\n"
-            # get a short table output with only HIGH/CRITICAL (customize severity)
-            trivy image --format table --severity CRITICAL,HIGH --exit-code 0 "$img_trimmed" > "trivy-${img_trimmed//[:\/]/_}.txt" || true
-            REPORT="$REPORT\`\`\`\n$(cat "trivy-${img_trimmed//[:\/]/_}.txt" 2>/dev/null || true)\n\`\`\`\n"
-            # also store JSON to artifacts if you like
-            trivy image --format json --output "trivy-${img_trimmed//[:\/]/_}.json" "$img_trimmed" || true
+            
+            # Add image header to report
+            echo "" >> pr-trivy-report.md
+            echo "---" >> pr-trivy-report.md
+            echo "" >> pr-trivy-report.md
+            echo "## \`$img_trimmed\`" >> pr-trivy-report.md
+            echo "" >> pr-trivy-report.md
+            
+            # Run trivy scan
+            scan_file="trivy-${img_trimmed//[:\/]/_}.txt"
+            if trivy image --format table --severity CRITICAL,HIGH --exit-code 0 "$img_trimmed" > "$scan_file" 2>&1; then
+              if [ -s "$scan_file" ]; then
+                # Check if there are actual vulnerabilities (not just headers)
+                vuln_count=$(grep -c "CRITICAL\|HIGH" "$scan_file" 2>/dev/null || echo "0")
+                if [ "$vuln_count" -gt 0 ]; then
+                  total_vulnerabilities=$((total_vulnerabilities + vuln_count))
+                  echo "\`\`\`" >> pr-trivy-report.md
+                  cat "$scan_file" >> pr-trivy-report.md
+                  echo "\`\`\`" >> pr-trivy-report.md
+                else
+                  echo "✅ No HIGH or CRITICAL vulnerabilities found." >> pr-trivy-report.md
+                fi
+              else
+                echo "✅ No HIGH or CRITICAL vulnerabilities found." >> pr-trivy-report.md
+              fi
+            else
+              echo "❌ Failed to scan image. Error:" >> pr-trivy-report.md
+              echo "\`\`\`" >> pr-trivy-report.md
+              cat "$scan_file" 2>/dev/null >> pr-trivy-report.md || echo "Unknown error occurred" >> pr-trivy-report.md
+              echo "\`\`\`" >> pr-trivy-report.md
+            fi
+            
+            # Generate JSON report for artifacts
+            trivy image --format json --output "trivy-${img_trimmed//[:\/]/_}.json" "$img_trimmed" 2>/dev/null || true
           done
 
-          # create a shortened summary for top severities (example: count by severity)
-          SUMMARY=$(grep -hE "CRITICAL|HIGH" trivy-*.txt | wc -l || true)
-          REPORT="$REPORT\n**Total HIGH/CRITICAL lines found (quick grep):** $SUMMARY\n"
+          # Add summary
+          echo "" >> pr-trivy-report.md
+          echo "---" >> pr-trivy-report.md
+          echo "" >> pr-trivy-report.md
+          echo "**Summary:** Found $total_vulnerabilities HIGH/CRITICAL vulnerabilities across ${#arr[@]} image(s)." >> pr-trivy-report.md
 
-          # output markdown
-          echo "$REPORT" > pr-trivy-report.md
-          echo "::set-output name=report::$(echo "$REPORT" | sed 's/%/%25/g' | sed 's/\n/%0A/g' )"
+          echo "report_exists=true" >> $GITHUB_OUTPUT
 
       - name: Upload artifacts (full JSON reports)
         if: always()
@@ -146,6 +217,7 @@ jobs:
           retention-days: 7
 
       - name: Create or update PR comment with Trivy report
+        if: steps.trivy_reports.outputs.report_exists == 'true'
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
