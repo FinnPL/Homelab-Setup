@@ -1,6 +1,6 @@
 services:
   traefik:
-    image: traefik:latest
+    image: traefik:v3.1
     container_name: traefik
     restart: always
     ports:
@@ -18,7 +18,7 @@ services:
       - traefik_certs:/certs
 
   portainer:
-    image: portainer/portainer-ce:latest
+    image: portainer/portainer-ce:2.21.4
     container_name: portainer
     restart: always
     command: --admin-password ${PORTAINER_PASSWORD}
@@ -33,7 +33,7 @@ services:
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
 
   gatus:
-    image: twinproduction/gatus:latest
+    image: twinproduction/gatus:v5.12.1
     container_name: gatus
     restart: always
     environment:
@@ -50,7 +50,7 @@ services:
       - "traefik.http.services.gatus.loadbalancer.server.port=8080"
 
   homepage:
-    image: gethomepage/homepage:latest
+    image: gethomepage/homepage:v0.9.10
     container_name: homepage
     restart: always
     environment:
@@ -75,7 +75,7 @@ services:
 
   # Monitoring Stack
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v2.54.1
     container_name: prometheus
     restart: always
     command:
@@ -100,7 +100,7 @@ services:
       - "traefik.http.routers.prometheus.middlewares=auth@file"
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.2.2
     container_name: grafana
     restart: always
     environment:
@@ -118,7 +118,7 @@ services:
       - "traefik.http.services.grafana.loadbalancer.server.port=3000"
 
   node-exporter:
-    image: quay.io/prometheus/node-exporter:latest
+    image: quay.io/prometheus/node-exporter:v1.8.2
     container_name: node-exporter
     restart: always
     command:
@@ -130,7 +130,7 @@ services:
       - '/:/host:ro,rslave'
 
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
+    image: gcr.io/cadvisor/cadvisor:v0.50.0
     container_name: cadvisor
     restart: always
     privileged: true
@@ -144,7 +144,7 @@ services:
       - /cgroup:/cgroup:ro
 
   unpoller:
-    image: golift/unifi-poller:latest
+    image: golift/unifi-poller:v2.11.2
     container_name: unpoller
     restart: always
     environment:
@@ -156,7 +156,7 @@ services:
       - UP_PROMETHEUS_NAMESPACE=unpoller
 
   unpoller-remote:
-    image: golift/unifi-poller:latest
+    image: golift/unifi-poller:v2.11.2
     container_name: unpoller-remote
     restart: always
     environment:
@@ -178,7 +178,7 @@ services:
       - MAILCOW_EXPORTER_INSECURE_DISABLE_ACCESS_PROTECTION=1
 
   fritzbox-exporter:
-    image: pdreker/fritz_exporter:latest
+    image: pdreker/fritz_exporter:v2.17.1
     container_name: fritzbox-exporter
     restart: always
     environment:
@@ -187,7 +187,7 @@ services:
       - FRITZ_PASSWORD=${FRITZBOX_PASSWORD}
 
   alertmanager:
-    image: prom/alertmanager:latest
+    image: prom/alertmanager:v0.27.0
     container_name: alertmanager
     restart: always
     volumes:
@@ -205,7 +205,7 @@ services:
       - "traefik.http.routers.alertmanager.middlewares=auth@file"
 
   tailscale:
-    image: tailscale/tailscale:latest
+    image: tailscale/tailscale:v1.72.1
     container_name: tailscale-pi4
     hostname: pi4
     environment:
