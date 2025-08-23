@@ -205,7 +205,7 @@ services:
       - "traefik.http.routers.alertmanager.middlewares=auth@file"
 
   tailscale:
-    image: tailscale/tailscale:v1.72.1
+    image: tailscale/tailscale:v1.86.5
     container_name: tailscale-pi4
     hostname: pi4
     environment:
