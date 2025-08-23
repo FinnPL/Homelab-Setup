@@ -188,13 +188,12 @@ jobs:
                 if [ "$vuln_lines" -gt 0 ]; then
                   total_vulnerabilities=$((total_vulnerabilities + vuln_lines))
                   
-                  # Show summary table first (excluding "Report Summary" text)
+                  # Show summary table first
                   if grep -q "Report Summary" "$scan_file"; then
                     echo "### 📊 Vulnerability Summary" >> pr-trivy-report.md
                     echo "" >> pr-trivy-report.md
                     echo "\`\`\`" >> pr-trivy-report.md
-                    # Extract only the table part, skip "Report Summary" line entirely
-                    sed -n '/┌─/,/- \'0\': Clean/p' "$scan_file" | head -n -2 | grep -v "Report Summary" >> pr-trivy-report.md
+                    sed -n '/Report Summary/,/- .0.: Clean/p' "$scan_file" | sed '/Report Summary/d' >> pr-trivy-report.md
                     echo "\`\`\`" >> pr-trivy-report.md
                     echo "" >> pr-trivy-report.md
                   fi
@@ -216,10 +215,11 @@ jobs:
                       continue
                     fi
                     
-                    # Skip empty lines, legend lines after summary, and '0': Clean headings
-                    if [[ -z "$line" ]] || [[ "$line" =~ ^-\ \'0\': ]] || [[ "$line" =~ ^-\ \'-\': ]] || [[ "$line" =~ \'0\':\ Clean ]]; then
+                    # Skip empty lines at the start and lines with '0': Clean
+                    if [[ "$skip_summary" == false ]] && ([[ -z "$line" ]] || [[ "$line" =~ \'0\':\ Clean ]]); then
                       continue
                     fi
+                    skip_summary=false
                     
                     # Detect section headers - specific patterns for target names
                     # Look for lines like "gcr.io/cadvisor/cadvisor:latest (alpine 3.18.6)" or "usr/bin/cadvisor (gobinary)"
@@ -230,16 +230,15 @@ jobs:
                         echo "" >> pr-trivy-report.md
                       fi
                       
-                      # Start new section with nice heading
-                      echo "#### \`$line\`" >> pr-trivy-report.md
+                      # Start new section
+                      echo "#### $line" >> pr-trivy-report.md
                       echo "" >> pr-trivy-report.md
                       current_section="$line"
                       in_section=true
-                      # Don't start codeblock yet - wait for Total line
                       continue
                     fi
                     
-                    # Handle Total: lines specially - extract and format nicely outside codeblock
+                    # Handle Total: lines - extract and format nicely outside codeblock
                     if [[ "$line" =~ ^Total: ]] && [[ "$in_section" == true ]]; then
                       echo "**$line**" >> pr-trivy-report.md
                       echo "" >> pr-trivy-report.md
@@ -247,12 +246,12 @@ jobs:
                       continue
                     fi
                     
-                    # Skip equals lines
+                    # Skip lines with just equals signs
                     if [[ "$line" =~ ^=+$ ]]; then
                       continue
                     fi
                     
-                    # Add other lines to the current section (tables, etc.)
+                    # Add all other lines to the current section (tables, etc.)
                     if [[ "$in_section" == true ]]; then
                       echo "$line" >> pr-trivy-report.md
                     fi
