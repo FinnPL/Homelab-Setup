@@ -40,14 +40,8 @@ jobs:
           echo "$CHANGED" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Install tools (yq)
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y curl
-          # mikefarah yq binary (linux amd64)
-          curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq
-          chmod +x /usr/local/bin/yq
-          yq --version
+      - name: Setup yq
+        uses: mikefarah/yq@v4.44.1
 
       - name: Extract images from changed compose/YAML files
         id: get-images
