@@ -223,7 +223,7 @@ jobs:
                     
                     # Detect section headers - specific patterns for target names
                     # Look for lines like "gcr.io/cadvisor/cadvisor:latest (alpine 3.18.6)" or "usr/bin/cadvisor (gobinary)"
-                    if [[ "$line" =~ \([a-zA-Z0-9\._\ ]+\)$ ]] && [[ ! "$line" =~ ^Total: ]] && [[ ! "$line" =~ ^=+ ]] && [[ ! -z "$line" ]]; then
+                    if [[ "$line" =~ \([a-zA-Z0-9\._\ ]+\)$ ]] && [[ ! "$line" =~ ^Total: ]] && [[ ! "$line" =~ ^=+$ ]] && [[ ! -z "$line" ]]; then
                       # Close previous section
                       if [[ "$in_section" == true ]]; then
                         echo "\`\`\`" >> pr-trivy-report.md
