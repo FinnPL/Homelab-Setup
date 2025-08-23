@@ -1,10 +1,10 @@
 version: 2
 updates:
-  - package-ecosystem: "docker"
+  - package-ecosystem: "docker-compose"
     directory: "/src/Pi3"
     schedule:
       interval: "weekly"
-  - package-ecosystem: "docker"
+  - package-ecosystem: "docker-compose"
     directory: "/src/Pi4"
     schedule:
       interval: "weekly"
