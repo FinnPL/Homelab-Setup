@@ -1,0 +1,159 @@
+name: "Scan changed compose images (Trivy) and comment PR"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  prepare:
+    name: Prepare list of changed compose files & images
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.get-images.outputs.images }}   # comma-separated
+      files: ${{ steps.get-images.outputs.files }}
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch base branch for the PR
+        if: ${{ github.event.pull_request.base.ref != '' }}
+        run: |
+          git fetch origin ${{ github.event.pull_request.base.ref }} --depth=1
+
+      - name: List changed files
+        id: changed
+        run: |
+          # find the base commit (FETCH_HEAD) and compare
+          if [ -n "${{ github.event.pull_request.base.ref }}" ]; then
+            BASE=FETCH_HEAD
+          else
+            BASE=${{ github.event.before }}
+          fi
+          CHANGED=$(git diff --name-only $BASE...HEAD || true)
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Install tools (yq)
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y curl
+          # mikefarah yq binary (linux amd64)
+          curl -sL https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq
+          chmod +x /usr/local/bin/yq
+          yq --version
+
+      - name: Extract images from changed compose/YAML files
+        id: get-images
+        run: |
+          CHANGED="${{ fromJson(steps.changed.outputs.changed_files) }}"
+          # fallback: if changed_files is empty, examine full repository for compose files (optional)
+          IMGS=""
+          FILES=""
+          BASE=FETCH_HEAD
+          for f in $CHANGED; do
+            # only check yaml/yml – most compose files are yaml
+            if [[ "$f" =~ \.ya?ml$ ]]; then
+              FILES="${FILES}${f},"
+              # first attempt: yq - look under services.*.image
+              set +e
+              # yq query: get images under services.*.image (works for docker-compose format)
+              imgs_yq=$(yq e '.services[]? | .image // ""' "$f" 2>/dev/null || true)
+              set -e
+              # second attempt: grep image: lines from the PR diff to catch embedded images or unusual shapes
+              imgs_grep=$(git diff $BASE...HEAD -- "$f" 2>/dev/null | grep -oP 'image:\s*\K\S+' || true)
+              # combine
+              for i in $imgs_yq $imgs_grep; do
+                # basic cleanup
+                if [ -n "$i" ]; then
+                  # remove trailing commas or quotes
+                  i=$(echo "$i" | tr -d '"' | tr -d "'" | sed 's/[,:]$//')
+                  IMGS="${IMGS}${i}\n"
+                fi
+              done
+            fi
+          done
+          # If IMGS empty, optionally try to detect any compose files modified indirectly by searching all yaml files
+          # uniq and format output
+          IMGS=$(echo -e "$IMGS" | sed '/^\s*$/d' | sort -u | tr '\n' ',' | sed 's/,$//')
+          FILES=$(echo "$FILES" | sed 's/,$//')
+          echo "::set-output name=images::$IMGS"
+          echo "::set-output name=files::$FILES"
+
+  scan-and-comment:
+    name: Scan images with Trivy and comment PR
+    needs: prepare
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Trivy (setup action)
+        uses: aquasecurity/setup-trivy@v0.2.0
+        with:
+          version: 'v0.64.3'    # change if you prefer another version; setup-trivy installs Trivy CLI
+          cache: true
+
+      - name: Setup helper env
+        run: |
+          echo "IMAGES=${{ needs.prepare.outputs.images }}" >> $GITHUB_ENV
+          echo "FILES=${{ needs.prepare.outputs.files }}" >> $GITHUB_ENV
+
+      - name: Build report (scan each image)
+        id: trivy_reports
+        run: |
+          set -euo pipefail
+          images="${IMAGES:-}"
+          if [ -z "$images" ]; then
+            echo "No images detected in changed compose files. Exiting."
+            echo "::set-output name=report::No images found in changed compose files."
+            exit 0
+          fi
+
+          IFS=',' read -r -a arr <<< "$images"
+          REPORT="# Docker image vulnerability report\n\n"
+          REPORT="$REPORT**Detected changed compose files:** $FILES\n\n"
+
+          for img in "${arr[@]}"; do
+            img_trimmed=$(echo "$img" | xargs)
+            if [ -z "$img_trimmed" ]; then
+              continue
+            fi
+            echo "Scanning image: $img_trimmed"
+            # run trivy; do not fail the job, always capture output
+            REPORT="$REPORT\n---\n\n### \`$img_trimmed\`\n\n"
+            # get a short table output with only HIGH/CRITICAL (customize severity)
+            trivy image --format table --severity CRITICAL,HIGH --exit-code 0 "$img_trimmed" > "trivy-${img_trimmed//[:\/]/_}.txt" || true
+            REPORT="$REPORT\`\`\`\n$(cat "trivy-${img_trimmed//[:\/]/_}.txt" 2>/dev/null || true)\n\`\`\`\n"
+            # also store JSON to artifacts if you like
+            trivy image --format json --output "trivy-${img_trimmed//[:\/]/_}.json" "$img_trimmed" || true
+          done
+
+          # create a shortened summary for top severities (example: count by severity)
+          SUMMARY=$(grep -hE "CRITICAL|HIGH" trivy-*.txt | wc -l || true)
+          REPORT="$REPORT\n**Total HIGH/CRITICAL lines found (quick grep):** $SUMMARY\n"
+
+          # output markdown
+          echo "$REPORT" > pr-trivy-report.md
+          echo "::set-output name=report::$(echo "$REPORT" | sed 's/%/%25/g' | sed 's/\n/%0A/g' )"
+
+      - name: Upload artifacts (full JSON reports)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-json-reports
+          path: trivy-*.json
+          retention-days: 7
+
+      - name: Create or update PR comment with Trivy report
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-path: pr-trivy-report.md
+          edit-mode: replace
