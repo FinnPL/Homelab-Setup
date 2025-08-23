@@ -250,6 +250,7 @@ jobs:
                     if [[ "$line" =~ ^=+$ ]]; then
                       continue
                     fi
+                    fi
                     
                     # Add other lines to the current section (tables, etc.)
                     if [[ "$in_section" == true ]]; then
