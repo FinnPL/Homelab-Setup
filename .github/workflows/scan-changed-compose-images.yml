@@ -209,7 +209,7 @@ jobs:
                   while IFS= read -r line; do
                     # Skip the entire summary section
                     if [[ "$line" =~ Report\ Summary ]] || [[ "$skip_summary" == true ]]; then
-                      if [[ "$line" =~ - .0.: Clean ]] || [[ "$line" =~ - .-.: Not ]]; then
+                      if [[ "$line" =~ -\ \'0\':\ Clean ]] || [[ "$line" =~ -\ \'-\':\ Not ]]; then
                         skip_summary=false
                       fi
                       continue
@@ -222,7 +222,7 @@ jobs:
                     skip_summary=false
                     
                     # Detect section headers - lines ending with parentheses that contain version info
-                    if [[ "$line" =~ \([^)]*[0-9][^)]*\)$ ]] && [[ ! -z "$line" ]]; then
+                    if [[ "$line" =~ \([^\)]*[0-9][^\)]*\)$ ]] && [[ ! -z "$line" ]]; then
                       # Close previous section
                       if [[ "$in_section" == true ]]; then
                         echo "\`\`\`" >> pr-trivy-report.md
