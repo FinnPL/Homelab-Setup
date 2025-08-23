@@ -1,5 +1,6 @@
 # Homelab Setup
 [![Pi4 - Deploy Docker Compose](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi4-deploy.yml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi4-deploy.yml)
+[![Pi3 - Deploy Docker Compose](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi3-deploy.yml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi3-deploy.yml)
 [![Docker Compose Syntax Check](https://github.com/FinnPL/Homelab-Setup/actions/workflows/docker-syntax.yml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/docker-syntax.yml)
 
 This repository contains the configuration files for my multi-site homelab setup, featuring automated CI/CD deployment, comprehensive monitoring, and networking.
@@ -54,6 +55,7 @@ Each site implements a dual-VLAN architecture:
 | Service | Target | Port | Metrics |
 |---------|--------|------|---------|
 | **Node Exporter** | Pi4 System Metrics | :9100 | CPU, Memory, Disk, Network |
+| **Node Exporter (Pi3)** | Pi3 System Metrics | :9100 | CPU, Memory, Disk, Network |
 | **cAdvisor** | Docker Container Metrics | :8080 | Container resources and performance |
 | **UnPoller (Local)** | UniFi Controller (10.10.0.1) | :9130 | Local network statistics |
 | **UnPoller (Remote)** | UniFi Controller (10.0.0.1) | :9131 | Remote network statistics |
@@ -107,6 +109,9 @@ FRITZBOX_PASSWORD=fritz_password
 
 # Notification Webhooks
 DISCORD_WEBHOOK_URL=your_discord_webhook_url
+
+# Tailscale Configuration
+TAILSCALE_AUTHKEY=your_tailscale_auth_key
 ```
 
 ### Password Hashing
@@ -135,8 +140,8 @@ The setup uses `.template` files that are processed with `envsubst` to inject en
 ### Installation Methods
 
 #### Option 1: Automated CI/CD (Recommended)
-The repository includes GitHub Actions for automated deployment.  
-**Note:** To use this method, you must install a custom GitHub Actions runner on your target machine.  
+The repository includes GitHub Actions for automated deployment of both Pi4 and Pi3 sites.  
+**Note:** To use this method, you must install custom GitHub Actions runners on your target machines.  
 Additionally, add all required environment variables as GitHub repository secrets.
 
 1. **Fork the repository**
