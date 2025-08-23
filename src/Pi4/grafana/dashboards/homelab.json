@@ -1,63 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "Prometheus",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    },
-    {
-      "name": "VAR_SITE",
-      "type": "constant",
-      "label": "Site",
-      "value": "Default \\(default\\)",
-      "description": ""
-    },
-    {
-      "name": "VAR_GATEWAY",
-      "type": "constant",
-      "label": "Gateway",
-      "value": "Vieta",
-      "description": ""
-    },
-    {
-      "name": "VAR_GATEWAYR",
-      "type": "constant",
-      "label": "GatewayR",
-      "value": "CGU Minerva",
-      "description": ""
-    },
-    {
-      "name": "VAR_NODE",
-      "type": "constant",
-      "label": "node",
-      "value": "172.17.0.1:9100",
-      "description": ""
-    },
-    {
-      "name": "VAR_JOB",
-      "type": "constant",
-      "label": "job",
-      "value": "node-exporter",
-      "description": ""
-    },
-    {
-      "name": "VAR_NODER",
-      "type": "constant",
-      "label": "nodeR",
-      "value": "pi3.athena:9100",
-      "description": ""
-    },
-    {
-      "name": "VAR_JOBR",
-      "type": "constant",
-      "label": "jobR",
-      "value": "node-exporter-pi3",
-      "description": ""
-    }
-  ],
   "__elements": {},
   "__requires": [
     {
@@ -169,7 +110,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -230,7 +171,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "unpoller_device_uptime_seconds{name=\"Vieta\"}",
@@ -246,7 +187,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -304,7 +245,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "unpoller_device_cpu_utilization_ratio{name=\"Vieta\"}",
@@ -316,7 +257,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "unpoller_device_memory_utilization_ratio{name=\"Vieta\"}",
@@ -333,7 +274,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -392,7 +333,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (name) (unpoller_device_speedtest_runtime_seconds{name=~\"Vieta\"})",
@@ -405,7 +346,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (name) (unpoller_device_uplink_latency_seconds{name=~\"Vieta\"})",
@@ -421,7 +362,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -482,7 +423,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "unpoller_remote_device_uptime_seconds{name=~\"$GatewayR\"}",
@@ -498,7 +439,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -556,7 +497,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "unpoller_remote_device_cpu_utilization_ratio{name=~\"$GatewayR\"}",
@@ -568,7 +509,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "unpoller_remote_device_memory_utilization_ratio{name=~\"$GatewayR\"}",
@@ -585,7 +526,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -644,7 +585,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (name) (unpoller_remote_device_speedtest_runtime_seconds{name=~\"$GatewayR\"})",
@@ -657,7 +598,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (name) (unpoller_remote_device_uplink_latency_seconds{name=~\"$GatewayR\"})",
@@ -673,7 +614,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -732,7 +673,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "fritz_dsl_noise_margin_dB{friendly_name=\"Fritz!Box\"}",
@@ -748,7 +689,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -807,7 +748,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum(unpoller_device_stations{station_type=\"user\"})",
@@ -823,7 +764,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -882,7 +823,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (name) (unpoller_remote_device_speedtest_runtime_seconds{name=~\"$GatewayR\"})",
@@ -895,7 +836,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum(unpoller_remote_device_stations{name=~\"$GatewayR\"})",
@@ -911,7 +852,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Spikes on this graph that are missing from the LAN graph indicate gateway-originated traffic, like a scheduled speed test. Rx is on the negative axis.",
       "fieldConfig": {
@@ -1061,7 +1002,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "rate(unpoller_device_wan_receive_bytes_total{site_name=~\"$Site\", name=~\"$Gateway\"}[$__interval])",
@@ -1073,7 +1014,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "rate(unpoller_device_wan_transmit_bytes_total{site_name=~\"$Site\", name=~\"$Gateway\"}[$__interval])",
@@ -1085,7 +1026,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "unpoller_device_wan_transmit_rate_bytes{site_name=~\"$Site\", name=~\"$Gateway\"}",
           "hide": true,
@@ -1096,7 +1037,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "unpoller_device_wan_receive_rate_bytes{site_name=~\"$Site\", name=~\"$Gateway\"}",
           "hide": true,
@@ -1112,7 +1053,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Spikes on this graph that do not appear on the WAN graph indicate inter-VLAN-routing. Rx is on the negative axis.",
       "fieldConfig": {
@@ -1262,7 +1203,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "rate(unpoller_device_lan_receive_bytes_total{site_name=~\"$Site\", name=~\"$Gateway\"}[$__interval])",
           "interval": "$Smooth",
@@ -1272,7 +1213,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "expr": "rate(unpoller_device_lan_transmit_bytes_total{site_name=~\"$Site\", name=~\"$Gateway\"}[$__interval])",
           "interval": "$Smooth",
@@ -1287,7 +1228,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Spikes on this graph that are missing from the LAN graph indicate gateway-originated traffic, like a scheduled speed test. Rx is on the negative axis.",
       "fieldConfig": {
@@ -1437,7 +1378,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "rate(unpoller_remote_device_wan_receive_bytes_total{site_name=~\"$Site\", name=~\"$GatewayR\"}[$__interval])",
@@ -1449,7 +1390,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "rate(unpoller_remote_device_wan_transmit_bytes_total{site_name=~\"$Site\", name=~\"$GatewayR\"}[$__interval])",
@@ -1461,7 +1402,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "unpoller_remote_device_wan_transmit_rate_bytes{site_name=~\"$Site\", name=~\"$GatewayR\"}",
@@ -1474,7 +1415,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "unpoller_remote_device_wan_receive_rate_bytes{site_name=~\"$Site\", name=~\"$GatewayR\"}",
@@ -1492,7 +1433,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Spikes on this graph that do not appear on the WAN graph indicate inter-VLAN-routing. Rx is on the negative axis.",
       "fieldConfig": {
@@ -1642,7 +1583,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "rate(unpoller_remote_device_lan_receive_bytes_total{site_name=~\"$Site\", name=~\"$GatewayR\"}[$__interval])",
@@ -1654,7 +1595,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "rate(unpoller_remote_device_lan_transmit_bytes_total{site_name=~\"$Site\", name=~\"$GatewayR\"}[$__interval])",
@@ -1671,7 +1612,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -1794,7 +1735,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (name) (rate(unpoller_client_transmit_bytes_total{name!~\".*camera.*|.*cam(era)?$\", name=~\".*\", site_name=~\".*\", ap_name=~\"Access Point U6\\\\+\"}[$__interval]))",
@@ -1807,7 +1748,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (name) (rate(unpoller_client_receive_bytes_total{name!~\".*camera.*|.*cam(era)?$\", name=~\".*\", site_name=~\".*\", ap_name=~\"Access Point U6\\\\+\"}[$__interval]))",
@@ -1820,7 +1761,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (name) (rate(unpoller_client_transmit_bytes_total{name!~\".*camera.*|.*cam(era)?$\", name=~\".*\", site_name=~\".*\", sw_name=~\"(Switch Flex Mini|Vieta)\"}[$__interval]))",
@@ -1834,7 +1775,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (name) (rate(unpoller_client_receive_bytes_total{name!~\".*camera.*|.*cam(era)?$\", name=~\".*\", site_name=~\".*\", sw_name=~\"(Switch Flex Mini|Vieta)\"}[$__interval]))",
@@ -1853,7 +1794,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "",
       "fieldConfig": {
@@ -1974,7 +1915,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (name) (rate(unpoller_remote_client_transmit_bytes_total{name!~\".*camera.*|.*cam(era)?$\", name=~\".*\", site_name=~\".*\", ap_name=~\"U6\\\\+\"}[$__interval]))",
@@ -1987,7 +1928,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (name) (rate(unpoller_remote_client_receive_bytes_total{name!~\".*camera.*|.*cam(era)?$\", name=~\".*\", site_name=~\".*\", ap_name=~\"U6\\\\+\"}[$__interval]))",
@@ -2000,7 +1941,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (name) (rate(unpoller_remote_client_transmit_bytes_total{name!~\".*camera.*|.*cam(era)?$\", name=~\".*\", site_name=~\".*\", sw_name=~\"CGU Minerva\"}[$__interval]))",
@@ -2014,7 +1955,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum by (name) (rate(unpoller_remote_client_receive_bytes_total{name!~\".*camera.*|.*cam(era)?$\", name=~\".*\", site_name=~\".*\", sw_name=~\"CGU Minerva\"}[$__interval]))",
@@ -2088,7 +2029,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Overall CPU busy percentage (averaged across all cores)",
       "fieldConfig": {
@@ -2167,7 +2108,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -2178,7 +2119,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Real RAM usage excluding cache and reclaimable memory",
       "fieldConfig": {
@@ -2247,7 +2188,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -2258,7 +2199,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Percentage of swap space currently used by the system",
       "fieldConfig": {
@@ -2335,7 +2276,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -2346,7 +2287,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Used Root FS",
       "fieldConfig": {
@@ -2424,7 +2365,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -2435,7 +2376,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Overall CPU busy percentage (averaged across all cores)",
       "fieldConfig": {
@@ -2514,7 +2455,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -2525,7 +2466,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Real RAM usage excluding cache and reclaimable memory",
       "fieldConfig": {
@@ -2594,7 +2535,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -2605,7 +2546,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Percentage of swap space currently used by the system",
       "fieldConfig": {
@@ -2682,7 +2623,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -2693,7 +2634,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Used Root FS",
       "fieldConfig": {
@@ -2771,7 +2712,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -2782,7 +2723,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "CPU time spent busy vs idle, split by activity type",
       "fieldConfig": {
@@ -2951,7 +2892,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -2966,7 +2907,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -2980,7 +2921,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -2994,7 +2935,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3008,7 +2949,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3022,7 +2963,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -3033,7 +2974,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "RAM and swap usage overview, including caches",
       "fieldConfig": {
@@ -3196,7 +3137,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3211,7 +3152,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3225,7 +3166,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3239,7 +3180,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3253,7 +3194,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -3264,7 +3205,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "CPU time spent busy vs idle, split by activity type",
       "fieldConfig": {
@@ -3433,7 +3374,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3448,7 +3389,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3462,7 +3403,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3476,7 +3417,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3490,7 +3431,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3504,7 +3445,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -3515,7 +3456,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "RAM and swap usage overview, including caches",
       "fieldConfig": {
@@ -3678,7 +3619,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3693,7 +3634,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3707,7 +3648,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3721,7 +3662,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3735,7 +3676,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -3746,7 +3687,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "System load average over 1, 5, and 15 minutes. Reflects the number of active or waiting processes. Values above CPU core count may indicate overload",
       "fieldConfig": {
@@ -3869,7 +3810,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3883,7 +3824,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3897,7 +3838,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -3912,7 +3853,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -3923,7 +3864,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Per-interface network traffic (receive and transmit) in bits per second",
       "fieldConfig": {
@@ -4024,7 +3965,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -4038,7 +3979,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -4049,7 +3990,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "System load average over 1, 5, and 15 minutes. Reflects the number of active or waiting processes. Values above CPU core count may indicate overload",
       "fieldConfig": {
@@ -4172,7 +4113,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -4186,7 +4127,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -4200,7 +4141,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -4215,7 +4156,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -4226,7 +4167,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "description": "Per-interface network traffic (receive and transmit) in bits per second",
       "fieldConfig": {
@@ -4327,7 +4268,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         },
         {
@@ -4341,7 +4282,7 @@
           "step": 240,
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -4415,7 +4356,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -4484,7 +4425,7 @@
           "refId": "A",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -4504,7 +4445,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -4592,7 +4533,7 @@
           "refId": "A",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -4603,7 +4544,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
+        "uid": "prometheus"
       },
       "fieldConfig": {
         "defaults": {
@@ -4663,7 +4604,7 @@
           "refId": "A",
           "datasource": {
             "type": "prometheus",
-            "uid": "${DS_PROMETHEUS}"
+            "uid": "prometheus"
           }
         }
       ],
@@ -4681,18 +4622,18 @@
         "hide": 2,
         "label": "Site",
         "name": "Site",
-        "query": "${VAR_SITE}",
+        "query": "Default \\(default\\)",
         "skipUrlSync": true,
         "type": "constant",
         "current": {
-          "value": "${VAR_SITE}",
-          "text": "${VAR_SITE}",
+          "value": "Default \\(default\\)",
+          "text": "Default \\(default\\)",
           "selected": false
         },
         "options": [
           {
-            "value": "${VAR_SITE}",
-            "text": "${VAR_SITE}",
+            "value": "Default \\(default\\)",
+            "text": "Default \\(default\\)",
             "selected": false
           }
         ]
@@ -4702,18 +4643,18 @@
         "hide": 2,
         "label": "Gateway",
         "name": "Gateway",
-        "query": "${VAR_GATEWAY}",
+        "query": "Vieta",
         "skipUrlSync": true,
         "type": "constant",
         "current": {
-          "value": "${VAR_GATEWAY}",
-          "text": "${VAR_GATEWAY}",
+          "value": "Vieta",
+          "text": "Vieta",
           "selected": false
         },
         "options": [
           {
-            "value": "${VAR_GATEWAY}",
-            "text": "${VAR_GATEWAY}",
+            "value": "Vieta",
+            "text": "Vieta",
             "selected": false
           }
         ]
@@ -4764,18 +4705,18 @@
         "description": "",
         "hide": 2,
         "name": "GatewayR",
-        "query": "${VAR_GATEWAYR}",
+        "query": "CGU Minerva",
         "skipUrlSync": true,
         "type": "constant",
         "current": {
-          "value": "${VAR_GATEWAYR}",
-          "text": "${VAR_GATEWAYR}",
+          "value": "CGU Minerva",
+          "text": "CGU Minerva",
           "selected": false
         },
         "options": [
           {
-            "value": "${VAR_GATEWAYR}",
-            "text": "${VAR_GATEWAYR}",
+            "value": "CGU Minerva",
+            "text": "CGU Minerva",
             "selected": false
           }
         ]
@@ -4784,18 +4725,18 @@
         "description": "",
         "hide": 2,
         "name": "node",
-        "query": "${VAR_NODE}",
+        "query": "172.17.0.1:9100",
         "skipUrlSync": true,
         "type": "constant",
         "current": {
-          "value": "${VAR_NODE}",
-          "text": "${VAR_NODE}",
+          "value": "172.17.0.1:9100",
+          "text": "172.17.0.1:9100",
           "selected": false
         },
         "options": [
           {
-            "value": "${VAR_NODE}",
-            "text": "${VAR_NODE}",
+            "value": "172.17.0.1:9100",
+            "text": "172.17.0.1:9100",
             "selected": false
           }
         ]
@@ -4803,18 +4744,18 @@
       {
         "hide": 2,
         "name": "job",
-        "query": "${VAR_JOB}",
+        "query": "node-exporter",
         "skipUrlSync": true,
         "type": "constant",
         "current": {
-          "value": "${VAR_JOB}",
-          "text": "${VAR_JOB}",
+          "value": "node-exporter",
+          "text": "node-exporter",
           "selected": false
         },
         "options": [
           {
-            "value": "${VAR_JOB}",
-            "text": "${VAR_JOB}",
+            "value": "node-exporter",
+            "text": "node-exporter",
             "selected": false
           }
         ]
@@ -4822,18 +4763,18 @@
       {
         "hide": 2,
         "name": "nodeR",
-        "query": "${VAR_NODER}",
+        "query": "pi3.athena:9100",
         "skipUrlSync": true,
         "type": "constant",
         "current": {
-          "value": "${VAR_NODER}",
-          "text": "${VAR_NODER}",
+          "value": "pi3.athena:9100",
+          "text": "pi3.athena:9100",
           "selected": false
         },
         "options": [
           {
-            "value": "${VAR_NODER}",
-            "text": "${VAR_NODER}",
+            "value": "pi3.athena:9100",
+            "text": "pi3.athena:9100",
             "selected": false
           }
         ]
@@ -4842,18 +4783,18 @@
         "description": "",
         "hide": 2,
         "name": "jobR",
-        "query": "${VAR_JOBR}",
+        "query": "node-exporter-pi3",
         "skipUrlSync": true,
         "type": "constant",
         "current": {
-          "value": "${VAR_JOBR}",
-          "text": "${VAR_JOBR}",
+          "value": "node-exporter-pi3",
+          "text": "node-exporter-pi3",
           "selected": false
         },
         "options": [
           {
-            "value": "${VAR_JOBR}",
-            "text": "${VAR_JOBR}",
+            "value": "node-exporter-pi3",
+            "text": "node-exporter-pi3",
             "selected": false
           }
         ]
