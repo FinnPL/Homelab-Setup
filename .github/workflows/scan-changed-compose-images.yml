@@ -193,51 +193,54 @@ jobs:
                     echo "### 📊 Vulnerability Summary" >> pr-trivy-report.md
                     echo "" >> pr-trivy-report.md
                     echo "\`\`\`" >> pr-trivy-report.md
-                    sed -n '/Report Summary/,/Clean (no security findings detected)/p' "$scan_file" >> pr-trivy-report.md
+                    sed -n '/Report Summary/,/- .0.: Clean/p' "$scan_file" >> pr-trivy-report.md
                     echo "\`\`\`" >> pr-trivy-report.md
                     echo "" >> pr-trivy-report.md
                   fi
                   
-                  # Show detailed sections
                   echo "### 🔍 Detailed Vulnerabilities" >> pr-trivy-report.md
                   echo "" >> pr-trivy-report.md
                   
-                  # Process each target section
-                  in_target=false
+                  # Use a simpler approach - split by lines that end with )
+                  current_section=""
+                  in_vuln_section=false
+                  
                   while IFS= read -r line; do
-                    # Check if this is a target header (ends with parentheses)
-                    if [[ "$line" =~ \)$ ]] && [[ ! "$line" =~ ^[[:space:]]*$ ]] && [[ ! "$line" =~ Report\ Summary ]]; then
-                      if [ "$in_target" = true ]; then
+                    # Skip the summary section entirely
+                    if [[ "$line" =~ Report\ Summary ]]; then
+                      in_vuln_section=false
+                      continue
+                    fi
+                    if [[ "$line" =~ ^┌ ]] || [[ "$line" =~ ^├ ]] || [[ "$line" =~ ^└ ]] || [[ "$line" =~ ^│ ]] || [[ "$line" =~ ^Legend: ]] || [[ "$line" =~ ^-.*Clean ]]; then
+                      in_vuln_section=false
+                      continue
+                    fi
+                    
+                    # Detect new vulnerability section (ends with parentheses, not empty, not summary stuff)
+                    if [[ "$line" =~ \)$ ]] && [[ ! "$line" =~ ^[[:space:]]*$ ]] && [[ ! "$line" =~ Target ]] && [[ ! "$line" =~ Report\ Summary ]]; then
+                      # Close previous section if any
+                      if [[ ! -z "$current_section" ]]; then
                         echo "\`\`\`" >> pr-trivy-report.md
                         echo "" >> pr-trivy-report.md
                       fi
+                      # Start new section
                       echo "#### $line" >> pr-trivy-report.md
                       echo "" >> pr-trivy-report.md
                       echo "\`\`\`" >> pr-trivy-report.md
-                      in_target=true
-                    # Check if this is a section divider (===)
-                    elif [[ "$line" =~ ^=+$ ]]; then
-                      if [ "$in_target" = true ]; then
-                        echo "\`\`\`" >> pr-trivy-report.md
-                        echo "" >> pr-trivy-report.md
-                      fi
-                      # The previous line should be the section title
-                      echo "#### $prev_line" >> pr-trivy-report.md
-                      echo "" >> pr-trivy-report.md
-                      echo "\`\`\`" >> pr-trivy-report.md
-                      in_target=true
-                    # Skip summary table and legend lines
-                    elif [[ "$line" =~ ^Report\ Summary ]] || [[ "$line" =~ ^┌ ]] || [[ "$line" =~ ^├ ]] || [[ "$line" =~ ^└ ]] || [[ "$line" =~ ^│ ]] || [[ "$line" =~ ^Legend: ]] || [[ "$line" =~ ^-.*:.*scanned ]] || [[ "$line" =~ ^-.*:.*Clean ]]; then
+                      current_section="$line"
+                      in_vuln_section=true
                       continue
-                    # Add content to current section
-                    elif [ "$in_target" = true ] && [[ ! -z "$line" ]]; then
+                    fi
+                    
+                    # Add line to current section if we're in one
+                    if [[ "$in_vuln_section" == true ]] && [[ ! -z "$line" ]]; then
                       echo "$line" >> pr-trivy-report.md
                     fi
-                    prev_line="$line"
+                    
                   done < "$scan_file"
                   
-                  # Close final code block
-                  if [ "$in_target" = true ]; then
+                  # Close final section
+                  if [[ ! -z "$current_section" ]]; then
                     echo "\`\`\`" >> pr-trivy-report.md
                   fi
                   
