@@ -48,13 +48,15 @@ jobs:
       - name: Setup yq
         uses: mikefarah/yq@v4.44.1
 
-      - name: Extract images from changed compose files
+      - name: Extract changed/added images from compose files
         id: get-images
         run: |
           CHANGED="${{ steps.changed.outputs.changed_files }}"
           IMGS=""
           FILES=""
           BASE=FETCH_HEAD
+          
+          echo "🔍 Analyzing changed compose files for image differences..."
           
           for f in $CHANGED; do
             # Only check files that are actually docker-compose files
@@ -69,30 +71,62 @@ jobs:
               echo "Processing compose file: $f"
               FILES="${FILES}${f},"
               
-              # Check if file exists and has services section
+              # Get images from current version (HEAD)
+              current_images=""
               if [ -f "$f" ]; then
                 set +e
-                # yq query: get images under services.*.image (works for docker-compose format)
-                imgs_yq=$(yq e '.services[]? | .image // ""' "$f" 2>/dev/null | grep -v '^$' || true)
+                current_images=$(yq e '.services[]? | .image // ""' "$f" 2>/dev/null | grep -v '^$' || true)
                 set -e
-                
-                for i in $imgs_yq; do
-                  # basic cleanup
-                  if [ -n "$i" ] && [ "$i" != "null" ]; then
-                    # remove trailing commas or quotes
-                    i=$(echo "$i" | tr -d '"' | tr -d "'" | sed 's/[,:]$//')
-                    if [ -n "$i" ]; then
-                      IMGS="${IMGS}${i}\n"
-                    fi
-                  fi
-                done
               fi
+              
+              # Get images from base version
+              base_images=""
+              if git show "$BASE:$f" >/dev/null 2>&1; then
+                set +e
+                base_images=$(git show "$BASE:$f" | yq e '.services[]? | .image // ""' - 2>/dev/null | grep -v '^$' || true)
+                set -e
+              else
+                echo "  → File is new (not in base branch)"
+              fi
+              
+              # Compare images and find new/changed ones
+              echo "  Current images in $f:"
+              for img in $current_images; do
+                if [ -n "$img" ] && [ "$img" != "null" ]; then
+                  img_clean=$(echo "$img" | tr -d '"' | tr -d "'" | sed 's/[,:]$//')
+                  echo "    - $img_clean"
+                  
+                  # Check if this image is new or changed
+                  img_found=false
+                  for base_img in $base_images; do
+                    base_img_clean=$(echo "$base_img" | tr -d '"' | tr -d "'" | sed 's/[,:]$//')
+                    if [ "$img_clean" = "$base_img_clean" ]; then
+                      img_found=true
+                      break
+                    fi
+                  done
+                  
+                  if [ "$img_found" = false ]; then
+                    echo "    ✅ NEW/CHANGED: $img_clean"
+                    IMGS="${IMGS}${img_clean}\n"
+                  else
+                    echo "    ⏭️  UNCHANGED: $img_clean"
+                  fi
+                fi
+              done
+              
+              echo ""
             fi
           done
           
           # uniq and format output
           IMGS=$(echo -e "$IMGS" | sed '/^\s*$/d' | sort -u | tr '\n' ',' | sed 's/,$//')
           FILES=$(echo "$FILES" | sed 's/,$//')
+          
+          echo "📋 Summary:"
+          echo "  Changed files: $FILES"
+          echo "  New/changed images: $IMGS"
+          
           echo "images=$IMGS" >> $GITHUB_OUTPUT
           echo "files=$FILES" >> $GITHUB_OUTPUT
 
@@ -136,17 +170,15 @@ jobs:
           fi
           
           if [ -z "$images" ]; then
-            echo "No Docker images found in changed compose files."
+            echo "No new or changed Docker images found in modified compose files."
             echo "# Docker Image Vulnerability Report" > pr-trivy-report.md
+            echo "" >> pr-trivy-report.md
+            echo "> [!TIP]" >> pr-trivy-report.md
+            echo "> **Summary:** No new or changed images to scan. All images in the modified compose files remain unchanged from the base branch. 🎉" >> pr-trivy-report.md
             echo "" >> pr-trivy-report.md
             echo "**Changed compose files:** $files" >> pr-trivy-report.md
             echo "" >> pr-trivy-report.md
-            echo "No Docker images found in the changed compose files. This may be because:" >> pr-trivy-report.md
-            echo "- The compose files don't contain any \`image:\` declarations" >> pr-trivy-report.md
-            echo "- The compose files only use \`build:\` directives" >> pr-trivy-report.md
-            echo "- The files were deleted or moved" >> pr-trivy-report.md
-            echo "" >> pr-trivy-report.md
-            echo "Skipping vulnerability scan." >> pr-trivy-report.md
+            echo "All Docker images in the changed compose files are identical to those in the base branch, so no vulnerability scanning is needed." >> pr-trivy-report.md
             echo "report_exists=true" >> $GITHUB_OUTPUT
             exit 0
           fi
@@ -158,7 +190,7 @@ jobs:
           # We'll add the summary at the top later, after scanning
           echo "**Changed compose files:** $files" >> pr-trivy-report.md
           echo "" >> pr-trivy-report.md
-          echo "**Found images:**" >> pr-trivy-report.md
+          echo "**New/changed images being scanned:**" >> pr-trivy-report.md
           IFS=',' read -r -a img_array <<< "$images"
           for img in "${img_array[@]}"; do
             img_trimmed=$(echo "$img" | xargs)
