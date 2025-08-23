@@ -178,7 +178,7 @@ services:
       - MAILCOW_EXPORTER_INSECURE_DISABLE_ACCESS_PROTECTION=1
 
   fritzbox-exporter:
-    image: pdreker/fritz_exporter:v2.17.1
+    image: pdreker/fritz_exporter:v2.5.2
     container_name: fritzbox-exporter
     restart: always
     environment:
