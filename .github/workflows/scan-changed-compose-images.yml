@@ -114,6 +114,10 @@ jobs:
         run: |
           echo "IMAGES=${{ needs.prepare.outputs.images }}" >> $GITHUB_ENV
           echo "FILES=${{ needs.prepare.outputs.files }}" >> $GITHUB_ENV
+          # Set Trivy environment variables to reduce verbose output
+          echo "TRIVY_QUIET=true" >> $GITHUB_ENV
+          echo "TRIVY_NO_PROGRESS=true" >> $GITHUB_ENV
+          echo "TRIVY_DISABLE_VEX_NOTICE=true" >> $GITHUB_ENV
 
       - name: Build report (scan each image)
         id: trivy_reports
@@ -163,7 +167,7 @@ jobs:
               continue
             fi
             
-            echo "Scanning image: $img_trimmed"
+            echo "🔍 Scanning image: $img_trimmed"
             
             # Add image header to report
             echo "" >> pr-trivy-report.md
@@ -174,12 +178,15 @@ jobs:
             
             # Run trivy scan
             scan_file="trivy-${img_trimmed//[:\/]/_}.txt"
-            if trivy image --format table --severity CRITICAL,HIGH --exit-code 0 "$img_trimmed" > "$scan_file" 2>&1; then
+            
+            # Run trivy with quiet flags - environment variables should suppress most verbose output
+            if trivy image --format table --severity CRITICAL,HIGH --exit-code 0 --quiet --no-progress "$img_trimmed" > "$scan_file" 2>&1; then
               if [ -s "$scan_file" ]; then
-                # Check if there are actual vulnerabilities (not just headers)
-                vuln_count=$(grep -c "CRITICAL\|HIGH" "$scan_file" 2>/dev/null || echo "0")
-                if [ "$vuln_count" -gt 0 ]; then
-                  total_vulnerabilities=$((total_vulnerabilities + vuln_count))
+                # Check if there are actual vulnerability entries (lines with CRITICAL or HIGH)
+                vuln_lines=$(grep -c -E "(CRITICAL|HIGH)" "$scan_file" 2>/dev/null || echo "0")
+                
+                if [ "$vuln_lines" -gt 0 ]; then
+                  total_vulnerabilities=$((total_vulnerabilities + vuln_lines))
                   echo "\`\`\`" >> pr-trivy-report.md
                   cat "$scan_file" >> pr-trivy-report.md
                   echo "\`\`\`" >> pr-trivy-report.md
@@ -196,8 +203,8 @@ jobs:
               echo "\`\`\`" >> pr-trivy-report.md
             fi
             
-            # Generate JSON report for artifacts
-            trivy image --format json --output "trivy-${img_trimmed//[:\/]/_}.json" "$img_trimmed" 2>/dev/null || true
+            # Generate JSON report for artifacts (silently)
+            trivy image --format json --output "trivy-${img_trimmed//[:\/]/_}.json" --quiet --no-progress "$img_trimmed" >/dev/null 2>&1 || true
           done
 
           # Add summary
