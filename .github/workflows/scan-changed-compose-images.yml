@@ -91,7 +91,7 @@ jobs:
       - name: Install Trivy (setup action)
         uses: aquasecurity/setup-trivy@v0.2.0
         with:
-          version: 'v0.64.3'
+          version: 'v0.65.0'
           cache: true
 
       - name: Setup helper env
