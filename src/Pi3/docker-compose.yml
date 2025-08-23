@@ -12,7 +12,7 @@ services:
       - '/:/host:ro,rslave'
 
   portainer-agent:
-    image: portainer/agent:2.21.4
+    image: portainer/agent:2.33.0
     container_name: portainer-agent-pi3
     restart: always
     ports:
