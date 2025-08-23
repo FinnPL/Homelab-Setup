@@ -201,46 +201,52 @@ jobs:
                   echo "### 🔍 Detailed Vulnerabilities" >> pr-trivy-report.md
                   echo "" >> pr-trivy-report.md
                   
-                  # Use a simpler approach - split by lines that end with )
+                  # Parse the file and extract sections properly
+                  skip_summary=true
                   current_section=""
-                  in_vuln_section=false
+                  in_section=false
                   
                   while IFS= read -r line; do
-                    # Skip the summary section entirely
-                    if [[ "$line" =~ Report\ Summary ]]; then
-                      in_vuln_section=false
-                      continue
-                    fi
-                    if [[ "$line" =~ ^┌ ]] || [[ "$line" =~ ^├ ]] || [[ "$line" =~ ^└ ]] || [[ "$line" =~ ^│ ]] || [[ "$line" =~ ^Legend: ]] || [[ "$line" =~ ^-.*Clean ]]; then
-                      in_vuln_section=false
+                    # Skip the entire summary section
+                    if [[ "$line" =~ Report\ Summary ]] || [[ "$skip_summary" == true ]]; then
+                      if [[ "$line" =~ - .0.: Clean ]] || [[ "$line" =~ - .-.: Not ]]; then
+                        skip_summary=false
+                      fi
                       continue
                     fi
                     
-                    # Detect new vulnerability section (ends with parentheses, not empty, not summary stuff)
-                    if [[ "$line" =~ \)$ ]] && [[ ! "$line" =~ ^[[:space:]]*$ ]] && [[ ! "$line" =~ Target ]] && [[ ! "$line" =~ Report\ Summary ]]; then
-                      # Close previous section if any
-                      if [[ ! -z "$current_section" ]]; then
+                    # Skip empty lines at the start
+                    if [[ "$skip_summary" == false ]] && [[ -z "$line" ]]; then
+                      continue
+                    fi
+                    skip_summary=false
+                    
+                    # Detect section headers - lines ending with parentheses that contain version info
+                    if [[ "$line" =~ \([^)]*[0-9][^)]*\)$ ]] && [[ ! -z "$line" ]]; then
+                      # Close previous section
+                      if [[ "$in_section" == true ]]; then
                         echo "\`\`\`" >> pr-trivy-report.md
                         echo "" >> pr-trivy-report.md
                       fi
+                      
                       # Start new section
                       echo "#### $line" >> pr-trivy-report.md
                       echo "" >> pr-trivy-report.md
                       echo "\`\`\`" >> pr-trivy-report.md
                       current_section="$line"
-                      in_vuln_section=true
+                      in_section=true
                       continue
                     fi
                     
-                    # Add line to current section if we're in one
-                    if [[ "$in_vuln_section" == true ]] && [[ ! -z "$line" ]]; then
+                    # Add all other lines to the current section (including equals, Total:, and tables)
+                    if [[ "$in_section" == true ]]; then
                       echo "$line" >> pr-trivy-report.md
                     fi
                     
                   done < "$scan_file"
                   
                   # Close final section
-                  if [[ ! -z "$current_section" ]]; then
+                  if [[ "$in_section" == true ]]; then
                     echo "\`\`\`" >> pr-trivy-report.md
                   fi
                   
