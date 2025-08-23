@@ -127,3 +127,8 @@
       description: VPS Management
       href: https://my.contabo.com/
       icon: contabo.png
+
+  - Tailscale:
+      description: VPN Network Management
+      href: "https://login.tailscale.com/"
+      icon: tailscale.png
