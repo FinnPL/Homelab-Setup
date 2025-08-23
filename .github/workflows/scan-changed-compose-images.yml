@@ -46,7 +46,7 @@ jobs:
       - name: Extract images from changed compose/YAML files
         id: get-images
         run: |
-          CHANGED="${{ fromJson(steps.changed.outputs.changed_files) }}"
+          CHANGED="${{ steps.changed.outputs.changed_files }}"
           # fallback: if changed_files is empty, examine full repository for compose files (optional)
           IMGS=""
           FILES=""
@@ -91,7 +91,7 @@ jobs:
       - name: Install Trivy (setup action)
         uses: aquasecurity/setup-trivy@v0.2.0
         with:
-          version: 'v0.64.3'    # change if you prefer another version; setup-trivy installs Trivy CLI
+          version: 'v0.64.3'
           cache: true
 
       - name: Setup helper env
