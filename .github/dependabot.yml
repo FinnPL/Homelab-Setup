@@ -1,6 +1,10 @@
 version: 2
 updates:
-  - package-ecosystem: "docker" 
-    directory: "/" 
+  - package-ecosystem: "docker"
+    directory: "/src/Pi3"
+    schedule:
+      interval: "weekly"
+  - package-ecosystem: "docker"
+    directory: "/src/Pi4"
     schedule:
       interval: "weekly"
