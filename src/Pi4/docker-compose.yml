@@ -204,6 +204,22 @@ services:
       - "traefik.http.services.alertmanager.loadbalancer.server.port=9093"
       - "traefik.http.routers.alertmanager.middlewares=auth@file"
 
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale-pi4
+    hostname: pi4
+    environment:
+      - TS_AUTHKEY=${TAILSCALE_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+    volumes:
+      - tailscale_data:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    restart: always
+
 volumes:
   traefik_certs:
   portainer_data:
@@ -212,3 +228,4 @@ volumes:
   grafana_data:
   grafana_data_two:
   alertmanager_data:
+  tailscale_data:

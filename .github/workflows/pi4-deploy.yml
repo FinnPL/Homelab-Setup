@@ -3,6 +3,9 @@ on:
     push:
         branches:
             - main
+        paths:
+            - 'src/Pi4/**'
+            - '.github/workflows/pi4-deploy.yml'
 
 jobs:
     deploy:
@@ -37,6 +40,7 @@ jobs:
                 echo 'GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}' >> src/Pi4/.env
                 echo 'FRITZBOX_USERNAME=${{ secrets.FRITZBOX_USERNAME }}' >> src/Pi4/.env
                 echo 'FRITZBOX_PASSWORD=${{ secrets.FRITZBOX_PASSWORD }}' >> src/Pi4/.env
+                echo 'TAILSCALE_AUTHKEY=${{ secrets.TAILSCALE_AUTHKEY }}' >> src/Pi4/.env
 
             - name: Generate config files from templates
               run: |
@@ -56,6 +60,7 @@ jobs:
                 export GRAFANA_ADMIN_PASSWORD='${{ secrets.GRAFANA_ADMIN_PASSWORD }}'
                 export FRITZBOX_USERNAME='${{ secrets.FRITZBOX_USERNAME }}'
                 export FRITZBOX_PASSWORD='${{ secrets.FRITZBOX_PASSWORD }}'
+                export TAILSCALE_AUTHKEY='${{ secrets.TAILSCALE_AUTHKEY }}'
                 
                 # Generate config files from templates
                 envsubst < src/Pi4/prometheus/prometheus.yml.template > src/Pi4/prometheus/prometheus.yml
