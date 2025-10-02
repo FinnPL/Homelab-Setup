@@ -28,8 +28,7 @@ Each site implements a dual-VLAN architecture:
 #### Security Model
 - **VPN Tunnel**: Secure connection between Athena VLANs across sites
 - **NAS Synchronization**: Automated data replication between Apollo and Zeus
-- **Firewall Enforcement**: Access to Athena network from Default VLAN is **exclusively** through Traefik reverse proxy
-- **Zero Trust**: No direct access to homelab services bypassing the proxy
+- **Firewall Enforcement**: Access to Athena network from Default VLAN is **exclusively** through Traefik reverse proxy. No direct access to homelab services bypassing the proxy
 
 ## Services Architecture
 
@@ -75,7 +74,7 @@ Each site implements a dual-VLAN architecture:
 - `envsubst` for template processing
 
 ### Environment Variables
-The setup now uses **environment variable substitution** for configuration files that don't natively support `.env` files. This approach provides better security and flexibility.
+The setup uses **environment variable substitution** for configuration files that don't natively support `.env` files.
 
 #### Required Environment Variables
 Create a `.env` file in `src/Pi4/` with the following variables:
