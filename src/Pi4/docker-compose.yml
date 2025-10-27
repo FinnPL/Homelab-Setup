@@ -33,7 +33,7 @@ services:
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
 
   gatus:
-    image: twinproduction/gatus:v5.26.0
+    image: twinproduction/gatus:v5.29.0
     container_name: gatus
     restart: always
     environment:
