@@ -100,7 +100,7 @@ services:
       - "traefik.http.routers.prometheus.middlewares=auth@file"
 
   grafana:
-    image: grafana/grafana:12.2.0
+    image: grafana/grafana:12.2.1
     container_name: grafana
     restart: always
     environment:
