@@ -50,7 +50,7 @@ services:
       - "traefik.http.services.gatus.loadbalancer.server.port=8080"
 
   homepage:
-    image: gethomepage/homepage:v1.5.0
+    image: gethomepage/homepage:v1.6.1
     container_name: homepage
     restart: always
     environment:
