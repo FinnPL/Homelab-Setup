@@ -67,11 +67,11 @@ jobs:
                 envsubst < src/Pi4/traefik/traefik.yml.template > src/Pi4/traefik/traefik.yml
                 envsubst < src/Pi4/alertmanager/alertmanager.yml.template > src/Pi4/alertmanager/alertmanager.yml
             
-            - name: Stop existing containers
-              run: docker compose -f src/Pi4/docker-compose.yml down
-
             - name: Pull latest images
               run: docker compose -f src/Pi4/docker-compose.yml pull
+
+            - name: Stop existing containers
+              run: docker compose -f src/Pi4/docker-compose.yml down
 
             - name: Start containers
               run: docker compose -f src/Pi4/docker-compose.yml up -d
