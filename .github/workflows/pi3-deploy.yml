@@ -24,11 +24,11 @@ jobs:
               run: |
                 echo 'TAILSCALE_AUTHKEY=${{ secrets.TAILSCALE_AUTHKEY }}' >> src/Pi3/.env
             
-            - name: Stop existing containers
-              run: docker compose -f src/Pi3/docker-compose.yml down || true
-
             - name: Pull latest images
               run: docker compose -f src/Pi3/docker-compose.yml pull
+
+            - name: Stop existing containers
+              run: docker compose -f src/Pi3/docker-compose.yml down || true
 
             - name: Start containers
               run: docker compose -f src/Pi3/docker-compose.yml up -d
