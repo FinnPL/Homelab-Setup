@@ -18,7 +18,7 @@ services:
       - traefik_certs:/certs
 
   portainer:
-    image: portainer/portainer-ce:2.33.4
+    image: portainer/portainer-ce:2.33.5
     container_name: portainer
     restart: always
     command: --admin-password ${PORTAINER_PASSWORD}
