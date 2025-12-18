@@ -44,3 +44,6 @@ Desktop.ini
 *.swp
 *.swo
 *~
+
+# Terraform
+.terraform/
