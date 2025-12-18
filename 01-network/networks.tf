@@ -10,6 +10,6 @@ resource "unifi_network" "tf_vlan_athena" {
   dhcp_enabled = true
 
   site = "default"
-  
+
   igmp_snooping = true
 }
