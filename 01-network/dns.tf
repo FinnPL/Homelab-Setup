@@ -5,9 +5,10 @@ data "cloudflare_zone" "main" {
 # Test entry
 resource "cloudflare_record" "tf_proxmox_entry" {
   zone_id = data.cloudflare_zone.main.id
-  name    = "proxmox"
-  content = "10.0.10.5"
+  name    = "lippok.dev"
+  content = "10.10.1.41"
   type    = "A"
   proxied = false
   comment = "Managed by Terraform"
+  ttl     = 60
 }
