@@ -22,5 +22,10 @@ resource "unifi_device" "tf_cgu" {
     name            = "tf-Port2"
     port_profile_id = unifi_port_profile.athena_custom_profile.id
   }
+  port_override {
+    number          = 3
+    name            = "tf-Port3"
+    port_profile_id = unifi_port_profile.athena_custom_profile.id
+  }
 
 }
