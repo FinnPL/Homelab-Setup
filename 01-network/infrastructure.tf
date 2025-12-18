@@ -2,9 +2,9 @@ resource "unifi_port_profile" "athena_custom_profile" {
   name = "Athena (Terraform)"
   site = "default"
 
-  native_networkconf {
-    network_id = unifi_network.tf_vlan_athena.id
-  }
+  forward = "customize"
+
+  native_networkconf_id = unifi_network.tf_vlan_athena.id
 
   depends_on = [unifi_network.tf_vlan_athena]
 }
