@@ -28,5 +28,5 @@ resource "unifi_network" "tf_vlan_default" {
   site = "default"
 
   igmp_snooping = true
-  mdns_enabled  = true
+  multicast_dns = true
 }
