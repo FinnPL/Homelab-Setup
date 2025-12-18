@@ -34,8 +34,6 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-        with:
-            clean: false # Temporarily disable cleaning due to mounted volumes of Pi4 deploy. Wont fix that now because am going to move to k8s soon anyway.
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3

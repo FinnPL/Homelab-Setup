@@ -14,33 +14,39 @@ jobs:
         permissions:
             contents: read
         steps:
-            - name: Remove homepage files
-              run: sudo rm -rf src/Pi4/homepage/
+            - name: Ensure deploy directory exists
+              run: |
+                sudo mkdir -p /opt/homelab/pi4
+                sudo chown -R "$(id -u):$(id -g)" /opt/homelab/pi4
 
             - name: Checkout repository
               uses: actions/checkout@v4
 
+            - name: Sync compose stack to /opt (no runner mounts)
+              run: |
+                rsync -a --delete --exclude='.env' src/Pi4/ /opt/homelab/pi4/
+
             - name: Clear Env File
-              run: echo "" > src/Pi4/.env
+              run: echo "" > /opt/homelab/pi4/.env
 
             - name: Set up Env File
               run: |
-                echo 'TRAEFIK_USER=${{ secrets.TRAEFIK_USER }}' >> src/Pi4/.env
-                echo 'TRAEFIK_PASSWORD=${{ secrets.TRAEFIK_PASSWORD }}' >> src/Pi4/.env
-                echo 'TRAEFIK_PASSWORD_UNHASHED=${{ secrets.TRAEFIK_PASSWORD_UNHASHED }}' >> src/Pi4/.env
-                echo 'CF_DNS_API_TOKEN=${{ secrets.CF_DNS_API_TOKEN }}' >> src/Pi4/.env
-                echo 'CLOUDFLARE_EMAIL=${{ secrets.CLOUDFLARE_EMAIL }}' >> src/Pi4/.env
-                echo 'PORTAINER_PASSWORD=${{ secrets.PORTAINER_PASSWORD }}' >> src/Pi4/.env
-                echo 'DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}' >> src/Pi4/.env
-                echo 'HOMEPAGE_VAR_OPENWEATHERMAP_API_KEY=${{ secrets.HOMEPAGE_VAR_OPENWEATHERMAP_API_KEY }}' >> src/Pi4/.env
-                echo 'HOMEPAGE_VAR_MAILCOW_API_KEY=${{ secrets.HOMEPAGE_VAR_MAILCOW_API_KEY }}' >> src/Pi4/.env
-                echo 'HOMEPAGE_VAR_UNIFI_USER=${{ secrets.HOMEPAGE_VAR_UNIFI_USER }}' >> src/Pi4/.env
-                echo 'HOMEPAGE_VAR_UNIFI_PASSWORD=${{ secrets.HOMEPAGE_VAR_UNIFI_PASSWORD }}' >> src/Pi4/.env
-                echo 'HOMEPAGE_VAR_PORTAINER_API_KEY=${{ secrets.HOMEPAGE_VAR_PORTAINER_API_KEY }}' >> src/Pi4/.env
-                echo 'GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}' >> src/Pi4/.env
-                echo 'FRITZBOX_USERNAME=${{ secrets.FRITZBOX_USERNAME }}' >> src/Pi4/.env
-                echo 'FRITZBOX_PASSWORD=${{ secrets.FRITZBOX_PASSWORD }}' >> src/Pi4/.env
-                echo 'TAILSCALE_AUTHKEY=${{ secrets.TAILSCALE_AUTHKEY }}' >> src/Pi4/.env
+                echo 'TRAEFIK_USER=${{ secrets.TRAEFIK_USER }}' >> /opt/homelab/pi4/.env
+                echo 'TRAEFIK_PASSWORD=${{ secrets.TRAEFIK_PASSWORD }}' >> /opt/homelab/pi4/.env
+                echo 'TRAEFIK_PASSWORD_UNHASHED=${{ secrets.TRAEFIK_PASSWORD_UNHASHED }}' >> /opt/homelab/pi4/.env
+                echo 'CF_DNS_API_TOKEN=${{ secrets.CF_DNS_API_TOKEN }}' >> /opt/homelab/pi4/.env
+                echo 'CLOUDFLARE_EMAIL=${{ secrets.CLOUDFLARE_EMAIL }}' >> /opt/homelab/pi4/.env
+                echo 'PORTAINER_PASSWORD=${{ secrets.PORTAINER_PASSWORD }}' >> /opt/homelab/pi4/.env
+                echo 'DISCORD_WEBHOOK_URL=${{ secrets.DISCORD_WEBHOOK_URL }}' >> /opt/homelab/pi4/.env
+                echo 'HOMEPAGE_VAR_OPENWEATHERMAP_API_KEY=${{ secrets.HOMEPAGE_VAR_OPENWEATHERMAP_API_KEY }}' >> /opt/homelab/pi4/.env
+                echo 'HOMEPAGE_VAR_MAILCOW_API_KEY=${{ secrets.HOMEPAGE_VAR_MAILCOW_API_KEY }}' >> /opt/homelab/pi4/.env
+                echo 'HOMEPAGE_VAR_UNIFI_USER=${{ secrets.HOMEPAGE_VAR_UNIFI_USER }}' >> /opt/homelab/pi4/.env
+                echo 'HOMEPAGE_VAR_UNIFI_PASSWORD=${{ secrets.HOMEPAGE_VAR_UNIFI_PASSWORD }}' >> /opt/homelab/pi4/.env
+                echo 'HOMEPAGE_VAR_PORTAINER_API_KEY=${{ secrets.HOMEPAGE_VAR_PORTAINER_API_KEY }}' >> /opt/homelab/pi4/.env
+                echo 'GRAFANA_ADMIN_PASSWORD=${{ secrets.GRAFANA_ADMIN_PASSWORD }}' >> /opt/homelab/pi4/.env
+                echo 'FRITZBOX_USERNAME=${{ secrets.FRITZBOX_USERNAME }}' >> /opt/homelab/pi4/.env
+                echo 'FRITZBOX_PASSWORD=${{ secrets.FRITZBOX_PASSWORD }}' >> /opt/homelab/pi4/.env
+                echo 'TAILSCALE_AUTHKEY=${{ secrets.TAILSCALE_AUTHKEY }}' >> /opt/homelab/pi4/.env
 
             - name: Generate config files from templates
               run: |
@@ -63,15 +69,15 @@ jobs:
                 export TAILSCALE_AUTHKEY='${{ secrets.TAILSCALE_AUTHKEY }}'
                 
                 # Generate config files from templates
-                envsubst < src/Pi4/prometheus/prometheus.yml.template > src/Pi4/prometheus/prometheus.yml
-                envsubst < src/Pi4/traefik/traefik.yml.template > src/Pi4/traefik/traefik.yml
-                envsubst < src/Pi4/alertmanager/alertmanager.yml.template > src/Pi4/alertmanager/alertmanager.yml
+                envsubst < /opt/homelab/pi4/prometheus/prometheus.yml.template > /opt/homelab/pi4/prometheus/prometheus.yml
+                envsubst < /opt/homelab/pi4/traefik/traefik.yml.template > /opt/homelab/pi4/traefik/traefik.yml
+                envsubst < /opt/homelab/pi4/alertmanager/alertmanager.yml.template > /opt/homelab/pi4/alertmanager/alertmanager.yml
             
             - name: Pull latest images
-              run: docker compose -f src/Pi4/docker-compose.yml pull
+              run: docker compose -f /opt/homelab/pi4/docker-compose.yml pull
 
             - name: Stop existing containers
-              run: docker compose -f src/Pi4/docker-compose.yml down
+              run: docker compose -f /opt/homelab/pi4/docker-compose.yml down
 
             - name: Start containers
-              run: docker compose -f src/Pi4/docker-compose.yml up -d
+              run: docker compose -f /opt/homelab/pi4/docker-compose.yml up -d
