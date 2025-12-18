@@ -16,10 +16,7 @@ resource "unifi_device" "tf_cgu" {
     prevent_destroy = true
 
     ignore_changes = [
-      disabled,
-      syslog_config,
-      snmp_contact,
-      snmp_location
+      disabled
     ]
   }
 
