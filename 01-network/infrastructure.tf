@@ -12,6 +12,13 @@ resource "unifi_port_profile" "athena_custom_profile" {
 resource "unifi_device" "tf_cgu" {
   name = "tf-Cloud-Gateway-Ultra"
   mac  = "28:70:4e:3e:fb:15"
+  lifecycle {
+    prevent_destroy = true
+
+    ignore_changes = [
+      disabled
+    ]
+  }
 
   port_override {
     number          = 2
