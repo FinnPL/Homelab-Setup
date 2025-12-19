@@ -11,7 +11,7 @@ resource "unifi_network" "tf_vlan_athena" {
 
   site = "default"
 
-  #network_isolation_enabled = false
+  #network_isolation_enabled = true
 
   igmp_snooping = true
 }
@@ -30,7 +30,7 @@ resource "unifi_network" "tf_vlan_default" {
   site = "default"
 
 
-  network_isolation_enabled = false
+  network_isolation_enabled = true
 
   igmp_snooping = true
   multicast_dns = true
