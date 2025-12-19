@@ -11,7 +11,7 @@ resource "unifi_network" "tf_vlan_athena" {
 
   site = "default"
 
-  intra_network_access_enabled = false
+  #intra_network_access_enabled = false
 
   igmp_snooping = true
 }
