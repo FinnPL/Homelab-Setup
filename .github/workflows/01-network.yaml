@@ -5,11 +5,18 @@ on:
     branches:
       - main
     paths:
-      - '01-network/**'
-      - '.github/workflows/01-network.yaml'
+      - "01-network/**"
+      - ".github/workflows/01-network.yaml"
   pull_request:
     paths:
-      - '01-network/**'
+      - "01-network/**"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Run terraform apply (dangerous)"
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -71,5 +78,7 @@ jobs:
         run: exit 1
 
       - name: Terraform Apply
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          (github.event_name == 'workflow_dispatch' && inputs.apply == true)
         run: terraform apply -auto-approve -input=false

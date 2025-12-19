@@ -1,8 +1,8 @@
 terraform {
   required_providers {
     unifi = {
-      source  = "paultyng/unifi"
-      version = "~> 0.41.0"
+      source  = "filipowm/unifi"
+      version = "~> 1.0.0"
     }
     cloudflare = {
       source  = "cloudflare/cloudflare"
