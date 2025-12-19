@@ -12,8 +12,7 @@ terraform {
 }
 
 provider "unifi" {
-  username       = var.unifi_username
-  password       = var.unifi_password
+  api_key        = var.unifi_api_key
   api_url        = var.unifi_api_url
   allow_insecure = var.unifi_insecure
 }
