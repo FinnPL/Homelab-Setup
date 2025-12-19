@@ -41,15 +41,6 @@ Terraform is organized into numbered layers (each with its own backend state).
 - `03-services/`: Helm charts deployed onto the cluster *(planned / not implemented yet)*
 
 > [!NOTE]
-> `01-network` is intended to be the source of truth for my UniFi network configuration.
->
-> At the time of writing, the UniFi Terraform provider is not working properly with the newer Versions of UniFi Network. Because of that, Terraform is not always able to apply the desired state.
->
-> Until this is fixed, I keep the Terraform config and the real UniFi configuration in sync manually.
->
-> When I revisit this later, likely options are switching to `filipowm/unifi` or waiting for further maturation of the official UniFi API to support a stable Terraform workflow.
-
-> [!NOTE]
 > Long-term direction: migrate away from Docker Compose and run services via Helm charts on a Talos-based Kubernetes cluster (RPis), with the control plane hosted on an Intel NUC running Proxmox.
 
 ## Services Architecture
