@@ -3,7 +3,7 @@
 [![Pi3 - Deploy Docker Compose](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi3-deploy.yml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi3-deploy.yml)
 [![Docker Compose Syntax Check](https://github.com/FinnPL/Homelab-Setup/actions/workflows/docker-syntax.yml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/docker-syntax.yml)
 
-This repository contains the configuration files for my multi-site homelab setup, featuring automated CI/CD deployment, comprehensive monitoring, and networking.
+This repository contains the Terraform and Docker configuration for my multi-site homelab setup, featuring automated CI/CD deployment, comprehensive monitoring, and networking.
 
 ## Network Architecture
 ![NWD](https://github.com/user-attachments/assets/5e6225d0-8305-421c-8ee2-33f057eb3ace)
@@ -29,6 +29,28 @@ Each site implements a dual-VLAN architecture:
 - **VPN Tunnel**: Secure connection between Athena VLANs across sites
 - **NAS Synchronization**: Automated data replication between Apollo and Zeus
 - **Firewall Enforcement**: Access to Athena network from Default VLAN is **exclusively** through Traefik reverse proxy. No direct access to homelab services bypassing the proxy
+
+## Infrastructure as Code
+The homelab utilizes Terraform as the Infrastructure as Code (IaC) principles through Terraform to ensure a declarative, reproducible, and version-controlled foundation for the entire network and server stack.
+
+Terraform is organized into numbered layers (each with its own backend state).
+
+- `00-global/`: Shared Terraform foundation (remote state backend, base provider config)
+- `01-network/`: UniFi network state (VLANs, DHCP reservations, port profiles) + Cloudflare DNS
+- `02-infrastructure/`: Proxmox + Talos bootstrap for my Kubernetes homelab *(planned / not implemented yet)*
+- `03-services/`: Helm charts deployed onto the cluster *(planned / not implemented yet)*
+
+> [!NOTE]
+> `01-network` is intended to be the source of truth for my UniFi network configuration.
+>
+> At the time of writing, the UniFi Terraform provider is not working properly with the newer Versions of UniFi Network. Because of that, Terraform is not always able to apply the desired state.
+>
+> Until this is fixed, I keep the Terraform config and the real UniFi configuration in sync manually.
+>
+> When I revisit this later, likely options are switching to `filipowm/unifi` or waiting for further maturation of the official UniFi API to support a stable Terraform workflow.
+
+> [!NOTE]
+> Long-term direction: migrate away from Docker Compose and run services via Helm charts on a Talos-based Kubernetes cluster (RPis), with the control plane hosted on an Intel NUC running Proxmox.
 
 ## Services Architecture
 
