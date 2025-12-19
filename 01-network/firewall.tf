@@ -1,68 +1,90 @@
-locals {
-  athena_network_id  = unifi_network.tf_vlan_athena.id
-  default_network_id = unifi_network.tf_vlan_default.id
+# =============================================================================
+# Zone-Based Firewall Configuration
+# =============================================================================
+# - Only HTTPS (443), SMB (445), SSH (22) between Default -> Athena
+# - No other VLAN has access to Athena (network isolation)
+# - Only Athena has access to AthenaLink VPN gateway (10.0.3.2)
+# =============================================================================
+
+# Zones
+data "unifi_firewall_zone" "internal" {
+  name = "Internal"
+  site = "default"
 }
 
-/*
-Firewall rules are temporarily disabled to unblock VLAN/network changes.
-
-Current issue: UniFi controller rejects rule_index values with
-api.err.FirewallRuleIndexOutOfRange for /rest/firewallrule.
-
-Once resolved (provider/fork/API approach), re-enable and apply.
-
-resource "unifi_firewall_rule" "allow_athena_to_default_services" { #Will restrict later to only allow access to ingress IPs
-  name       = "tf-allow-athena-to-default-https-ssh-smb"
-  ruleset    = "LAN_IN"
-  action     = "accept"
-  rule_index = 4100
-  site       = "default"
-
-  protocol = "tcp_udp"
-  dst_port = "443,22,445"
-
-  src_network_id = local.athena_network_id
-  dst_network_id = local.default_network_id
+data "unifi_firewall_zone" "external" {
+  name = "External"
+  site = "default"
+}
+resource "unifi_firewall_zone" "athena" {
+  name     = "tf-Athena"
+  networks = [unifi_network.tf_vlan_athena.id]
+  site     = "default"
 }
 
-resource "unifi_firewall_rule" "allow_default_to_athena_services" {
-  name       = "tf-allow-default-to-athena-https-ssh-smb"
-  ruleset    = "LAN_IN"
-  action     = "accept"
-  rule_index = 4110
-  site       = "default"
-
-  protocol = "tcp_udp"
-  dst_port = "443,22,445"
-
-  src_network_id = local.default_network_id
-  dst_network_id = local.athena_network_id
+# Port Groups
+resource "unifi_firewall_group" "athena_default_services" {
+  name    = "tf-athena-default-services"
+  type    = "port-group"
+  members = ["22", "443", "445"]
+  site    = "default"
 }
 
-resource "unifi_firewall_rule" "allow_athena_to_athenalink_gateway" {
-  name       = "tf-allow-athena-to-athenalink-gateway-10.0.3.2"
-  ruleset    = "LAN_IN"
-  action     = "accept"
-  rule_index = 4200
-  site       = "default"
+# Zone Policies
 
+# Allow Internal (Default) -> Athena for HTTPS, SSH, SMB and return traffic
+resource "unifi_firewall_zone_policy" "internal_to_athena" {
+  name                      = "tf-allow-internal-to-athena-services"
+  action                    = "ALLOW"
+  protocol                  = "tcp_udp"
+  auto_allow_return_traffic = true
+
+  source = {
+    zone_id = data.unifi_firewall_zone.internal.id
+  }
+
+  destination = {
+    zone_id       = unifi_firewall_zone.athena.id
+    port_group_id = unifi_firewall_group.athena_default_services.id
+  }
+
+  site = "default"
+}
+
+# Allow Athena -> External (for AthenaLink VPN access)
+resource "unifi_firewall_zone_policy" "athena_to_external" {
+  name                      = "tf-allow-athena-to-external"
+  action                    = "ALLOW"
+  protocol                  = "all"
+  auto_allow_return_traffic = true
+
+  source = {
+    zone_id = unifi_firewall_zone.athena.id
+  }
+
+  destination = {
+    zone_id = data.unifi_firewall_zone.external.id
+    ips     = ["10.0.3.2"]
+  }
+
+  site = "default"
+}
+
+# Block all other zones from reaching External/AthenaLink VPN gateway
+resource "unifi_firewall_zone_policy" "block_internal_to_athenalink" {
+  name     = "tf-block-internal-to-athenalink"
+  action   = "BLOCK"
   protocol = "all"
+  index    = 10000 # Lower priority than allow rules
 
-  src_network_id   = local.athena_network_id
-  dst_network_type = "ADDRv4"
-  dst_address      = "10.0.3.2/32"
+  source = {
+    zone_id = data.unifi_firewall_zone.internal.id
+  }
+
+  destination = {
+    zone_id = data.unifi_firewall_zone.external.id
+    ips     = ["10.0.3.2"]
+  }
+
+  site = "default"
 }
-
-resource "unifi_firewall_rule" "block_default_athena_link_gateway" {
-  name       = "tf-block-athenalink-gateway-10.0.3.2"
-  ruleset    = "LAN_IN"
-  action     = "drop"
-  rule_index = 4210
-  site       = "default"
-
-  protocol = "all"
-
-  dst_network_type = "ADDRv4"
-  dst_address      = "10.0.3.2/32"
-}
-*/
