@@ -11,7 +11,7 @@ resource "unifi_network" "tf_vlan_athena" {
 
   site = "default"
 
-  #network_isolation_enabled = true
+  network_isolation_enabled = true
 
   igmp_snooping = true
 }
