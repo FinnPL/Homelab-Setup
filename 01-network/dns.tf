@@ -2,11 +2,10 @@ data "cloudflare_zone" "main" {
   name = "lippok.dev"
 }
 
-# Test entry
-resource "cloudflare_record" "tf_proxmox_entry" {
+resource "cloudflare_record" "tf_pi4_entry" {
   zone_id = data.cloudflare_zone.main.id
   name    = "lippok.dev"
-  content = "10.10.1.41"
+  content = unifi_user.tf_pi4_host.fixed_ip
   type    = "A"
   proxied = false
   comment = "Managed by Terraform"
