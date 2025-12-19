@@ -7,7 +7,8 @@ resource "unifi_firewall_rule" "allow_athena_to_default_services" { #Will restri
   name       = "tf-allow-athena-to-default-https-ssh-smb"
   ruleset    = "LAN_IN"
   action     = "accept"
-  rule_index = 2100
+  rule_index = 4100
+  site       = "default"
 
   protocol = "tcp_udp"
   dst_port = "443,22,445"
@@ -20,7 +21,8 @@ resource "unifi_firewall_rule" "allow_default_to_athena_services" {
   name       = "tf-allow-default-to-athena-https-ssh-smb"
   ruleset    = "LAN_IN"
   action     = "accept"
-  rule_index = 2110
+  rule_index = 4110
+  site       = "default"
 
   protocol = "tcp_udp"
   dst_port = "443,22,445"
@@ -33,7 +35,8 @@ resource "unifi_firewall_rule" "allow_athena_to_athenalink_gateway" {
   name       = "tf-allow-athena-to-athenalink-gateway-10.0.3.2"
   ruleset    = "LAN_IN"
   action     = "accept"
-  rule_index = 2200
+  rule_index = 4200
+  site       = "default"
 
   protocol = "all"
 
@@ -46,7 +49,8 @@ resource "unifi_firewall_rule" "block_default_athena_link_gateway" {
   name       = "tf-block-athenalink-gateway-10.0.3.2"
   ruleset    = "LAN_IN"
   action     = "drop"
-  rule_index = 2210
+  rule_index = 4210
+  site       = "default"
 
   protocol = "all"
 

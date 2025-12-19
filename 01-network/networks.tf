@@ -16,7 +16,7 @@ resource "unifi_network" "tf_vlan_athena" {
   igmp_snooping = true
 }
 
-resource "unifi_network" "tf_vlan_default" { #TODO: Replace existing default VLAN
+resource "unifi_network" "tf_vlan_default" {
   name    = "tf-Default"
   purpose = "corporate"
 
