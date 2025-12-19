@@ -4,9 +4,22 @@ resource "unifi_port_profile" "athena_custom_profile" {
 
   forward = "customize"
 
-  native_networkconf_id = unifi_network.tf_vlan_athena.id
+  native_networkconf_id  = unifi_network.tf_vlan_athena.id
+  tagged_networkconf_ids = []
 
   depends_on = [unifi_network.tf_vlan_athena]
+}
+
+resource "unifi_port_profile" "default_custom_profile" {
+  name = "Default (Terraform)"
+  site = "default"
+
+  forward = "customize"
+
+  native_networkconf_id  = unifi_network.tf_vlan_default.id
+  tagged_networkconf_ids = []
+
+  depends_on = [unifi_network.tf_vlan_default]
 }
 
 resource "unifi_device" "tf_cgu" {
@@ -15,6 +28,12 @@ resource "unifi_device" "tf_cgu" {
   site = "default"
   lifecycle {
     prevent_destroy = true
+  }
+
+  port_override {
+    number          = 1
+    name            = "tf-Port1"
+    port_profile_id = unifi_port_profile.default_custom_profile.id
   }
 
   port_override {
@@ -27,5 +46,11 @@ resource "unifi_device" "tf_cgu" {
     name            = "tf-Port3"
     port_profile_id = unifi_port_profile.athena_custom_profile.id
   }
-
+  port_override {
+    number          = 4
+    name            = "tf-Port4"
+    port_profile_id = unifi_port_profile.default_custom_profile.id
+  }
 }
+
+#TODO: Add flex mini switch
