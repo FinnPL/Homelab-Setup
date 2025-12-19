@@ -2,10 +2,9 @@ resource "unifi_port_profile" "athena_custom_profile" {
   name = "Athena (Terraform)"
   site = "default"
 
-  forward = "customize"
+  forward = "native"
 
-  native_networkconf_id  = unifi_network.tf_vlan_athena.id
-  tagged_networkconf_ids = []
+  native_networkconf_id = unifi_network.tf_vlan_athena.id
 
   depends_on = [unifi_network.tf_vlan_athena]
 }
@@ -14,10 +13,9 @@ resource "unifi_port_profile" "default_custom_profile" {
   name = "Default (Terraform)"
   site = "default"
 
-  forward = "customize"
+  forward = "native"
 
-  native_networkconf_id  = unifi_network.tf_vlan_default.id
-  tagged_networkconf_ids = []
+  native_networkconf_id = unifi_network.tf_vlan_default.id
 
   depends_on = [unifi_network.tf_vlan_default]
 }
@@ -35,7 +33,6 @@ resource "unifi_device" "tf_cgu" {
     name            = "tf-Port1"
     port_profile_id = unifi_port_profile.default_custom_profile.id
   }
-
   port_override {
     number          = 2
     name            = "tf-Port2"
@@ -46,11 +43,35 @@ resource "unifi_device" "tf_cgu" {
     name            = "tf-Port3"
     port_profile_id = unifi_port_profile.athena_custom_profile.id
   }
+  # Leave Port4 as default (Allow All VLANs)
+}
+
+resource "unifi_device" "tf_flex_mini" {
+  name = "Flex Mini"
+  mac  = "28:70:4e:32:53:14"
+  site = "default"
+  lifecycle {
+    prevent_destroy = true
+  }
+  # Leave Port1 as default (Allow All VLANs)
+  port_override {
+    number          = 2
+    name            = "tf-Port2"
+    port_profile_id = unifi_port_profile.default_custom_profile.id
+  }
+  port_override {
+    number          = 3
+    name            = "tf-Port3"
+    port_profile_id = unifi_port_profile.athena_custom_profile.id
+  }
   port_override {
     number          = 4
     name            = "tf-Port4"
-    port_profile_id = unifi_port_profile.default_custom_profile.id
+    port_profile_id = unifi_port_profile.athena_custom_profile.id
+  }
+  port_override {
+    number          = 5
+    name            = "tf-Port5"
+    port_profile_id = unifi_port_profile.athena_custom_profile.id
   }
 }
-
-#TODO: Add flex mini switch
