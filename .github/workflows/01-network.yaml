@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   terraform:
@@ -33,8 +34,7 @@ jobs:
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
       TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      TF_VAR_unifi_username: ${{ secrets.UNIFI_USERNAME }}
-      TF_VAR_unifi_password: ${{ secrets.UNIFI_PASSWORD }}
+      TF_VAR_unifi_api_key: ${{ secrets.UNIFI_API_KEY }}
       TF_VAR_unifi_api_url: ${{ vars.UNIFI_API_URL }}
       TF_VAR_unifi_insecure: ${{ vars.UNIFI_INSECURE }}
 
@@ -70,8 +70,17 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -no-color -input=false
+        run: terraform plan -out .planfile -input=false
         continue-on-error: true
+
+      - name: Comment Terraform Plan
+        if: github.event_name == 'pull_request'
+        uses: borchero/terraform-plan-comment@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          planfile: .planfile
+          working-directory: ./01-network
+          header: "Terraform Plan (01-network)"
 
       - name: Check Plan Status
         if: steps.plan.outcome == 'failure'

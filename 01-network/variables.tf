@@ -4,14 +4,8 @@ variable "cloudflare_api_token" {
   sensitive   = true
 }
 
-variable "unifi_username" {
-  description = "Local Admin Username for UniFi Controller"
-  type        = string
-  sensitive   = true
-}
-
-variable "unifi_password" {
-  description = "Local Admin Password for UniFi Controller"
+variable "unifi_api_key" {
+  description = "UniFi API Key for UniFi Controller"
   type        = string
   sensitive   = true
 }
