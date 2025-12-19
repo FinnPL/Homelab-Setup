@@ -1,3 +1,20 @@
+# Temporary lookup
+data "unifi_port_profile" "search_athena" {
+  name = "Athena (Terraform)"
+}
+
+data "unifi_port_profile" "search_default" {
+  name = "Default (Terraform)"
+}
+
+output "FOUND_ATHENA_ID" {
+  value = data.unifi_port_profile.search_athena.id
+}
+
+output "FOUND_DEFAULT_ID" {
+  value = data.unifi_port_profile.search_default.id
+}
+
 resource "unifi_port_profile" "athena_custom_profile" {
   name = "Athena (Terraform)"
   site = "default"
