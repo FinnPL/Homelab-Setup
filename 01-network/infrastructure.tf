@@ -2,7 +2,7 @@ resource "unifi_port_profile" "athena_custom_profile" {
   name = "Athena (Terraform)"
   site = "default"
 
-  forward = "customize"
+  forward = "native" # Also toggle Block All in GUI
 
   native_networkconf_id  = unifi_network.tf_vlan_athena.id
   tagged_networkconf_ids = []
@@ -14,7 +14,7 @@ resource "unifi_port_profile" "default_custom_profile" {
   name = "Default (Terraform)"
   site = "default"
 
-  forward = "customize"
+  forward = "native" # Also toggle Block All in GUI
 
   native_networkconf_id = unifi_network.tf_vlan_default.id
 

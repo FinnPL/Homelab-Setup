@@ -11,6 +11,8 @@ resource "unifi_network" "tf_vlan_athena" {
 
   site = "default"
 
+  intra_network_access_enabled = false
+
   igmp_snooping = true
 }
 
@@ -26,6 +28,8 @@ resource "unifi_network" "tf_vlan_default" { #TODO: Replace existing default VLA
   dhcp_enabled = true
 
   site = "default"
+
+  intra_network_access_enabled = false
 
   igmp_snooping = true
   multicast_dns = true
