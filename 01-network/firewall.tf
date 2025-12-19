@@ -53,10 +53,9 @@ resource "unifi_firewall_zone_policy" "internal_to_athena" {
 
 # Allow Athena -> External (for AthenaLink VPN access)
 resource "unifi_firewall_zone_policy" "athena_to_external" {
-  name                      = "tf-allow-athena-to-external"
-  action                    = "ALLOW"
-  protocol                  = "all"
-  auto_allow_return_traffic = true
+  name     = "tf-allow-athena-to-external"
+  action   = "ALLOW"
+  protocol = "all"
 
   source = {
     zone_id = unifi_firewall_zone.athena.id
