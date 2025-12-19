@@ -3,6 +3,14 @@ locals {
   default_network_id = unifi_network.tf_vlan_default.id
 }
 
+/*
+Firewall rules are temporarily disabled to unblock VLAN/network changes.
+
+Current issue: UniFi controller rejects rule_index values with
+api.err.FirewallRuleIndexOutOfRange for /rest/firewallrule.
+
+Once resolved (provider/fork/API approach), re-enable and apply.
+
 resource "unifi_firewall_rule" "allow_athena_to_default_services" { #Will restrict later to only allow access to ingress IPs
   name       = "tf-allow-athena-to-default-https-ssh-smb"
   ruleset    = "LAN_IN"
@@ -57,3 +65,4 @@ resource "unifi_firewall_rule" "block_default_athena_link_gateway" {
   dst_network_type = "ADDRv4"
   dst_address      = "10.0.3.2/32"
 }
+*/
