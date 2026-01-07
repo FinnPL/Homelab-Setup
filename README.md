@@ -1,41 +1,60 @@
+<div align="center">
+   
 # Homelab Setup
+   
 [![Pi4 - Deploy Docker Compose](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi4-deploy.yml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi4-deploy.yml)
 [![Pi3 - Deploy Docker Compose](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi3-deploy.yml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi3-deploy.yml)
 [![Docker Compose Syntax Check](https://github.com/FinnPL/Homelab-Setup/actions/workflows/docker-syntax.yml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/docker-syntax.yml)
 
 This repository contains the Terraform and Docker configuration for my multi-site homelab setup, featuring automated CI/CD deployment, comprehensive monitoring, and networking.
+</div>
 
-## Network Architecture
 ![NWD](https://github.com/user-attachments/assets/5e6225d0-8305-421c-8ee2-33f057eb3ace)
 
-### Sites Overview
+
+## Sites Overview
 The homelab consists of two geographically separated sites connected via VPN:
 
-#### **Vieta Site** (Primary)
-- **Pi4**: Main orchestration node running Docker services
-- **Apollo NAS**: Primary storage and backup system
+<table width="100%">
+  <tr>
+    <th width="50%" align="center">Vieta Site (Primary)</th>
+    <th width="50%" align="center">Minerva Site (Secondary)</th>
+  </tr>
+  <tr>
+    <td valign="top">
+      <ul>
+        <li><strong>Pi4:</strong> Main orchestration node running Docker services</li>
+        <li><strong>Apollo NAS:</strong> Primary storage and backup system</li>
+      </ul>
+    </td>
+    <td valign="top">
+      <ul>
+        <li><strong>Pi3:</strong> Secondary node for monitoring and services</li>
+        <li><strong>Zeus NAS:</strong> Secondary storage with synchronization to Apollo</li>
+      </ul>
+    </td>
+  </tr>
+</table>
 
 > [!NOTE]
 > <img align="right" width="255" height="315" alt="rack-plan" src="https://github.com/user-attachments/assets/32db0ecd-c6e9-4bf9-8fc1-1621b8900dbb" />
 > Long-term direction: migrate away from Docker Compose and run services via Helm charts on a Talos-based Kubernetes cluster (RPis), with the control plane hosted on an Intel NUC running Proxmox.
 > 
-> Future plans include a 10-inch desktop rack equipped with custom 3D-printed mounting brackets to organize the hardware.
+> Future plans for Vieta Site include a 10-inch desktop rack equipped with custom 3D-printed mounting brackets to organize the hardware.
 > <br clear="right" />
 
-#### **Minerva Site** (Secondary)  
-- **Pi3**: Secondary node for monitoring and services
-- **Zeus NAS**: Secondary storage with synchronization to Apollo
+## Network & Security
+Each site implements a dual-VLAN architecture to separate domestic devices from infrastructure.
 
-### Network Segmentation
-Each site implements a dual-VLAN architecture:
+| VLAN Name | Type | Description |
+| :--- | :--- | :--- |
+| **Default** | Standard | General devices (Phones, Laptops, IoT) |
+| **Athena** | Infrastructure | Dedicated homelab network for all services |
 
-- **Default VLAN**: Standard network for general devices
-- **Athena VLAN**: Dedicated homelab network for all infrastructure services
-
-#### Security Model
-- **VPN Tunnel**: Secure connection between Athena VLANs across sites
-- **NAS Synchronization**: Automated data replication between Apollo and Zeus
-- **Firewall Enforcement**: Access to Athena network from Default VLAN is **exclusively** through Traefik reverse proxy. No direct access to homelab services bypassing the proxy
+### Security Model
+* **VPN Tunnel:** Secure connection between Athena VLANs across sites.
+* **NAS Sync:** Automated data replication between *Apollo* and *Zeus*.
+* **Firewall Enforcement:** Access to Athena network from Default VLAN is exclusively through Traefik reverse proxy. No direct access to homelab services bypassing the proxy
 
 ## Infrastructure as Code
 The homelab utilizes Terraform as the Infrastructure as Code (IaC) principles through Terraform to ensure a declarative, reproducible, and version-controlled foundation for the entire network and server stack.
