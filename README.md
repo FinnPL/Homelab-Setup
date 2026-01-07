@@ -15,6 +15,13 @@ The homelab consists of two geographically separated sites connected via VPN:
 - **Pi4**: Main orchestration node running Docker services
 - **Apollo NAS**: Primary storage and backup system
 
+> [!NOTE]
+> <img align="right" width="255" height="315" alt="rack-plan" src="https://github.com/user-attachments/assets/32db0ecd-c6e9-4bf9-8fc1-1621b8900dbb" />
+> Long-term direction: migrate away from Docker Compose and run services via Helm charts on a Talos-based Kubernetes cluster (RPis), with the control plane hosted on an Intel NUC running Proxmox.
+> 
+> Future plans include a 10-inch desktop rack equipped with custom 3D-printed mounting brackets to organize the hardware.
+> <br clear="right" />
+
 #### **Minerva Site** (Secondary)  
 - **Pi3**: Secondary node for monitoring and services
 - **Zeus NAS**: Secondary storage with synchronization to Apollo
@@ -39,9 +46,6 @@ Terraform is organized into numbered layers (each with its own backend state).
 - `01-network/`: UniFi network state (VLANs, DHCP reservations, port profiles) + Cloudflare DNS
 - `02-infrastructure/`: Proxmox + Talos bootstrap for my Kubernetes homelab *(planned / not implemented yet)*
 - `03-services/`: Helm charts deployed onto the cluster *(planned / not implemented yet)*
-
-> [!NOTE]
-> Long-term direction: migrate away from Docker Compose and run services via Helm charts on a Talos-based Kubernetes cluster (RPis), with the control plane hosted on an Intel NUC running Proxmox.
 
 ## Services Architecture
 
