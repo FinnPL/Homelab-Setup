@@ -67,7 +67,7 @@
             <MetaData wcm:action="add">
               <Key>/IMAGE/NAME</Key>
               <!-- Use Standard (Desktop Experience) or Datacenter -->
-              <Value>Windows Server 2025 SERVERSTANDARD</Value>
+              <Value>Windows Server 2025 Standard Evaluation (Desktop Experience)</Value>
             </MetaData>
           </InstallFrom>
         </OSImage>
@@ -140,8 +140,11 @@
             <DhcpEnabled>false</DhcpEnabled>
           </Ipv4Settings>
           <UnicastIpAddresses>
-            <IpAddress wcm:action="add" wcm:keyValue="1">${ip_address}/${subnet_mask}</IpAddress>
+            <IpAddress wcm:action="add" wcm:keyValue="1">${ip_address}</IpAddress>
           </UnicastIpAddresses>
+          <SubnetMasks>
+            <SubnetMask wcm:action="add" wcm:keyValue="1">${subnet_mask}</SubnetMask>
+          </SubnetMasks>
           <Routes>
             <Route wcm:action="add">
               <Identifier>0</Identifier>
@@ -214,12 +217,17 @@
         </SynchronousCommand>
         <SynchronousCommand wcm:action="add">
           <Order>4</Order>
-          <CommandLine>winrm set winrm/config/service @{AllowUnencrypted="true"}</CommandLine>
-          <Description>Allow Unencrypted WinRM</Description>
+          <CommandLine>powershell -Command "$cert = New-SelfSignedCertificate -DnsName ${computer_name} -CertStoreLocation Cert:\\LocalMachine\\My; winrm create winrm/config/Listener?Address=*+Transport=HTTPS @{Hostname='${computer_name}'; CertificateThumbprint=$cert.Thumbprint} -Force; if (Get-WSManInstance -ResourceURI winrm/config/Listener -SelectorSet @{Address='*';Transport='HTTP'} -ErrorAction SilentlyContinue) { winrm delete winrm/config/Listener?Address=*+Transport=HTTP }; netsh advfirewall firewall add rule name='WinRM HTTPS' dir=in action=allow protocol=TCP localport=5986"</CommandLine>
+          <Description>Enforce WinRM over HTTPS</Description>
+        </SynchronousCommand>
+        <SynchronousCommand wcm:action="add">
+          <Order>5</Order>
+          <CommandLine>winrm set winrm/config/service @{AllowUnencrypted="false"}</CommandLine>
+          <Description>Disallow Unencrypted WinRM</Description>
         </SynchronousCommand>
         <!-- Disable auto-logon after first login -->
         <SynchronousCommand wcm:action="add">
-          <Order>5</Order>
+          <Order>6</Order>
           <CommandLine>reg add "HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon" /v AutoAdminLogon /t REG_SZ /d 0 /f</CommandLine>
           <Description>Disable Auto Logon</Description>
         </SynchronousCommand>

@@ -16,7 +16,7 @@ resource "proxmox_virtual_environment_download_file" "talos_iso" {
   node_name    = var.proxmox_node
 
   file_name = "talos-${var.talos_version}-amd64.iso"
-  url       = "https://factory.talos.dev/image/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515/${var.talos_version}/metal-amd64.iso"
+  url       = var.talos_schematic_id != "" ? "https://factory.talos.dev/image/${var.talos_schematic_id}/${var.talos_version}/metal-amd64.iso" : "https://github.com/siderolabs/talos/releases/download/${var.talos_version}/metal-amd64.iso"
 
   overwrite = false
 }
@@ -26,8 +26,8 @@ resource "proxmox_virtual_environment_download_file" "virtio_drivers" {
   datastore_id = var.proxmox_iso_storage
   node_name    = var.proxmox_node
 
-  file_name = "virtio-win-0.1.262.iso"
-  url       = "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/archive-virtio/virtio-win-0.1.262-2/virtio-win-0.1.262.iso"
+  file_name = "virtio-win-stable.iso"
+  url       = "https://fedorapeople.org/groups/virt/virtio-win/direct-downloads/stable-virtio/virtio-win.iso"
 
   overwrite = false
 }

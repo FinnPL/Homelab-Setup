@@ -80,17 +80,9 @@ resource "proxmox_virtual_environment_vm" "github_runner" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo apt-get update",
-      "sudo apt-get install -y curl ca-certificates tar docker.io",
-      "sudo systemctl enable --now docker",
-      "cd /home/${var.github_runner_ssh_user}",
-      "sudo -u ${var.github_runner_ssh_user} mkdir -p actions-runner",
-      "cd /home/${var.github_runner_ssh_user}/actions-runner",
-      "sudo -u ${var.github_runner_ssh_user} curl -o actions-runner-linux-x64-${var.github_runner_version}.tar.gz -L https://github.com/actions/runner/releases/download/v${var.github_runner_version}/actions-runner-linux-x64-${var.github_runner_version}.tar.gz",
-      "sudo -u ${var.github_runner_ssh_user} tar xzf actions-runner-linux-x64-${var.github_runner_version}.tar.gz",
-      "sudo -u ${var.github_runner_ssh_user} ./config.sh --url https://github.com/${var.github_owner}/${var.github_repository} --token ${data.github_actions_registration_token.runner.token} --name ${var.github_runner_config.name} --unattended --labels ${join(",", var.github_runner_labels)}",
-      "sudo ./svc.sh install",
-      "sudo ./svc.sh start"
+      <<-EOT
+        bash -lc "set -euo pipefail; trap 'echo runner bootstrap failed at line $LINENO >&2' ERR; sudo apt-get update; sudo apt-get install -y curl ca-certificates tar docker.io; sudo systemctl enable --now docker; cd /home/${var.github_runner_ssh_user}; sudo -u ${var.github_runner_ssh_user} mkdir -p actions-runner; cd /home/${var.github_runner_ssh_user}/actions-runner; sudo -u ${var.github_runner_ssh_user} curl -o actions-runner-linux-x64-${var.github_runner_version}.tar.gz -L https://github.com/actions/runner/releases/download/v${var.github_runner_version}/actions-runner-linux-x64-${var.github_runner_version}.tar.gz; sudo -u ${var.github_runner_ssh_user} tar xzf actions-runner-linux-x64-${var.github_runner_version}.tar.gz; sudo -u ${var.github_runner_ssh_user} ./config.sh --url https://github.com/${var.github_owner}/${var.github_repository} --token ${data.github_actions_registration_token.runner.token} --name ${var.github_runner_config.name} --unattended --labels ${join(",", var.github_runner_labels)}; sudo ./svc.sh install; sudo ./svc.sh start"
+      EOT
     ]
 
     connection {
