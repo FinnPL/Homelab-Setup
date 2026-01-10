@@ -46,7 +46,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Setup yq
-        uses: mikefarah/yq@v4.44.1
+        uses: mikefarah/yq@v4.50.1
 
       - name: Extract changed/added images from compose files
         id: get-images
