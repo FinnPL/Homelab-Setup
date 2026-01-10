@@ -1,0 +1,86 @@
+{
+    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    "extends": [
+        "config:recommended",
+        ":semanticCommits"
+    ],
+    "labels": [
+        "dependencies"
+    ],
+    "terraform": {
+        "enabled": true
+    },
+    "packageRules": [
+        {
+            "description": "Group Terraform provider updates (excluding infrastructure-critical)",
+            "matchManagers": [
+                "terraform"
+            ],
+            "excludePackagePatterns": [
+                "talos",
+                "proxmox"
+            ],
+            "groupName": "terraform providers"
+        },
+        {
+            "description": "Talos provider",
+            "matchManagers": [
+                "terraform"
+            ],
+            "matchPackagePatterns": [
+                "talos"
+            ],
+            "labels": [
+                "dependencies",
+                "infrastructure-critical"
+            ]
+        },
+        {
+            "description": "Proxmox provider",
+            "matchManagers": [
+                "terraform"
+            ],
+            "matchPackagePatterns": [
+                "proxmox"
+            ],
+            "labels": [
+                "dependencies",
+                "infrastructure-critical"
+            ]
+        },
+        {
+            "description": "Helm charts",
+            "matchManagers": [
+                "terraform"
+            ],
+            "matchDatasources": [
+                "helm"
+            ],
+            "groupName": "helm charts",
+            "labels": [
+                "dependencies",
+                "helm"
+            ]
+        },
+        {
+            "description": "Kubernetes version",
+            "matchPackageNames": [
+                "kubernetes/kubernetes"
+            ],
+            "labels": [
+                "dependencies",
+                "infrastructure-critical"
+            ]
+        },
+        {
+            "description": "Talos OS version",
+            "matchPackageNames": [
+                "siderolabs/talos"
+            ],
+            "labels": [
+                "dependencies",
+                "infrastructure-critical"
+            ]
+        }
+    ]
+}

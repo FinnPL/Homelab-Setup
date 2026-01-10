@@ -96,13 +96,15 @@ variable "windows_product_key" {
 variable "talos_version" {
   description = "Talos Linux version to use"
   type        = string
-  default     = "v1.8.3"
+  # renovate: datasource=github-releases depName=siderolabs/talos
+  default = "v1.8.3"
 }
 
 variable "kubernetes_version" {
   description = "Kubernetes version for Talos cluster"
   type        = string
-  default     = "1.31.4"
+  # renovate: datasource=github-releases depName=kubernetes/kubernetes versioning=semver extractVersion=^v(?<version>.*)$
+  default = "1.31.4"
 }
 
 variable "cluster_name" {
