@@ -22,6 +22,7 @@ locals {
 
   windows_server_ip     = cidrhost(local.athena_subnet, 50)
   github_runner_ip      = cidrhost(local.athena_subnet, 70)
+  nfs_server_ip         = cidrhost(local.athena_subnet, 80)
   talos_controlplane_ip = cidrhost(local.athena_subnet, 60)
   talos_worker_ips = [
     cidrhost(local.athena_subnet, 61),

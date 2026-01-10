@@ -219,3 +219,39 @@ variable "github_runner_ssh_private_key_path" {
   type        = string
   default     = "~/.ssh/id_rsa"
 }
+
+# =============================================================================
+# NFS Server Configuration
+# =============================================================================
+
+variable "nfs_server_config" {
+  description = "NFS server LXC container configuration"
+  type = object({
+    vmid           = number
+    name           = string
+    cores          = number
+    memory         = number
+    root_disk_size = number # OS on SSD
+    data_disk_size = number # NFS data on HDD
+  })
+  default = {
+    vmid           = 400
+    name           = "nfs-server"
+    cores          = 1
+    memory         = 512
+    root_disk_size = 8
+    data_disk_size = 500
+  }
+}
+
+variable "nfs_hdd_storage" {
+  description = "Proxmox storage pool for NFS data (must be created from /dev/sda first)"
+  type        = string
+  default     = "hdd-data"
+}
+
+variable "nfs_root_password" {
+  description = "Root password for the NFS LXC container"
+  type        = string
+  sensitive   = true
+}

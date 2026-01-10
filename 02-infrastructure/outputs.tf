@@ -20,3 +20,12 @@ output "cluster_info" {
     controlplane_ip    = local.talos_controlplane_ip
   }
 }
+
+output "nfs_server" {
+  description = "NFS server information for Kubernetes storage"
+  value = {
+    ip           = local.nfs_server_ip
+    export_path  = "/srv/nfs/kubernetes"
+    storage_size = var.nfs_server_config.data_disk_size
+  }
+}
