@@ -1,22 +1,3 @@
-resource "proxmox_virtual_environment_file" "windows_autounattend" {
-  content_type = "snippets"
-  datastore_id = var.proxmox_iso_storage
-  node_name    = var.proxmox_node
-
-  source_raw {
-    data = templatefile("${path.module}/templates/autounattend.xml.tftpl", {
-      admin_password = var.windows_admin_password
-      product_key    = var.windows_product_key
-      computer_name  = var.windows_vm_config.name
-      ip_address     = local.windows_server_ip
-      subnet_mask    = cidrnetmask(local.athena_subnet)
-      gateway        = local.athena_gateway
-      dns_server     = local.athena_gateway
-    })
-    file_name = "autounattend-${var.windows_vm_config.name}.xml"
-  }
-}
-
 resource "proxmox_virtual_environment_vm" "windows_server" {
   name      = var.windows_vm_config.name
   node_name = var.proxmox_node
@@ -67,13 +48,15 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
     ssd          = true
   }
 
+  # VirtIO drivers ISO on ide3
   disk {
     datastore_id = var.proxmox_iso_storage
     file_id      = proxmox_virtual_environment_download_file.virtio_drivers.id
-    interface    = "ide0"
+    interface    = "ide3"
     file_format  = "raw"
   }
 
+  # Windows installation ISO
   cdrom {
     enabled   = true
     file_id   = "${var.proxmox_iso_storage}:iso/windows-server-2025.iso"

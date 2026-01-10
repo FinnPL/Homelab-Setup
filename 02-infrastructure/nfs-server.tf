@@ -75,8 +75,8 @@ resource "proxmox_virtual_environment_download_file" "debian_lxc_template" {
   datastore_id = var.proxmox_iso_storage
   node_name    = var.proxmox_node
 
-  file_name = "debian-12-standard_12.7-1_amd64.tar.zst"
-  url       = "http://download.proxmox.com/images/system/debian-12-standard_12.7-1_amd64.tar.zst"
+  file_name = "debian-12-standard_12.12-1_amd64.tar.zst"
+  url       = "http://download.proxmox.com/images/system/debian-12-standard_12.12-1_amd64.tar.zst"
 
   overwrite = false
 }

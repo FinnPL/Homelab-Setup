@@ -52,7 +52,7 @@ resource "proxmox_virtual_environment_vm" "github_runner" {
 
   initialization {
     datastore_id = var.proxmox_storage
-    interface    = "scsi0"
+    interface    = "scsi1"
 
     user_account {
       username = var.github_runner_ssh_user
