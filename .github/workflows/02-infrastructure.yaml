@@ -1,0 +1,113 @@
+name: "Terraform: 02-infrastructure"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "02-infrastructure/**"
+      - ".github/workflows/02-infrastructure.yaml"
+  pull_request:
+    paths:
+      - "02-infrastructure/**"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Run terraform apply (dangerous)"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  terraform:
+    name: "Terraform Infrastructure"
+    runs-on: pi4
+    environment: Terraform
+    defaults:
+      run:
+        working-directory: ./02-infrastructure
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      # Proxmox
+      TF_VAR_proxmox_api_token: ${{ secrets.PROXMOX_API_TOKEN }}
+      TF_VAR_proxmox_ssh_user: ${{ vars.PROXMOX_SSH_USER }}
+      TF_VAR_proxmox_ssh_password: ${{ secrets.PROXMOX_SSH_PASSWORD }}
+      TF_VAR_proxmox_insecure: ${{ vars.PROXMOX_INSECURE }}
+      TF_VAR_proxmox_node: ${{ vars.PROXMOX_NODE }}
+      # Windows
+      TF_VAR_windows_admin_password: ${{ secrets.WINDOWS_ADMIN_PASSWORD }}
+      TF_VAR_windows_product_key: ${{ secrets.WINDOWS_PRODUCT_KEY }}
+      # Talos
+      TF_VAR_cluster_name: ${{ vars.TALOS_CLUSTER_NAME }}
+      # GitHub Runner
+      TF_VAR_github_pat: ${{ secrets.GH_PAT }}
+      # NFS
+      TF_VAR_nfs_root_password: ${{ secrets.NFS_ROOT_PASSWORD }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.0"
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Ensure SSH Keys Exist
+        run: |
+          if [ ! -f ~/.ssh/id_rsa ]; then
+            mkdir -p ~/.ssh
+            ssh-keygen -t rsa -b 4096 -f ~/.ssh/id_rsa -N "" -C "github-runner-provisioning"
+            chmod 600 ~/.ssh/id_rsa
+            chmod 644 ~/.ssh/id_rsa.pub
+          fi
+
+      - name: Terraform Format
+        run: terraform fmt -check
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out .planfile -input=false
+        continue-on-error: true
+
+      - name: Comment Terraform Plan
+        if: github.event_name == 'pull_request'
+        uses: borchero/terraform-plan-comment@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          planfile: .planfile
+          working-directory: ./02-infrastructure
+          header: "Terraform Plan (02-infrastructure)"
+
+      - name: Check Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Terraform Apply
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          (github.event_name == 'workflow_dispatch' && inputs.apply == true)
+        run: terraform apply -auto-approve -input=false
