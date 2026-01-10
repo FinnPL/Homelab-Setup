@@ -89,12 +89,6 @@ variable "windows_product_key" {
   default     = ""
 }
 
-variable "windows_startup_scripts" {
-  description = "PowerShell scripts to run on Windows VM first boot"
-  type        = list(string)
-  default     = []
-}
-
 # =============================================================================
 # Talos Kubernetes Configuration
 # =============================================================================

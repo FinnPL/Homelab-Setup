@@ -17,19 +17,6 @@ resource "proxmox_virtual_environment_file" "windows_autounattend" {
   }
 }
 
-resource "proxmox_virtual_environment_file" "windows_postinstall" {
-  count = length(var.windows_startup_scripts) > 0 ? 1 : 0
-
-  content_type = "snippets"
-  datastore_id = var.proxmox_iso_storage
-  node_name    = var.proxmox_node
-
-  source_raw {
-    data      = join("\n\n", var.windows_startup_scripts)
-    file_name = "postinstall-${var.windows_vm_config.name}.ps1"
-  }
-}
-
 resource "proxmox_virtual_environment_vm" "windows_server" {
   name      = var.windows_vm_config.name
   node_name = var.proxmox_node
