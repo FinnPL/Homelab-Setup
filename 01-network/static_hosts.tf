@@ -15,3 +15,12 @@ resource "unifi_user" "tf_pi4_host" {
   network_id       = unifi_network.tf_vlan_athena.id
   note             = "Managed by Terraform"
 }
+
+resource "unifi_user" "tf_nuc_host" {
+  mac              = "94:c6:91:18:9c:aa"
+  name             = "tf-Intel-NUC"
+  fixed_ip         = "10.10.1.42"
+  local_dns_record = "nuc.athena"
+  network_id       = unifi_network.tf_vlan_athena.id
+  note             = "Managed by Terraform"
+}

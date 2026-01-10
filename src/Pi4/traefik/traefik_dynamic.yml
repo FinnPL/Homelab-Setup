@@ -61,6 +61,14 @@ http:
       tls:
         certResolver: letsencrypt
 
+    nuc:
+      rule: "Host(`nuc.lippok.dev`)"
+      entrypoints:
+        - websecure
+      service: nuc-service
+      tls:
+        certResolver: letsencrypt
+
   services:
   
     apollo-service:
@@ -87,3 +95,13 @@ http:
       loadBalancer:
         servers:
           - url: "http://pi3.athena:3001"
+
+    nuc-service:
+      loadBalancer:
+        servers:
+          - url: "https://nuc.athena:8006"
+        serversTransport: insecureTransport
+
+  serversTransports:
+    insecureTransport:
+      insecureSkipVerify: true
