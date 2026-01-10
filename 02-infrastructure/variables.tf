@@ -1,0 +1,212 @@
+# =============================================================================
+# Proxmox Configuration
+# =============================================================================
+
+variable "proxmox_api_token" {
+  description = "Proxmox API Token in format: user@realm!tokenid=token-secret"
+  type        = string
+  sensitive   = true
+}
+
+variable "proxmox_insecure" {
+  description = "Skip TLS verification for Proxmox API (set to true for self-signed certs)"
+  type        = bool
+  default     = true
+}
+
+variable "proxmox_ssh_user" {
+  description = "SSH username for Proxmox host (used for file uploads)"
+  type        = string
+  default     = "root"
+}
+
+variable "proxmox_ssh_password" {
+  description = "SSH password for Proxmox host"
+  type        = string
+  sensitive   = true
+}
+
+variable "proxmox_node" {
+  description = "Name of the Proxmox node"
+  type        = string
+  default     = "nuc"
+}
+
+variable "proxmox_bridge" {
+  description = "Proxmox network bridge to use for VMs"
+  type        = string
+  default     = "vmbr0"
+}
+
+# =============================================================================
+# Storage Configuration
+# =============================================================================
+
+variable "proxmox_storage" {
+  description = "Proxmox storage pool for VM disks"
+  type        = string
+  default     = "local-lvm"
+}
+
+variable "proxmox_iso_storage" {
+  description = "Proxmox storage pool for ISO images"
+  type        = string
+  default     = "local"
+}
+
+# =============================================================================
+# Windows Server VM Configuration
+# =============================================================================
+
+variable "windows_vm_config" {
+  description = "Windows Server 2025 VM configuration"
+  type = object({
+    vmid      = number
+    name      = string
+    cores     = number
+    memory    = number
+    disk_size = number
+  })
+  default = {
+    vmid      = 100
+    name      = "windows-server-2025"
+    cores     = 4
+    memory    = 8192
+    disk_size = 100
+  }
+}
+
+variable "windows_admin_password" {
+  description = "Windows Server administrator password"
+  type        = string
+  sensitive   = true
+}
+
+variable "windows_product_key" {
+  description = "Windows Server 2025 product key"
+  type        = string
+  sensitive   = true
+  default     = ""
+}
+
+variable "windows_startup_scripts" {
+  description = "PowerShell scripts to run on Windows VM first boot"
+  type        = list(string)
+  default     = []
+}
+
+# =============================================================================
+# Talos Kubernetes Configuration
+# =============================================================================
+
+variable "talos_version" {
+  description = "Talos Linux version to use"
+  type        = string
+  default     = "v1.8.3"
+}
+
+variable "kubernetes_version" {
+  description = "Kubernetes version for Talos cluster"
+  type        = string
+  default     = "1.31.4"
+}
+
+variable "cluster_name" {
+  description = "Name of the Kubernetes cluster"
+  type        = string
+  default     = "homelab-k8s"
+}
+
+variable "talos_controlplane_config" {
+  description = "Talos control plane VM configuration (IP comes from 01-network outputs)"
+  type = object({
+    vmid      = number
+    name      = string
+    cores     = number
+    memory    = number
+    disk_size = number
+  })
+  default = {
+    vmid      = 200
+    name      = "talos-controlplane"
+    cores     = 4
+    memory    = 4096
+    disk_size = 50
+  }
+}
+
+variable "talos_workers_enabled" {
+  description = "Enable flags for each worker node (indices 0-4 map to workers 1-5)"
+  type        = list(bool)
+  default     = [false, false, false, false, false]
+}
+
+# =============================================================================
+# GitHub Actions Runner Configuration
+# =============================================================================
+
+variable "github_pat" {
+  description = "GitHub personal access token (needs repo/admin:org scope for runners)"
+  type        = string
+  sensitive   = true
+}
+
+variable "github_owner" {
+  description = "GitHub user or organization that owns the repository"
+  type        = string
+  default     = "FinnPL"
+}
+
+variable "github_repository" {
+  description = "GitHub repository name to register the runner against"
+  type        = string
+  default     = "Homelab-Setup"
+}
+
+variable "github_runner_template_vmid" {
+  description = "Proxmox VMID of an existing Debian cloud-init template to clone for the runner"
+  type        = number
+  default     = 9000
+}
+
+variable "github_runner_config" {
+  description = "Self-hosted runner VM settings"
+  type = object({
+    vmid      = number
+    name      = string
+    cores     = number
+    memory    = number
+    disk_size = number
+  })
+  default = {
+    vmid      = 310
+    name      = "github-runner-01"
+    cores     = 2
+    memory    = 4096
+    disk_size = 40
+  }
+}
+
+variable "github_runner_labels" {
+  description = "Labels to assign to the GitHub self-hosted runner"
+  type        = list(string)
+  default     = ["proxmox", "docker", "self-hosted"]
+}
+
+variable "github_runner_ssh_user" {
+  description = "SSH user configured on the runner template"
+  type        = string
+  default     = "debian"
+}
+
+variable "github_runner_ssh_public_key_path" {
+  description = "Path to the SSH public key used for cloud-init (authorized_keys)"
+  type        = string
+  default     = "~/.ssh/id_rsa.pub"
+}
+
+variable "github_runner_ssh_private_key_path" {
+  description = "Path to the SSH private key used by the remote-exec provisioner"
+  type        = string
+  default     = "~/.ssh/id_rsa"
+}
