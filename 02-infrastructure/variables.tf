@@ -189,6 +189,13 @@ variable "github_runner_labels" {
   default     = ["proxmox", "docker", "self-hosted"]
 }
 
+variable "github_runner_version" {
+  description = "GitHub Actions runner release version"
+  type        = string
+  # renovate: datasource=github-releases depName=actions/runner versioning=semver
+  default = "2.311.0"
+}
+
 variable "github_runner_ssh_user" {
   description = "SSH user configured on the runner template"
   type        = string

@@ -56,7 +56,7 @@ resource "proxmox_virtual_environment_vm" "github_runner" {
 
     user_account {
       username = var.github_runner_ssh_user
-      keys     = [file(var.github_runner_ssh_public_key_path)]
+      keys     = [file(pathexpand(var.github_runner_ssh_public_key_path))]
     }
 
     ip_config {
@@ -86,8 +86,8 @@ resource "proxmox_virtual_environment_vm" "github_runner" {
       "cd /home/${var.github_runner_ssh_user}",
       "sudo -u ${var.github_runner_ssh_user} mkdir -p actions-runner",
       "cd /home/${var.github_runner_ssh_user}/actions-runner",
-      "sudo -u ${var.github_runner_ssh_user} curl -o actions-runner-linux-x64-2.311.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.311.0/actions-runner-linux-x64-2.311.0.tar.gz",
-      "sudo -u ${var.github_runner_ssh_user} tar xzf actions-runner-linux-x64-2.311.0.tar.gz",
+      "sudo -u ${var.github_runner_ssh_user} curl -o actions-runner-linux-x64-${var.github_runner_version}.tar.gz -L https://github.com/actions/runner/releases/download/v${var.github_runner_version}/actions-runner-linux-x64-${var.github_runner_version}.tar.gz",
+      "sudo -u ${var.github_runner_ssh_user} tar xzf actions-runner-linux-x64-${var.github_runner_version}.tar.gz",
       "sudo -u ${var.github_runner_ssh_user} ./config.sh --url https://github.com/${var.github_owner}/${var.github_repository} --token ${data.github_actions_registration_token.runner.token} --name ${var.github_runner_config.name} --unattended --labels ${join(",", var.github_runner_labels)}",
       "sudo ./svc.sh install",
       "sudo ./svc.sh start"
@@ -96,7 +96,7 @@ resource "proxmox_virtual_environment_vm" "github_runner" {
     connection {
       type        = "ssh"
       user        = var.github_runner_ssh_user
-      private_key = file(var.github_runner_ssh_private_key_path)
+      private_key = file(pathexpand(var.github_runner_ssh_private_key_path))
       host        = local.github_runner_ip
       timeout     = "10m"
     }
