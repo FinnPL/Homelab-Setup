@@ -42,12 +42,3 @@ resource "unifi_user" "tf_talos_controlplane" {
   network_id       = unifi_network.tf_vlan_athena.id
   note             = "Managed by Terraform"
 }
-
-resource "unifi_user" "tf_github_runner" {
-  mac              = var.host_macs["github_runner"]
-  name             = "tf-GitHub-Runner"
-  fixed_ip         = "10.10.1.70"
-  local_dns_record = "gh-runner.athena"
-  network_id       = unifi_network.tf_vlan_athena.id
-  note             = "Managed by Terraform"
-}

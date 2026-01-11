@@ -17,7 +17,6 @@ output "host_ips" {
     nuc                = unifi_user.tf_nuc_host.fixed_ip
     windows_server     = unifi_user.tf_windows_server.fixed_ip
     talos_controlplane = unifi_user.tf_talos_controlplane.fixed_ip
-    github_runner      = unifi_user.tf_github_runner.fixed_ip
   }
 }
 
