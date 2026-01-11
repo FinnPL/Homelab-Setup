@@ -63,10 +63,11 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
 
   features {
     nesting = true
+    mount   = ["nfs"]
   }
 
   started      = true
-  unprivileged = true
+  unprivileged = false
 
   tags = ["kubernetes", "storage", "nfs"]
 
