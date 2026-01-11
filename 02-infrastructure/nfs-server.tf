@@ -78,7 +78,8 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
       "mkdir -p /srv/nfs/kubernetes",
       "chown nobody:nogroup /srv/nfs/kubernetes",
       "chmod 777 /srv/nfs/kubernetes",
-      "echo '/srv/nfs/kubernetes ${local.athena_subnet}(rw,sync,no_subtree_check,no_root_squash)' > /etc/exports", "systemctl enable --now nfs-kernel-server",
+      "echo '/srv/nfs/kubernetes ${local.athena_subnet}(rw,sync,no_subtree_check,no_root_squash)' > /etc/exports",
+      "systemctl enable --now nfs-kernel-server",
       "exportfs -ra"
     ]
 
