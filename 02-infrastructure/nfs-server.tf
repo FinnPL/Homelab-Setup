@@ -129,12 +129,18 @@ resource "proxmox_virtual_environment_firewall_options" "nfs_firewall_opts" {
   ndp      = true
 }
 
-resource "proxmox_virtual_environment_firewall_alias" "nfs_clients" {
-  node_name = var.proxmox_node
-  vm_id     = proxmox_virtual_environment_container.nfs_server.vm_id
+resource "proxmox_virtual_environment_firewall_ipset" "nfs_clients" {
+  node_name    = var.proxmox_node
+  container_id = proxmox_virtual_environment_container.nfs_server.vm_id
+  name         = "nfs_clients"
+  comment      = "Allowed NFS Clients"
 
-  name = "nfs_clients"
-  cidr = local.nfs_client_ips
+  dynamic "cidr" {
+    for_each = local.nfs_client_ips
+    content {
+      name = cidr.value
+    }
+  }
 }
 
 resource "proxmox_virtual_environment_firewall_rules" "nfs_rules" {
@@ -154,7 +160,7 @@ resource "proxmox_virtual_environment_firewall_rules" "nfs_rules" {
   rule {
     type    = "in"
     action  = "ACCEPT"
-    source  = "nfs_clients" # References the alias containing your K8s workers
+    source  = "+nfs_clients"
     comment = "Allow NFS access for K8s Workers and Pis"
   }
 }
