@@ -55,8 +55,13 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
     interface = "ide2"
   }
 
-  # VirtIO drivers ISO as secondary CD-ROM via QEMU args
-  kvm_arguments = "-drive file=/var/lib/vz/template/iso/virtio-win-stable.iso,media=cdrom,if=none,id=drive-ide3 -device ide-cd,bus=ide.3,drive=drive-ide3"
+  # VirtIO drivers ISO attached as IDE3 via disk
+  disk {
+    datastore_id = var.proxmox_iso_storage
+    file_format  = "iso"
+    interface    = "ide3"
+    file_id      = "${var.proxmox_iso_storage}:iso/virtio-win-stable.iso"
+  }
 
   scsi_hardware = "virtio-scsi-single"
 
