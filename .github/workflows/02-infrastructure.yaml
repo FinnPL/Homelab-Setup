@@ -79,6 +79,9 @@ jobs:
             chmod 644 ~/.ssh/id_rsa.pub
           fi
 
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass
+
       - name: Terraform Format
         run: terraform fmt -check
 
