@@ -48,14 +48,6 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
     ssd          = true
   }
 
-  # VirtIO drivers ISO on ide3
-  disk {
-    datastore_id = var.proxmox_iso_storage
-    file_id      = proxmox_virtual_environment_download_file.virtio_drivers.id
-    interface    = "ide3"
-    file_format  = "raw"
-  }
-
   # Windows installation ISO
   cdrom {
     enabled   = true
@@ -63,12 +55,14 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
     interface = "ide2"
   }
 
+  # VirtIO drivers ISO as secondary CD-ROM via QEMU args
+  kvm_arguments = "-drive file=/var/lib/vz/template/iso/virtio-win-stable.iso,media=cdrom,if=none,id=drive-ide3 -device ide-cd,bus=ide.3,drive=drive-ide3"
+
   scsi_hardware = "virtio-scsi-single"
 
   network_device {
-    bridge  = var.proxmox_bridge
-    model   = "virtio"
-    vlan_id = local.athena_vlan_id
+    bridge = var.proxmox_bridge
+    model  = "virtio"
   }
 
   vga {

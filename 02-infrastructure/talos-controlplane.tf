@@ -61,9 +61,8 @@ resource "proxmox_virtual_environment_vm" "talos_controlplane" {
   scsi_hardware = "virtio-scsi-single"
 
   network_device {
-    bridge  = var.proxmox_bridge
-    model   = "virtio"
-    vlan_id = local.athena_vlan_id
+    bridge = var.proxmox_bridge
+    model  = "virtio"
   }
 
   serial_device {}

@@ -40,9 +40,8 @@ resource "proxmox_virtual_environment_vm" "github_runner" {
   }
 
   network_device {
-    bridge  = var.proxmox_bridge
-    model   = "virtio"
-    vlan_id = local.athena_vlan_id
+    bridge = var.proxmox_bridge
+    model  = "virtio"
   }
 
   agent {
