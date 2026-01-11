@@ -61,8 +61,9 @@ resource "proxmox_virtual_environment_vm" "talos_controlplane" {
   scsi_hardware = "virtio-scsi-single"
 
   network_device {
-    bridge = var.proxmox_bridge
-    model  = "virtio"
+    bridge      = var.proxmox_bridge
+    model       = "virtio"
+    mac_address = local.talos_controlplane_mac
   }
 
   serial_device {}
@@ -95,6 +96,19 @@ data "talos_machine_configuration" "controlplane" {
 
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
+
+  config_patches = [jsonencode({
+    machine = {
+      kernel = {
+        args = ["console=ttyS0,115200n8"]
+      }
+    }
+    cluster = {
+      controlPlane = {
+        endpoint = local.cluster_endpoint
+      }
+    }
+  })]
 }
 
 data "talos_client_configuration" "this" {
@@ -138,9 +152,10 @@ resource "talos_cluster_kubeconfig" "this" {
 output "talos_controlplane_vm" {
   description = "Talos control plane VM details"
   value = {
-    vmid       = proxmox_virtual_environment_vm.talos_controlplane.vm_id
-    name       = proxmox_virtual_environment_vm.talos_controlplane.name
-    ip_address = local.talos_controlplane_ip
-    endpoint   = local.cluster_endpoint
+    vmid        = proxmox_virtual_environment_vm.talos_controlplane.vm_id
+    name        = proxmox_virtual_environment_vm.talos_controlplane.name
+    ip_address  = local.talos_controlplane_ip
+    mac_address = local.talos_controlplane_mac
+    endpoint    = local.cluster_endpoint
   }
 }
