@@ -96,19 +96,6 @@ data "talos_machine_configuration" "controlplane" {
 
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
-
-  config_patches = [jsonencode({
-    machine = {
-      kernel = {
-        args = ["console=ttyS0,115200n8"]
-      }
-    }
-    cluster = {
-      controlPlane = {
-        endpoint = local.cluster_endpoint
-      }
-    }
-  })]
 }
 
 data "talos_client_configuration" "this" {
