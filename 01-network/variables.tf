@@ -27,7 +27,6 @@ variable "host_macs" {
   type        = map(string)
   default = {
     talos_controlplane = "52:54:00:aa:00:60"
-    github_runner      = "52:54:00:aa:00:70"
     windows_server     = "52:54:00:aa:00:50"
   }
 }

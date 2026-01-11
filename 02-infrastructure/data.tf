@@ -23,9 +23,10 @@ locals {
 
   # IP assignments sourced from 01-network outputs (DHCP reservations)
   windows_server_ip     = local.host_ips.windows_server
-  github_runner_ip      = local.host_ips.github_runner
   talos_controlplane_ip = local.host_ips.talos_controlplane
-  nfs_server_ip         = cidrhost(local.athena_subnet, 80)
+
+  github_runner_ip = cidrhost(local.athena_subnet, 70)
+  nfs_server_ip    = cidrhost(local.athena_subnet, 80)
 
   talos_worker_ips = [
     cidrhost(local.athena_subnet, 61),
@@ -37,7 +38,5 @@ locals {
 
   # Resolve MACs from 01-network outputs
   talos_controlplane_mac = try(local.host_macs.talos_controlplane, null)
-  github_runner_mac      = try(local.host_macs.github_runner, null)
   windows_server_mac     = try(local.host_macs.windows_server, null)
-
 }
