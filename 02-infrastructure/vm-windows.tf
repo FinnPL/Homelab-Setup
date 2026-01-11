@@ -61,8 +61,8 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
   scsi_hardware = "virtio-scsi-single"
 
   network_device {
-    bridge = var.proxmox_bridge
-    model  = "virtio"
+    bridge      = var.proxmox_bridge
+    model       = "virtio"
     mac_address = local.windows_server_mac
   }
 
@@ -91,11 +91,11 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
 output "windows_server_vm" {
   description = "Windows Server 2025 VM details"
   value = {
-    vmid       = proxmox_virtual_environment_vm.windows_server.vm_id
-    name       = proxmox_virtual_environment_vm.windows_server.name
-    ip_address = local.windows_server_ip
+    vmid        = proxmox_virtual_environment_vm.windows_server.vm_id
+    name        = proxmox_virtual_environment_vm.windows_server.name
+    ip_address  = local.windows_server_ip
     mac_address = local.windows_server_mac
-    gateway    = local.athena_gateway
-    vlan_id    = local.athena_vlan_id
+    gateway     = local.athena_gateway
+    vlan_id     = local.athena_vlan_id
   }
 }
