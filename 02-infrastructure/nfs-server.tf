@@ -49,7 +49,7 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
   network_interface {
     name     = "eth0"
     bridge   = var.proxmox_bridge
-    firewall = false
+    firewall = true
   }
 
   operating_system {
@@ -103,4 +103,58 @@ resource "proxmox_virtual_environment_download_file" "debian_lxc_template" {
   url       = "http://download.proxmox.com/images/system/debian-12-standard_12.12-1_amd64.tar.zst"
 
   overwrite = false
+}
+
+# IPs that should have access to the NFS server
+locals {
+  nfs_client_ips = concat(
+    [
+      "10.10.1.41",          # tf-Pi4 REMOVE AFTER SWITCHING
+      local.proxmox_host_ip, # nuc
+      local.talos_controlplane_ip
+    ],
+
+    local.talos_worker_ips
+  )
+}
+
+resource "proxmox_virtual_environment_firewall_options" "nfs_firewall_opts" {
+  node_name = var.proxmox_node
+  vm_id     = proxmox_virtual_environment_container.nfs_server.vm_id
+
+  input_policy = "DROP"
+
+  dhcp     = true
+  ipfilter = true
+  ndp      = true
+}
+
+resource "proxmox_virtual_environment_firewall_alias" "nfs_clients" {
+  node_name = var.proxmox_node
+  vm_id     = proxmox_virtual_environment_container.nfs_server.vm_id
+
+  name = "nfs_clients"
+  cidr = local.nfs_client_ips
+}
+
+resource "proxmox_virtual_environment_firewall_rules" "nfs_rules" {
+  node_name = var.proxmox_node
+  vm_id     = proxmox_virtual_environment_container.nfs_server.vm_id
+
+  # Allow SSH
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    proto   = "tcp"
+    dport   = "22"
+    comment = "SSH Management Access"
+  }
+
+  # Allow Full Access from Trusted Clients (K8s)
+  rule {
+    type    = "in"
+    action  = "ACCEPT"
+    source  = "nfs_clients" # References the alias containing your K8s workers
+    comment = "Allow NFS access for K8s Workers and Pis"
+  }
 }
