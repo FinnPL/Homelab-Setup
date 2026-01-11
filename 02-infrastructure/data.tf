@@ -36,8 +36,8 @@ locals {
   ]
 
   # Resolve MACs from 01-network outputs
-  talos_controlplane_mac = local.host_macs.talos_controlplane
-  github_runner_mac      = local.host_macs.github_runner
-  windows_server_mac     = local.host_macs.windows_server
+  talos_controlplane_mac = try(local.host_macs.talos_controlplane, null)
+  github_runner_mac      = try(local.host_macs.github_runner, null)
+  windows_server_mac     = try(local.host_macs.windows_server, null)
 
 }
