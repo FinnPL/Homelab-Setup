@@ -11,7 +11,7 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
   tags        = ["terraform", "windows", "server"]
 
   on_boot = true
-  started = true
+  started = false
 
   machine = "q35"
   bios    = "ovmf"
@@ -55,14 +55,6 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
     interface = "ide2"
   }
 
-  # VirtIO drivers ISO attached as IDE3 via disk
-  disk {
-    datastore_id = var.proxmox_iso_storage
-    file_format  = "iso"
-    interface    = "ide3"
-    file_id      = "${var.proxmox_iso_storage}:iso/virtio-win-stable.iso"
-  }
-
   scsi_hardware = "virtio-scsi-single"
 
   network_device {
@@ -90,6 +82,16 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
       cdrom,
       started,
     ]
+  }
+
+  # Attach VirtIO ISO after creation (Proxmox allows only one cdrom in provider).
+  provisioner "local-exec" {
+    command = "sshpass -p '${var.proxmox_ssh_password}' ssh -o StrictHostKeyChecking=no ${var.proxmox_ssh_user}@${local.proxmox_host_ip} \"qm set ${var.windows_vm_config.vmid} -ide3 ${var.proxmox_iso_storage}:iso/virtio-win-stable.iso,media=cdrom\""
+  }
+
+  # Start VM after attaching VirtIO ISO
+  provisioner "local-exec" {
+    command = "sshpass -p '${var.proxmox_ssh_password}' ssh -o StrictHostKeyChecking=no ${var.proxmox_ssh_user}@${local.proxmox_host_ip} \"qm start ${var.windows_vm_config.vmid}\""
   }
 }
 
