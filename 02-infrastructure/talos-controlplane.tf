@@ -129,26 +129,13 @@ resource "talos_machine_configuration_apply" "controlplane" {
   ]
 }
 
-resource "talos_machine_install" "controlplane" {
-  client_configuration        = talos_machine_secrets.this.client_configuration
-  machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
-  node                        = local.talos_controlplane_ip
-  endpoint                    = local.talos_controlplane_ip
-  install_disk                = "/dev/sda"
-  reboot                      = true
-
-  depends_on = [
-    talos_machine_configuration_apply.controlplane
-  ]
-}
-
 resource "talos_machine_bootstrap" "this" {
   client_configuration = talos_machine_secrets.this.client_configuration
   node                 = local.talos_controlplane_ip
   endpoint             = local.talos_controlplane_ip
 
   depends_on = [
-    talos_machine_install.controlplane
+    talos_machine_configuration_apply.controlplane
   ]
 }
 
