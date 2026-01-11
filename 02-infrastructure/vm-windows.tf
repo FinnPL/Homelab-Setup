@@ -63,6 +63,7 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
   network_device {
     bridge = var.proxmox_bridge
     model  = "virtio"
+    mac_address = local.windows_server_mac
   }
 
   vga {
@@ -93,6 +94,7 @@ output "windows_server_vm" {
     vmid       = proxmox_virtual_environment_vm.windows_server.vm_id
     name       = proxmox_virtual_environment_vm.windows_server.name
     ip_address = local.windows_server_ip
+    mac_address = local.windows_server_mac
     gateway    = local.athena_gateway
     vlan_id    = local.athena_vlan_id
   }

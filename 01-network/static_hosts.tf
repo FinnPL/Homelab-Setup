@@ -24,3 +24,30 @@ resource "unifi_user" "tf_nuc_host" {
   network_id       = unifi_network.tf_vlan_athena.id
   note             = "Managed by Terraform"
 }
+
+resource "unifi_user" "tf_windows_server" {
+  mac              = var.host_macs["windows_server"]
+  name             = "tf-Windows-Server"
+  fixed_ip         = "10.10.1.50"
+  local_dns_record = "win.athena"
+  network_id       = unifi_network.tf_vlan_athena.id
+  note             = "Managed by Terraform"
+}
+
+resource "unifi_user" "tf_talos_controlplane" {
+  mac              = var.host_macs["talos_controlplane"]
+  name             = "tf-Talos-ControlPlane"
+  fixed_ip         = "10.10.1.60"
+  local_dns_record = "talos-cp.athena"
+  network_id       = unifi_network.tf_vlan_athena.id
+  note             = "Managed by Terraform"
+}
+
+resource "unifi_user" "tf_github_runner" {
+  mac              = var.host_macs["github_runner"]
+  name             = "tf-GitHub-Runner"
+  fixed_ip         = "10.10.1.70"
+  local_dns_record = "gh-runner.athena"
+  network_id       = unifi_network.tf_vlan_athena.id
+  note             = "Managed by Terraform"
+}

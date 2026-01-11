@@ -42,6 +42,7 @@ resource "proxmox_virtual_environment_vm" "github_runner" {
   network_device {
     bridge = var.proxmox_bridge
     model  = "virtio"
+      mac_address = local.github_runner_mac
   }
 
   agent {
