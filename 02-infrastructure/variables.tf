@@ -97,7 +97,7 @@ variable "talos_version" {
   description = "Talos Linux version to use"
   type        = string
   # renovate: datasource=github-releases depName=siderolabs/talos
-  default = "v1.8.3"
+  default = "v1.12.1"
 }
 
 variable "talos_schematic_id" {
