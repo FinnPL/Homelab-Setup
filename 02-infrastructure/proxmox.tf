@@ -1,6 +1,6 @@
 provider "proxmox" {
   endpoint = "https://${local.proxmox_host_ip}:8006"
-  username = var.proxmox_ssh_user
+  username = "${var.proxmox_ssh_user}@pam"
   password = var.proxmox_ssh_password
   insecure = var.proxmox_insecure
 
