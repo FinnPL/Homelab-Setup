@@ -16,23 +16,23 @@
             "matchManagers": [
                 "terraform"
             ],
-            "excludePackagePatterns": [
-                "talos",
-                "proxmox"
-            ],
-            "groupName": "terraform providers"
+            "groupName": "terraform providers",
+            "matchPackageNames": [
+                "!/talos/",
+                "!/proxmox/"
+            ]
         },
         {
             "description": "Talos provider",
             "matchManagers": [
                 "terraform"
             ],
-            "matchPackagePatterns": [
-                "talos"
-            ],
             "labels": [
                 "dependencies",
                 "infrastructure-critical"
+            ],
+            "matchPackageNames": [
+                "/talos/"
             ]
         },
         {
@@ -40,12 +40,12 @@
             "matchManagers": [
                 "terraform"
             ],
-            "matchPackagePatterns": [
-                "proxmox"
-            ],
             "labels": [
                 "dependencies",
                 "infrastructure-critical"
+            ],
+            "matchPackageNames": [
+                "/proxmox/"
             ]
         },
         {
