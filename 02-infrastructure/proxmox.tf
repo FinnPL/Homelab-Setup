@@ -1,7 +1,8 @@
 provider "proxmox" {
-  endpoint  = "https://${local.proxmox_host_ip}:8006"
-  api_token = var.proxmox_api_token
-  insecure  = var.proxmox_insecure
+  endpoint = "https://${local.proxmox_host_ip}:8006"
+  username = var.proxmox_ssh_user
+  password = var.proxmox_ssh_password
+  insecure = var.proxmox_insecure
 
   ssh {
     agent    = false
