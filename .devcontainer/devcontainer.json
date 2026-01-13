@@ -1,6 +1,6 @@
 {
     "name": "NoStarDevContainer",
-    "image": "mcr.microsoft.com/vscode/devcontainers/base:0-alpine",
+    "image": "mcr.microsoft.com/vscode/devcontainers/base:2-alpine",
     "customizations": {
         "vscode": {
             "settings": {
