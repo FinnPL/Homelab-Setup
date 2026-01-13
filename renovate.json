@@ -10,6 +10,17 @@
     "terraform": {
         "enabled": true
     },
+    "customManagers": [
+        {
+            "customType": "regex",
+            "fileMatch": [
+                "\\.tf$"
+            ],
+            "matchStrings": [
+                "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?:\\s+versioning=(?<versioning>.*?))?(?:\\s+extractVersion=(?<extractVersion>.*?))?\\s+default\\s*=\\s*\"(?<currentValue>.*?)\""
+            ]
+        }
+    ],
     "packageRules": [
         {
             "description": "Group Terraform provider updates (excluding infrastructure-critical)",
