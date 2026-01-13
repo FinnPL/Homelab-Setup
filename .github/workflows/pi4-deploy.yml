@@ -20,7 +20,7 @@ jobs:
                 sudo chown -R "$(id -u):$(id -g)" /opt/homelab/pi4
 
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: Sync compose stack to /opt (no runner mounts)
               run: |

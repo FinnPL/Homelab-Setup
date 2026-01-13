@@ -22,7 +22,7 @@ jobs:
       files: ${{ steps.get-images.outputs.files }}
     steps:
       - name: Checkout (full history)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -136,7 +136,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Trivy (setup action)
         uses: aquasecurity/setup-trivy@v0.2.0
