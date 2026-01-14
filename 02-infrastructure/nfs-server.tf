@@ -42,10 +42,15 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
 
   # Mount the HDD storage for NFS exports
   mount_point {
-    volume        = "${var.nfs_hdd_storage}:${var.nfs_server_config.data_disk_size}"
-    path          = "/srv/nfs"
-    size          = var.nfs_server_config.data_disk_size
-    mount_options = []
+    volume = "${var.nfs_hdd_storage}:${var.nfs_server_config.data_disk_size}"
+    path   = "/srv/nfs"
+  }
+
+  lifecycle {
+    ignore_changes = [
+      mount_point[0].volume,
+      mount_point[0].size
+    ]
   }
 
   network_interface {
