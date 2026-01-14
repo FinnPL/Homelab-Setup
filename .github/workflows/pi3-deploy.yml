@@ -15,7 +15,7 @@ jobs:
             contents: read
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v4
+              uses: actions/checkout@v6
 
             - name: Clear Env File
               run: echo "" > src/Pi3/.env
