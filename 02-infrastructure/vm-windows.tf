@@ -50,7 +50,6 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
 
   # Windows installation ISO
   cdrom {
-    enabled   = true
     file_id   = "${var.proxmox_iso_storage}:iso/windows-server-2025.iso"
     interface = "ide2"
   }
