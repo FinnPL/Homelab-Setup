@@ -69,7 +69,7 @@ resource "proxmox_virtual_environment_vm" "talos_controlplane" {
   serial_device {}
 
   vga {
-    type = "serial0"
+    type = "std"
   }
 
   agent {
