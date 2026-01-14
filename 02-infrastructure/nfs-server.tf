@@ -42,8 +42,10 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
 
   # Mount the HDD storage for NFS exports
   mount_point {
-    volume = "${var.nfs_hdd_storage}:${var.nfs_server_config.data_disk_size}"
-    path   = "/srv/nfs"
+    volume        = "${var.nfs_hdd_storage}:${var.nfs_server_config.data_disk_size}"
+    path          = "/srv/nfs"
+    size          = var.nfs_server_config.data_disk_size
+    mount_options = []
   }
 
   network_interface {
@@ -69,7 +71,7 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
   started      = true
   unprivileged = false
 
-  tags = ["kubernetes", "storage", "nfs"]
+  tags = sort(["kubernetes", "storage", "nfs"])
 
   provisioner "remote-exec" {
     inline = [
