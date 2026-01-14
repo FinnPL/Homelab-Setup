@@ -125,6 +125,12 @@ resource "talos_machine_configuration_apply" "controlplane" {
   depends_on = [
     proxmox_virtual_environment_vm.talos_controlplane
   ]
+
+  lifecycle {
+    replace_triggered_by = [
+      proxmox_virtual_environment_vm.talos_controlplane
+    ]
+  }
 }
 
 resource "talos_machine_bootstrap" "this" {
