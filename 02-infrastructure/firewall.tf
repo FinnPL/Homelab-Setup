@@ -4,12 +4,6 @@ resource "proxmox_virtual_environment_cluster_firewall" "main" {
   output_policy = "ACCEPT"
 }
 
-resource "proxmox_virtual_environment_firewall_options" "node_firewall" {
-  node_name = var.proxmox_node
-
-  enabled = true
-}
-
 # IPs that should have access to the NFS server
 locals {
   nfs_client_ips = concat(
