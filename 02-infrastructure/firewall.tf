@@ -49,8 +49,8 @@ resource "proxmox_virtual_environment_firewall_ipset" "nfs_clients" {
 }
 
 resource "proxmox_virtual_environment_firewall_rules" "nfs_rules" {
-  node_name = var.proxmox_node
-  vm_id     = proxmox_virtual_environment_container.nfs_server.vm_id
+  node_name    = var.proxmox_node
+  container_id = proxmox_virtual_environment_container.nfs_server.vm_id
 
   # Allow SSH
   rule {
