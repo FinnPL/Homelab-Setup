@@ -128,7 +128,7 @@ resource "talos_machine_configuration_apply" "controlplane" {
 
   lifecycle {
     replace_triggered_by = [
-      proxmox_virtual_environment_vm.talos_controlplane
+      proxmox_virtual_environment_vm.talos_controlplane.id
     ]
   }
 }
