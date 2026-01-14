@@ -18,11 +18,10 @@ locals {
 }
 
 resource "proxmox_virtual_environment_firewall_options" "nfs_firewall_opts" {
-  node_name    = var.proxmox_node
-  container_id = proxmox_virtual_environment_container.nfs_server.vm_id
+  node_name = var.proxmox_node
+  vm_id     = proxmox_virtual_environment_container.nfs_server.vm_id
 
   enabled      = true
-
   input_policy = "DROP"
 
   dhcp     = true
