@@ -55,7 +55,6 @@ resource "proxmox_virtual_environment_vm" "talos_controlplane" {
   }
 
   cdrom {
-    enabled   = true
     file_id   = proxmox_virtual_environment_download_file.talos_iso.id
     interface = "ide0"
   }
@@ -98,6 +97,16 @@ data "talos_machine_configuration" "controlplane" {
 
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
+
+  config_patches = [
+    yamlencode({
+      machine = {
+        install = {
+          image = "factory.talos.dev/installer/${talos_image_factory_schematic.this.id}:${var.talos_version}"
+        }
+      }
+    })
+  ]
 }
 
 data "talos_client_configuration" "this" {

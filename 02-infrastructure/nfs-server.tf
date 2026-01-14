@@ -46,6 +46,13 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
     path   = "/srv/nfs"
   }
 
+  lifecycle {
+    ignore_changes = [
+      mount_point[0].volume,
+      mount_point[0].size
+    ]
+  }
+
   network_interface {
     name     = "eth0"
     bridge   = var.proxmox_bridge
@@ -69,7 +76,7 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
   started      = true
   unprivileged = false
 
-  tags = ["kubernetes", "storage", "nfs"]
+  tags = sort(["kubernetes", "storage", "nfs"])
 
   provisioner "remote-exec" {
     inline = [
