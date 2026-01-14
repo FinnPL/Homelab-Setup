@@ -100,12 +100,6 @@ variable "talos_version" {
   default = "v1.12.1"
 }
 
-variable "talos_schematic_id" {
-  description = "Talos Factory schematic ID for custom image configuration (extensions, kernel args, etc.)"
-  type        = string
-  default     = "ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515"
-}
-
 variable "kubernetes_version" {
   description = "Kubernetes version for Talos cluster"
   type        = string

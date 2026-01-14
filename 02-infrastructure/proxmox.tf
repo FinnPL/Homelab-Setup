@@ -11,13 +11,25 @@ provider "proxmox" {
   }
 }
 
+resource "talos_image_factory_schematic" "this" {
+  schematic = yamlencode({
+    customization = {
+      systemExtensions = {
+        officialExtensions = [
+          "siderolabs/qemu-guest-agent"
+        ]
+      }
+    }
+  })
+}
+
 resource "proxmox_virtual_environment_download_file" "talos_iso" {
   content_type = "iso"
   datastore_id = var.proxmox_iso_storage
   node_name    = var.proxmox_node
 
-  file_name = "talos-${var.talos_version}-amd64.iso"
-  url       = var.talos_schematic_id != "" ? "https://factory.talos.dev/image/${var.talos_schematic_id}/${var.talos_version}/metal-amd64.iso" : "https://github.com/siderolabs/talos/releases/download/${var.talos_version}/metal-amd64.iso"
+  file_name = "talos-${var.talos_version}-nocloud-amd64.iso"
+  url       = "https://factory.talos.dev/image/${talos_image_factory_schematic.this.id}/${var.talos_version}/nocloud-amd64.iso"
 
   overwrite = false
 }
