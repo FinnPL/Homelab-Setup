@@ -32,6 +32,8 @@ resource "proxmox_virtual_environment_vm" "talos_controlplane" {
   machine = "q35"
   bios    = "seabios"
 
+  boot_order = ["scsi0", "ide0"]
+
   cpu {
     cores   = var.talos_controlplane_config.cores
     sockets = 1
