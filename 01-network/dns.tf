@@ -1,8 +1,10 @@
 data "cloudflare_zone" "main" {
-  name = "lippok.dev"
+  filter = {
+    name = "lippok.dev"
+  }
 }
 
-resource "cloudflare_record" "tf_pi4_entry" {
+resource "cloudflare_dns_record" "tf_pi4_entry" {
   zone_id = data.cloudflare_zone.main.id
   name    = "lippok.dev"
   content = unifi_user.tf_pi4_host.fixed_ip
