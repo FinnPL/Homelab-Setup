@@ -1,0 +1,34 @@
+name: Pi3 - Deploy Docker Compose
+on:
+    push:
+        branches:
+            - main
+        paths:
+            - "src/Pi3/**"
+            - ".github/workflows/pi3-deploy.yml"
+
+jobs:
+    deploy:
+        runs-on: pi3
+        environment: Pi3
+        permissions:
+            contents: read
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+
+            - name: Clear Env File
+              run: echo "" > src/Pi3/.env
+
+            - name: Set up Env File
+              run: |
+                  echo 'TAILSCALE_AUTHKEY=${{ secrets.TAILSCALE_AUTHKEY }}' >> src/Pi3/.env
+
+            - name: Pull latest images
+              run: docker compose -f src/Pi3/docker-compose.yml pull
+
+            - name: Stop existing containers
+              run: docker compose -f src/Pi3/docker-compose.yml down || true
+
+            - name: Start containers
+              run: docker compose -f src/Pi3/docker-compose.yml up -d
