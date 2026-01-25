@@ -134,7 +134,7 @@ variable "talos_controlplane_config" {
 variable "talos_workers_enabled" {
   description = "Enable flags for each worker node (indices 0-4 map to workers 1-5)"
   type        = list(bool)
-  default     = [false, false, false, false, false]
+  default     = [true, true, false, false, false]
 }
 
 # =============================================================================
