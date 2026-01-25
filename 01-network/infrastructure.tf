@@ -75,10 +75,9 @@ resource "unifi_device" "usw_ultra" {
   dynamic "port_override" {
     for_each = [1, 2, 3, 4, 5]
     content {
-      number              = port_override.value
-      name                = "tf-Port${port_override.value}"
-      port_profile_id     = unifi_port_profile.athena_poe_profile.id
-      aggregate_num_ports = 0
+      number          = port_override.value
+      name            = "tf-Port${port_override.value}"
+      port_profile_id = unifi_port_profile.athena_poe_profile.id
     }
   }
 

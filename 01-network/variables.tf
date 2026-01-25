@@ -27,7 +27,7 @@ variable "host_vm_macs" {
   type        = map(string)
   default = {
     talos_controlplane = "bc:24:11:00:00:60"
-    windows_server     = "bc:24:11:00:00:50"
+    windows_server     = "52:54:00:aa:00:50"
     github_runner      = "bc:24:11:00:00:70"
     nfs_server         = "bc:24:11:00:00:80"
   }
