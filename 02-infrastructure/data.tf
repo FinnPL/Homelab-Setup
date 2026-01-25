@@ -27,13 +27,13 @@ locals {
   github_runner_ip      = local.host_ips.github_runner
   nfs_server_ip         = local.host_ips.nfs_server
 
-  talos_worker_ips = [
-    local.host_ips.talos_worker_1,
-    local.host_ips.talos_worker_2,
-    local.host_ips.talos_worker_3,
-    local.host_ips.talos_worker_4,
-    local.host_ips.talos_worker_5,
-  ]
+  talos_worker_ips = [for v in [
+    try(local.host_ips.talos_worker_1, null),
+    try(local.host_ips.talos_worker_2, null),
+    try(local.host_ips.talos_worker_3, null),
+    try(local.host_ips.talos_worker_4, null),
+    try(local.host_ips.talos_worker_5, null),
+  ] : v if v != null]
 
   # Resolve MACs from 01-network outputs
   talos_controlplane_mac = try(local.host_vm_macs.talos_controlplane, null)
