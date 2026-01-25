@@ -62,7 +62,7 @@ resource "unifi_user" "tf_nfs_server" {
 }
 
 resource "unifi_user" "tf_talos_worker_1" {
-  mac              = var.host_vm_macs["talos_worker_1"]
+  mac              = "dc:a6:32:af:be:2f"
   name             = "tf-Talos-Worker-1"
   fixed_ip         = "10.10.1.61"
   local_dns_record = "talos-w1.athena"
@@ -71,7 +71,7 @@ resource "unifi_user" "tf_talos_worker_1" {
 }
 
 resource "unifi_user" "tf_talos_worker_2" {
-  mac              = var.host_vm_macs["talos_worker_2"]
+  mac              = "dc:a6:32:4a:11:70"
   name             = "tf-Talos-Worker-2"
   fixed_ip         = "10.10.1.62"
   local_dns_record = "talos-w2.athena"
@@ -80,7 +80,7 @@ resource "unifi_user" "tf_talos_worker_2" {
 }
 
 resource "unifi_user" "tf_talos_worker_3" {
-  mac              = var.host_vm_macs["talos_worker_3"]
+  mac              = "bc:24:11:00:00:63" #placeholder 
   name             = "tf-Talos-Worker-3"
   fixed_ip         = "10.10.1.63"
   local_dns_record = "talos-w3.athena"
@@ -89,7 +89,7 @@ resource "unifi_user" "tf_talos_worker_3" {
 }
 
 resource "unifi_user" "tf_talos_worker_4" {
-  mac              = var.host_vm_macs["talos_worker_4"]
+  mac              = "bc:24:11:00:00:64" #placeholder
   name             = "tf-Talos-Worker-4"
   fixed_ip         = "10.10.1.64"
   local_dns_record = "talos-w4.athena"
@@ -98,7 +98,7 @@ resource "unifi_user" "tf_talos_worker_4" {
 }
 
 resource "unifi_user" "tf_talos_worker_5" {
-  mac              = var.host_vm_macs["talos_worker_5"]
+  mac              = "bc:24:11:00:00:65" #placeholder
   name             = "tf-Talos-Worker-5"
   fixed_ip         = "10.10.1.65"
   local_dns_record = "talos-w5.athena"

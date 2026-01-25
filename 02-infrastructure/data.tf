@@ -40,11 +40,4 @@ locals {
   windows_server_mac     = try(local.host_vm_macs.windows_server, null)
   github_runner_mac      = try(local.host_vm_macs.github_runner, null)
   nfs_server_mac         = try(local.host_vm_macs.nfs_server, null)
-  talos_worker_macs = [
-    try(local.host_vm_macs.talos_worker_1, null),
-    try(local.host_vm_macs.talos_worker_2, null),
-    try(local.host_vm_macs.talos_worker_3, null),
-    try(local.host_vm_macs.talos_worker_4, null),
-    try(local.host_vm_macs.talos_worker_5, null),
-  ]
 }
