@@ -15,17 +15,17 @@ locals {
   host_vm_macs   = try(data.terraform_remote_state.network.outputs.host_vm_macs, {})
 
   # Derived values
-  proxmox_host_ip    = local.host_ips.nuc
+  proxmox_host_ip    = lookup(local.host_ips, "nuc", null)
   athena_gateway     = local.athena_network.gateway
   athena_vlan_id     = local.athena_network.vlan_id
   athena_subnet      = local.athena_network.subnet
   athena_subnet_cidr = split("/", local.athena_subnet)[1]
 
   # IP assignments sourced from 01-network outputs (DHCP reservations)
-  windows_server_ip     = local.host_ips.windows_server
-  talos_controlplane_ip = local.host_ips.talos_controlplane
-  github_runner_ip      = local.host_ips.github_runner
-  nfs_server_ip         = local.host_ips.nfs_server
+  windows_server_ip     = lookup(local.host_ips, "windows_server", null)
+  talos_controlplane_ip = lookup(local.host_ips, "talos_controlplane", null)
+  github_runner_ip      = lookup(local.host_ips, "github_runner", null)
+  nfs_server_ip         = lookup(local.host_ips, "nfs_server", null)
 
   talos_worker_ips = [for v in [
     try(local.host_ips.talos_worker_1, null),
