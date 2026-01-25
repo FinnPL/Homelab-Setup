@@ -8,18 +8,6 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
 
   initialization {
     hostname = var.nfs_server_config.name
-
-    ip_config {
-      ipv4 {
-        address = "${local.nfs_server_ip}/${local.athena_subnet_cidr}"
-        gateway = local.athena_gateway
-      }
-    }
-
-    dns {
-      servers = [local.athena_gateway]
-    }
-
     user_account {
       password = var.nfs_root_password
       keys     = [file(pathexpand(var.github_runner_ssh_public_key_path))]
@@ -57,6 +45,7 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
     name     = "eth0"
     bridge   = var.proxmox_bridge
     firewall = true
+    hwaddr   = local.nfs_server_mac
   }
 
   operating_system {

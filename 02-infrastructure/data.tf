@@ -12,7 +12,7 @@ locals {
   # Network configuration from 01-network
   athena_network = data.terraform_remote_state.network.outputs.athena_network
   host_ips       = data.terraform_remote_state.network.outputs.host_ips
-  host_macs      = try(data.terraform_remote_state.network.outputs.host_macs, {})
+  host_vm_macs   = try(data.terraform_remote_state.network.outputs.host_vm_macs, {})
 
   # Derived values
   proxmox_host_ip    = local.host_ips.nuc
@@ -24,19 +24,27 @@ locals {
   # IP assignments sourced from 01-network outputs (DHCP reservations)
   windows_server_ip     = local.host_ips.windows_server
   talos_controlplane_ip = local.host_ips.talos_controlplane
-
-  github_runner_ip = cidrhost(local.athena_subnet, 70)
-  nfs_server_ip    = cidrhost(local.athena_subnet, 80)
+  github_runner_ip      = local.host_ips.github_runner
+  nfs_server_ip         = local.host_ips.nfs_server
 
   talos_worker_ips = [
-    cidrhost(local.athena_subnet, 61),
-    cidrhost(local.athena_subnet, 62),
-    cidrhost(local.athena_subnet, 63),
-    cidrhost(local.athena_subnet, 64),
-    cidrhost(local.athena_subnet, 65),
+    local.host_ips.talos_worker_1,
+    local.host_ips.talos_worker_2,
+    local.host_ips.talos_worker_3,
+    local.host_ips.talos_worker_4,
+    local.host_ips.talos_worker_5,
   ]
 
   # Resolve MACs from 01-network outputs
-  talos_controlplane_mac = try(local.host_macs.talos_controlplane, null)
-  windows_server_mac     = try(local.host_macs.windows_server, null)
+  talos_controlplane_mac = try(local.host_vm_macs.talos_controlplane, null)
+  windows_server_mac     = try(local.host_vm_macs.windows_server, null)
+  github_runner_mac      = try(local.host_vm_macs.github_runner, null)
+  nfs_server_mac         = try(local.host_vm_macs.nfs_server, null)
+  talos_worker_macs = [
+    try(local.host_vm_macs.talos_worker_1, null),
+    try(local.host_vm_macs.talos_worker_2, null),
+    try(local.host_vm_macs.talos_worker_3, null),
+    try(local.host_vm_macs.talos_worker_4, null),
+    try(local.host_vm_macs.talos_worker_5, null),
+  ]
 }

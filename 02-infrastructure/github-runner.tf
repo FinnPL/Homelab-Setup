@@ -73,8 +73,9 @@ resource "proxmox_virtual_environment_vm" "github_runner" {
   }
 
   network_device {
-    bridge = var.proxmox_bridge
-    model  = "virtio"
+    bridge      = var.proxmox_bridge
+    model       = "virtio"
+    mac_address = local.github_runner_mac
   }
 
   agent {
@@ -88,16 +89,6 @@ resource "proxmox_virtual_environment_vm" "github_runner" {
 
     user_data_file_id = proxmox_virtual_environment_file.cloud_init_runner.id
 
-    ip_config {
-      ipv4 {
-        address = "${local.github_runner_ip}/${local.athena_subnet_cidr}"
-        gateway = local.athena_gateway
-      }
-    }
-
-    dns {
-      servers = [local.athena_gateway]
-    }
   }
 
   lifecycle {

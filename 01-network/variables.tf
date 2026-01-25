@@ -22,11 +22,18 @@ variable "unifi_insecure" {
 }
 
 # Static VM MAC addresses for DHCP reservations
-variable "host_macs" {
-  description = "Map of host MAC addresses for DHCP reservations"
+variable "host_vm_macs" {
+  description = "Map of VM MAC addresses for DHCP reservations"
   type        = map(string)
   default = {
-    talos_controlplane = "52:54:00:aa:00:60"
-    windows_server     = "52:54:00:aa:00:50"
+    talos_controlplane = "bc:24:11:00:00:60"
+    windows_server     = "bc:24:11:00:00:50"
+    github_runner      = "bc:24:11:00:00:70"
+    nfs_server         = "bc:24:11:00:00:80"
+    talos_worker_1     = "bc:24:11:00:00:61"
+    talos_worker_2     = "bc:24:11:00:00:62"
+    talos_worker_3     = "bc:24:11:00:00:63"
+    talos_worker_4     = "bc:24:11:00:00:64"
+    talos_worker_5     = "bc:24:11:00:00:65"
   }
 }
