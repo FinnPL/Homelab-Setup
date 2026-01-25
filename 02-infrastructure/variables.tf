@@ -249,27 +249,3 @@ variable "nfs_root_password" {
   type        = string
   sensitive   = true
 }
-
-# =============================================================================
-# PXE Boot Configuration
-# =============================================================================
-
-variable "pxe_server_config" {
-  description = "PXE/TFTP Server LXC configuration"
-  type = object({
-    vmid      = number
-    name      = string
-    cores     = number
-    memory    = number
-    disk_size = number
-    ip        = string
-  })
-  default = {
-    vmid      = 401
-    name      = "pxe-server"
-    cores     = 1
-    memory    = 512
-    disk_size = 4
-    ip        = "10.10.1.43"
-  }
-}
