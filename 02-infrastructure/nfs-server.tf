@@ -42,10 +42,10 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
   }
 
   network_interface {
-    name     = "eth0"
-    bridge   = var.proxmox_bridge
-    firewall = true
-    hwaddr   = local.nfs_server_mac
+    name        = "eth0"
+    bridge      = var.proxmox_bridge
+    firewall    = true
+    mac_address = local.nfs_server_mac
   }
 
   operating_system {
