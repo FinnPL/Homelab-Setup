@@ -63,7 +63,7 @@ Terraform is organized into numbered layers (each with its own backend state).
 
 - `00-global/`: Shared Terraform foundation (remote state backend, base provider config)
 - `01-network/`: UniFi network state (VLANs, DHCP reservations, port profiles) + Cloudflare DNS
-- `02-infrastructure/`: Proxmox + Talos bootstrap for my Kubernetes homelab *(planned / not implemented yet)*
+- `02-infrastructure/`: Proxmox + Talos bootstrap for my Kubernetes homelab
 - `03-services/`: Helm charts deployed onto the cluster *(planned / not implemented yet)*
 
 ## Services Architecture

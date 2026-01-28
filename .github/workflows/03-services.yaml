@@ -1,15 +1,15 @@
-name: "Terraform: 01-network"
+name: "Terraform: 03-services"
 
 on:
   push:
     branches:
       - main
     paths:
-      - "01-network/**"
-      - ".github/workflows/01-network.yaml"
+      - "03-services/**"
+      - ".github/workflows/03-services.yaml"
   pull_request:
     paths:
-      - "01-network/**"
+      - "03-services/**"
   workflow_dispatch:
     inputs:
       apply:
@@ -24,19 +24,16 @@ permissions:
 
 jobs:
   terraform:
-    name: "Terraform Network"
+    name: "Terraform Services"
     runs-on: [self-hosted, proxmox, docker]
     environment: Terraform
     defaults:
       run:
-        working-directory: ./01-network
+        working-directory: ./03-services
     env:
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
       TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      TF_VAR_unifi_api_key: ${{ secrets.UNIFI_API_KEY }}
-      TF_VAR_unifi_api_url: ${{ vars.UNIFI_API_URL }}
-      TF_VAR_unifi_insecure: ${{ vars.UNIFI_INSECURE }}
 
     steps:
       - name: Checkout Code
@@ -66,7 +63,7 @@ jobs:
         run: terraform fmt -check
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -upgrade
 
       - name: Terraform Validate
         run: terraform validate
@@ -82,8 +79,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           planfile: .planfile
-          working-directory: ./01-network
-          header: "Terraform Plan (01-network)"
+          working-directory: ./03-services
+          header: "Terraform Plan (03-services)"
 
       - name: Check Plan Status
         if: steps.plan.outcome == 'failure'
