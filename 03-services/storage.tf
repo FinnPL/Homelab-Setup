@@ -2,7 +2,7 @@ resource "helm_release" "csi_driver_nfs" {
   name       = "csi-driver-nfs"
   repository = "https://raw.githubusercontent.com/kubernetes-sigs/csi-driver-nfs/master/charts"
   chart      = "csi-driver-nfs"
-  version    = "v4.9.0"
+  version    = "4.12.0"
   namespace  = "kube-system"
 }
 
