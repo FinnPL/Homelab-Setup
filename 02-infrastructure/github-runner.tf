@@ -95,7 +95,7 @@ resource "proxmox_virtual_environment_vm" "github_runner" {
     ignore_changes = [
       started,
     ]
-    #prevent_destroy = true
+    prevent_destroy = true
   }
 
   provisioner "remote-exec" {

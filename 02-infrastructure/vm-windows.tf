@@ -81,6 +81,7 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
       cdrom,
       started,
     ]
+    prevent_destroy = true
   }
 
   # Attach VirtIO ISO after creation (Proxmox allows only one cdrom in provider).
