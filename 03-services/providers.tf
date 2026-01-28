@@ -4,7 +4,7 @@ terraform {
   required_providers {
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "3.01"
+      version = "3.0.1"
     }
     helm = {
       source  = "hashicorp/helm"
@@ -15,4 +15,39 @@ terraform {
       version = "5.0"
     }
   }
+}
+
+data "terraform_remote_state" "infrastructure" {
+  backend = "s3"
+  config = {
+    bucket = "finnpl-homelab-tfstate-1766068376"
+    key    = "02-infrastructure/terraform.tfstate"
+    region = "eu-central-1"
+  }
+}
+
+locals {
+  kubeconfig = yamldecode(data.terraform_remote_state.infrastructure.outputs.kubeconfig)
+  cluster    = local.kubeconfig.clusters[0].cluster
+  user       = local.kubeconfig.users[0].user
+}
+
+provider "kubernetes" {
+  host                   = local.cluster.server
+  cluster_ca_certificate = base64decode(local.cluster["certificate-authority-data"])
+  client_certificate     = base64decode(local.user["client-certificate-data"])
+  client_key             = base64decode(local.user["client-key-data"])
+}
+
+provider "helm" {
+  kubernetes = {
+    host                   = local.cluster.server
+    cluster_ca_certificate = base64decode(local.cluster["certificate-authority-data"])
+    client_certificate     = base64decode(local.user["client-certificate-data"])
+    client_key             = base64decode(local.user["client-key-data"])
+  }
+}
+
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
 }
