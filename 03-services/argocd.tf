@@ -8,7 +8,7 @@ resource "helm_release" "argocd" {
   name       = "argocd"
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argo-cd"
-  version    = "7.7.0"
+  version    = "9.3.7"
   namespace  = kubernetes_namespace_v1.argocd.metadata[0].name
   timeout    = 600
 
