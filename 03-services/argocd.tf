@@ -16,10 +16,12 @@ resource "helm_release" "argocd" {
     yamlencode({
       redis = {
         enabled = true
-        persistence = {
-          enabled      = true
-          storageClass = "nfs-client"
-          size         = "1Gi"
+        master = {
+          persistence = {
+            enabled      = true
+            storageClass = "nfs-client" # Explicitly points to your NFS
+            size         = "1Gi"
+          }
         }
       }
 
