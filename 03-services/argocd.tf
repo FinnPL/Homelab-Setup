@@ -15,12 +15,26 @@ resource "helm_release" "argocd" {
   values = [
     yamlencode({
       redis = {
+        enabled = true
         persistence = {
           enabled      = true
           storageClass = "nfs-client"
           size         = "1Gi"
         }
       }
+
+      redis-ha = {
+        enabled = false
+      }
+
+      repoServer = {
+        persistence = {
+          enabled      = true
+          storageClass = "nfs-client"
+          size         = "2Gi"
+        }
+      }
+
       applicationSet = {
         enabled = true
       }
