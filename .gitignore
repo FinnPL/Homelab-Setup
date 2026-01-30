@@ -47,3 +47,5 @@ Desktop.ini
 
 # Terraform
 .terraform/
+
+kubeconfig.yaml
