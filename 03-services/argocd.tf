@@ -27,7 +27,7 @@ resource "helm_release" "argocd" {
         }
         haproxy = {
           metrics = {
-             enabled = false 
+            enabled = false
           }
         }
       }
