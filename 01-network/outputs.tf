@@ -13,7 +13,6 @@ output "host_ips" {
   description = "Static host IP addresses"
   value = {
     apollo             = unifi_user.tf_apollo_host.fixed_ip
-    pi4                = unifi_user.tf_pi4_host.fixed_ip
     nuc                = unifi_user.tf_nuc_host.fixed_ip
     windows_server     = unifi_user.tf_windows_server.fixed_ip
     talos_controlplane = unifi_user.tf_talos_controlplane.fixed_ip

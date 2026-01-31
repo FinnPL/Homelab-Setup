@@ -4,6 +4,7 @@ data "cloudflare_zone" "main" {
   }
 }
 
+/*
 resource "cloudflare_dns_record" "tf_pi4_entry" {
   zone_id = data.cloudflare_zone.main.id
   name    = "lippok.dev"
@@ -13,3 +14,4 @@ resource "cloudflare_dns_record" "tf_pi4_entry" {
   comment = "Managed by Terraform"
   ttl     = 60
 }
+*/
