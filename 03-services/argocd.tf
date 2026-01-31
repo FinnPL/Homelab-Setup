@@ -20,8 +20,10 @@ resource "helm_release" "argocd" {
 
       redis-ha = {
         enabled = true
+        podSecurityContext = {
+          fsGroup = 1000
+        }
         securityContext = {
-          fsGroup   = 1000
           runAsUser = 1000
         }
         persistentVolume = {
