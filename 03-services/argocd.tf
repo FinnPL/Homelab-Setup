@@ -20,7 +20,7 @@ resource "helm_release" "argocd" {
 
       redis-ha = {
         enabled = true
-        persistence = {
+        persistentVolume = {
           enabled      = true
           storageClass = "nfs-client"
           size         = "1Gi"
