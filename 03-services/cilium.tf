@@ -39,6 +39,7 @@ resource "helm_release" "cilium" {
       }
     })
   ]
+  depends_on = [kubernetes_manifest.gateway_api_crd]
 }
 
 resource "kubernetes_manifest" "cilium_ip_pool" {
@@ -78,4 +79,25 @@ resource "kubernetes_manifest" "cilium_l2_policy" {
   }
 
   depends_on = [helm_release.cilium]
+}
+
+data "http" "gateway_api_crds" {
+  url = "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.0.0/standard-install.yaml"
+}
+
+locals {
+  gateway_crds = [
+    for doc in split("---", data.http.gateway_api_crds.response_body) : 
+    yamldecode(doc) 
+    if length(trimspace(doc)) > 0
+  ]
+}
+
+resource "kubernetes_manifest" "gateway_api_crd" {
+  for_each = {
+    for idx, doc in local.gateway_crds : 
+    "${doc.kind}_${doc.metadata.name}" => doc
+  }
+
+  manifest = each.value
 }
