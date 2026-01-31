@@ -33,11 +33,21 @@ resource "helm_release" "argocd" {
       }
 
       repoServer = {
-        persistence = {
-          enabled      = true
-          storageClass = "nfs-client"
-          size         = "2Gi"
-        }
+        volumes = [
+          {
+            name = "repo-server-tmp"
+            emptyDir = {
+              medium    = "Memory"
+              sizeLimit = "1Gi"
+            }
+          }
+        ]
+        volumeMounts = [
+          {
+            name      = "repo-server-tmp"
+            mountPath = "/tmp"
+          }
+        ]
       }
 
       applicationSet = {
