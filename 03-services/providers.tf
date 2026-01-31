@@ -26,6 +26,16 @@ data "terraform_remote_state" "infrastructure" {
   }
 }
 
+data "terraform_remote_state" "network" {
+  backend = "s3"
+
+  config = {
+    bucket = "finnpl-homelab-tfstate-1766068376"
+    key    = "01-network/terraform.tfstate"
+    region = "eu-central-1"
+  }
+}
+
 locals {
   kubeconfig = yamldecode(data.terraform_remote_state.infrastructure.outputs.kubeconfig)
   cluster    = local.kubeconfig.clusters[0].cluster

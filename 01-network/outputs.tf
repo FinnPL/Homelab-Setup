@@ -9,6 +9,11 @@ output "athena_network" {
   }
 }
 
+output "athena_lb_cidr" {
+  description = "Cilium LoadBalancer CIDR block"
+  value       = "${cidrhost(local.athena_subnet, local.lb_start_index)}/29"
+}
+
 output "host_ips" {
   description = "Static host IP addresses"
   value = {

@@ -6,6 +6,21 @@ data "talos_machine_configuration" "worker" {
 
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
+
+  config_patches = [
+    yamlencode({
+      cluster = {
+        network = {
+          cni = {
+            name = "none"
+          }
+        }
+        proxy = {
+          disabled = true
+        }
+      }
+    })
+  ]
 }
 
 resource "talos_machine_configuration_apply" "workers" {
