@@ -20,6 +20,10 @@ resource "helm_release" "argocd" {
 
       redis-ha = {
         enabled = true
+        securityContext = {
+          fsGroup   = 1000
+          runAsUser = 1000
+        }
         persistentVolume = {
           enabled      = true
           storageClass = "nfs-client"
