@@ -82,7 +82,7 @@ resource "kubernetes_manifest" "cilium_l2_policy" {
 }
 
 data "http" "gateway_api_crds" {
-  url = "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.0.0/standard-install.yaml"
+  url = "https://github.com/kubernetes-sigs/gateway-api/releases/download/${var.gateway_api_version}/standard-install.yaml"
 }
 
 locals {
