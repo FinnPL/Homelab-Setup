@@ -1,5 +1,5 @@
 locals {
-  athena_subnet = "10.10.1.0/24"
+  athena_subnet  = "10.10.1.0/24"
   lb_start_index = 200 # end of dhcp -> cilium LB start
 }
 resource "unifi_network" "tf_vlan_athena" {
@@ -8,9 +8,9 @@ resource "unifi_network" "tf_vlan_athena" {
 
   vlan_id = 20
 
-  subnet  = local.athena_subnet
-  dhcp_start = cidrhost(local.athena_subnet, 20)
-  dhcp_stop  = cidrhost(local.athena_subnet, local.lb_start_index - 1)
+  subnet       = local.athena_subnet
+  dhcp_start   = cidrhost(local.athena_subnet, 20)
+  dhcp_stop    = cidrhost(local.athena_subnet, local.lb_start_index - 1)
   dhcp_enabled = true
 
   site = "default"
