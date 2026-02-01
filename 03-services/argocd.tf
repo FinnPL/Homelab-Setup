@@ -42,7 +42,7 @@ resource "helm_release" "argocd" {
           {
             name = "nfs-tmp"
             persistentVolumeClaim = {
-              claimName = "nfs-client"
+              claimName = kubernetes_persistent_volume_claim_v1.argocd_repo_server.metadata[0].name
             }
           }
         ]
@@ -67,6 +67,26 @@ resource "helm_release" "argocd" {
       }
     })
   ]
+
+  depends_on = [kubernetes_storage_class_v1.nfs]
+}
+
+resource "kubernetes_persistent_volume_claim_v1" "argocd_repo_server" {
+  metadata {
+    name      = "argocd-repo-server-nfs"
+    namespace = kubernetes_namespace_v1.argocd.metadata[0].name
+  }
+
+  spec {
+    access_modes       = ["ReadWriteMany"]
+    storage_class_name = "nfs-client"
+
+    resources {
+      requests = {
+        storage = "1Gi"
+      }
+    }
+  }
 
   depends_on = [kubernetes_storage_class_v1.nfs]
 }
