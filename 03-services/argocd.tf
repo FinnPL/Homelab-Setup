@@ -60,6 +60,22 @@ resource "helm_release" "argocd" {
             value = "/nfs-tmp"
           }
         ]
+        initContainers = [
+          {
+            name    = "fix-nfs-permissions"
+            image   = "busybox"
+            command = ["sh", "-c", "chown 999:999 /nfs-tmp && chmod 777 /nfs-tmp"]
+            volumeMounts = [
+              {
+                name      = "nfs-tmp"
+                mountPath = "/nfs-tmp"
+              }
+            ]
+            securityContext = {
+              runAsUser = 0
+            }
+          }
+        ]
       }
 
       applicationSet = {
