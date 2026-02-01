@@ -18,24 +18,26 @@ resource "helm_release" "argocd" {
         enabled = false
       }
 
-      redis-ha = {
+      redis = {
         enabled = true
-        podSecurityContext = {
-          fsGroup = 1000
-        }
-        securityContext = {
-          runAsUser = 0
-        }
-        persistentVolume = {
-          enabled      = true
-          storageClass = "nfs-client"
-          size         = "1Gi"
-        }
-        haproxy = {
-          metrics = {
-            enabled = false
+        volumes = [
+          {
+            name = "redis-data"
+            emptyDir = {
+              medium = "Memory"
+            }
           }
-        }
+        ]
+        volumeMounts = [
+          {
+            name      = "redis-data"
+            mountPath = "/data"
+          }
+        ]
+      }
+
+      "redis-ha" = {
+        enabled = false
       }
 
       repoServer = {
