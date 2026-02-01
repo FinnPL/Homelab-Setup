@@ -85,19 +85,7 @@ data "http" "gateway_api_crds" {
   url = "https://github.com/kubernetes-sigs/gateway-api/releases/download/${var.gateway_api_version}/standard-install.yaml"
 }
 
-locals {
-  gateway_crds = [
-    for doc in split("\n---", data.http.gateway_api_crds.response_body) :
-    yamldecode(doc)
-    if length(trimspace(doc)) > 0
-  ]
-}
-
-resource "kubernetes_manifest" "gateway_api_crd" {
-  for_each = {
-    for idx, doc in local.gateway_crds :
-    "${doc.kind}_${doc.metadata.name}" => doc
-  }
-
-  manifest = each.value
+resource "kubectl_manifest" "gateway_api_crds" {
+  for_each  = toset(split("---", data.http.gateway_api_crds.response_body))
+  yaml_body = each.value
 }
