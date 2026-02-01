@@ -15,10 +15,6 @@ resource "helm_release" "argocd" {
   values = [
     yamlencode({
       redis = {
-        enabled = false
-      }
-
-      redis = {
         enabled = true
         volumes = [
           {
@@ -44,17 +40,24 @@ resource "helm_release" "argocd" {
       repoServer = {
         volumes = [
           {
-            name = "repo-server-tmp"
-            emptyDir = {
-              medium    = "Memory"
-              sizeLimit = "1Gi"
+            name = "nfs-tmp"
+            persistentVolumeClaim = {
+              claimName = "nfs-client"
             }
           }
         ]
+
         volumeMounts = [
           {
-            name      = "repo-server-tmp"
-            mountPath = "/tmp"
+            name      = "nfs-tmp"
+            mountPath = "/nfs-tmp"
+          }
+        ]
+
+        env = [
+          {
+            name  = "TMPDIR"
+            value = "/nfs-tmp"
           }
         ]
       }
