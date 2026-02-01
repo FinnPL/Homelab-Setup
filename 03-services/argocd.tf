@@ -84,7 +84,7 @@ resource "helm_release" "argocd" {
     })
   ]
 
-  depends_on = [kubernetes_storage_class_v1.nfs]
+  depends_on = [kubernetes_storage_class_v1.nfs, helm_release.cilium]
 }
 
 resource "kubernetes_persistent_volume_claim_v1" "argocd_repo_server" {

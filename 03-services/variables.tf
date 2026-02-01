@@ -3,3 +3,10 @@ variable "cloudflare_api_token" {
   type        = string
   sensitive   = true
 }
+
+variable "gateway_api_version" {
+  description = "Version of Gateway API CRDs to install"
+  type        = string
+  # renovate: datasource=github-releases depName=kubernetes-sigs/gateway-api
+  default = "v1.0.0"
+}

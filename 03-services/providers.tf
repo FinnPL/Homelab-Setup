@@ -14,6 +14,10 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "5.16.0"
     }
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = ">= 1.14.0"
+    }
   }
 }
 
@@ -22,6 +26,16 @@ data "terraform_remote_state" "infrastructure" {
   config = {
     bucket = "finnpl-homelab-tfstate-1766068376"
     key    = "02-infrastructure/terraform.tfstate"
+    region = "eu-central-1"
+  }
+}
+
+data "terraform_remote_state" "network" {
+  backend = "s3"
+
+  config = {
+    bucket = "finnpl-homelab-tfstate-1766068376"
+    key    = "01-network/terraform.tfstate"
     region = "eu-central-1"
   }
 }
@@ -46,6 +60,14 @@ provider "helm" {
     client_certificate     = base64decode(local.user["client-certificate-data"])
     client_key             = base64decode(local.user["client-key-data"])
   }
+}
+
+provider "kubectl" {
+  host                   = local.cluster.server
+  cluster_ca_certificate = base64decode(local.cluster["certificate-authority-data"])
+  client_certificate     = base64decode(local.user["client-certificate-data"])
+  client_key             = base64decode(local.user["client-key-data"])
+  load_config_file       = false
 }
 
 provider "cloudflare" {
