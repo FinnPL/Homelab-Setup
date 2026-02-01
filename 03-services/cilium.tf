@@ -87,7 +87,7 @@ data "http" "gateway_api_crds" {
 
 locals {
   gateway_crds = [
-    for doc in split("---", data.http.gateway_api_crds.response_body) :
+    for doc in split("\n---", data.http.gateway_api_crds.response_body) :
     yamldecode(doc)
     if length(trimspace(doc)) > 0
   ]
