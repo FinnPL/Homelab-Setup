@@ -14,6 +14,10 @@ terraform {
       source  = "cloudflare/cloudflare"
       version = "5.15.0"
     }
+    kubectl = {
+      source  = "gavinbunney/kubectl"
+      version = ">= 1.14.0"
+    }
   }
 }
 
@@ -56,6 +60,14 @@ provider "helm" {
     client_certificate     = base64decode(local.user["client-certificate-data"])
     client_key             = base64decode(local.user["client-key-data"])
   }
+}
+
+provider "kubectl" {
+  host                   = local.cluster.server
+  cluster_ca_certificate = base64decode(local.cluster["certificate-authority-data"])
+  client_certificate     = base64decode(local.user["client-certificate-data"])
+  client_key             = base64decode(local.user["client-key-data"])
+  load_config_file       = false
 }
 
 provider "cloudflare" {

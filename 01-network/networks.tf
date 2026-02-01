@@ -1,5 +1,5 @@
 locals {
-  athena_subnet  = "10.10.1.0/24"
+  athena_subnet  = "10.10.1.1/24"
   lb_start_index = 200 # end of dhcp -> cilium LB start
 }
 resource "unifi_network" "tf_vlan_athena" {
