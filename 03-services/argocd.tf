@@ -15,10 +15,6 @@ resource "helm_release" "argocd" {
   values = [
     yamlencode({
       redis = {
-        enabled = false
-      }
-
-      redis = {
         enabled = true
         volumes = [
           {
@@ -39,24 +35,6 @@ resource "helm_release" "argocd" {
 
       "redis-ha" = {
         enabled = false
-      }
-
-      repoServer = {
-        volumes = [
-          {
-            name = "repo-server-tmp"
-            emptyDir = {
-              medium    = "Memory"
-              sizeLimit = "1Gi"
-            }
-          }
-        ]
-        volumeMounts = [
-          {
-            name      = "repo-server-tmp"
-            mountPath = "/tmp"
-          }
-        ]
       }
 
       applicationSet = {
