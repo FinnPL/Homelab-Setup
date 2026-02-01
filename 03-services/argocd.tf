@@ -24,7 +24,8 @@ resource "helm_release" "argocd" {
           {
             name = "redis-data"
             emptyDir = {
-              medium = "Memory"
+              medium    = "Memory"
+              sizeLimit = "1Gi"
             }
           }
         ]
