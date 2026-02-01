@@ -87,15 +87,15 @@ data "http" "gateway_api_crds" {
 
 locals {
   gateway_crds = [
-    for doc in split("---", data.http.gateway_api_crds.response_body) : 
-    yamldecode(doc) 
+    for doc in split("---", data.http.gateway_api_crds.response_body) :
+    yamldecode(doc)
     if length(trimspace(doc)) > 0
   ]
 }
 
 resource "kubernetes_manifest" "gateway_api_crd" {
   for_each = {
-    for idx, doc in local.gateway_crds : 
+    for idx, doc in local.gateway_crds :
     "${doc.kind}_${doc.metadata.name}" => doc
   }
 
