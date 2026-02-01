@@ -31,6 +31,23 @@ resource "helm_release" "argocd" {
           storageClass = "nfs-client"
           size         = "1Gi"
         }
+        initContainers = [
+          {
+            name    = "fix-permissions"
+            image   = "alpine:3.18"
+            command = ["/bin/sh", "-c"]
+            args    = ["chown -R 1000:1000 /data"]
+            volumeMounts = [
+              {
+                name      = "data"
+                mountPath = "/data"
+              }
+            ]
+            securityContext = {
+              runAsUser = 0
+            }
+          }
+        ]
         haproxy = {
           metrics = {
             enabled = false
