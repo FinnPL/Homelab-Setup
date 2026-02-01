@@ -9,6 +9,16 @@ data "talos_machine_configuration" "worker" {
 
   config_patches = [
     yamlencode({
+      machine = {
+        features = {
+          kubePrism = {
+            enabled = true
+            port    = 7445
+          }
+        }
+      }
+    }),
+    yamlencode({
       cluster = {
         network = {
           cni = {

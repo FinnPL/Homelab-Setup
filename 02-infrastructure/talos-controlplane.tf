@@ -104,6 +104,12 @@ data "talos_machine_configuration" "controlplane" {
   config_patches = [
     yamlencode({
       machine = {
+        features = {
+          kubePrism = {
+            enabled = true
+            port    = 7445
+          }
+        }
         install = {
           image = "factory.talos.dev/installer/${talos_image_factory_schematic.this.id}:${var.talos_version}"
         }
