@@ -17,7 +17,7 @@ data "talos_machine_configuration" "worker" {
           }
         }
       }
-      }),
+    }),
     yamlencode({
       cluster = {
         network = {
