@@ -52,6 +52,12 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
+      - name: DEBUG - PROVE FILE CONTENT
+        run: |
+          echo "============================================"
+          echo "CHECKING FILE ON DISK:"
+          cat 02-infrastructure/talos-controlplane.tf | grep -C 5 "kubePrism" || echo "❌ KUBEPRISM CONFIG IS MISSING ON RUNNER DISK"
+          echo "============================================"
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
