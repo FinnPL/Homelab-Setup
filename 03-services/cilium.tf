@@ -39,11 +39,11 @@ resource "helm_release" "cilium" {
       }
     })
   ]
-  depends_on = [kubernetes_manifest.gateway_api_crd]
+  depends_on = [kubectl_manifest.gateway_api_crds]
 }
 
-resource "kubernetes_manifest" "cilium_ip_pool" {
-  manifest = {
+resource "kubectl_manifest" "cilium_ip_pool" {
+  yaml_body = yamlencode({
     apiVersion = "cilium.io/v2alpha1"
     kind       = "CiliumLoadBalancerIPPool"
     metadata = {
@@ -56,13 +56,13 @@ resource "kubernetes_manifest" "cilium_ip_pool" {
         }
       ]
     }
-  }
+  })
 
   depends_on = [helm_release.cilium]
 }
 
-resource "kubernetes_manifest" "cilium_l2_policy" {
-  manifest = {
+resource "kubectl_manifest" "cilium_l2_policy" {
+  yaml_body = yamlencode({
     apiVersion = "cilium.io/v2alpha1"
     kind       = "CiliumL2AnnouncementPolicy"
     metadata = {
@@ -76,7 +76,7 @@ resource "kubernetes_manifest" "cilium_l2_policy" {
       externalIPs     = true
       loadBalancerIPs = true
     }
-  }
+  })
 
   depends_on = [helm_release.cilium]
 }
@@ -86,6 +86,10 @@ data "http" "gateway_api_crds" {
 }
 
 resource "kubectl_manifest" "gateway_api_crds" {
-  for_each  = toset(split("---", data.http.gateway_api_crds.response_body))
+  for_each = {
+    for index, manifest in split("---", data.http.gateway_api_crds.response_body) :
+    index => manifest
+    if trimspace(manifest) != ""
+  }
   yaml_body = each.value
 }
