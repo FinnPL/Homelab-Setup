@@ -31,7 +31,7 @@ resource "helm_release" "argocd" {
           storageClass = "nfs-client"
           size         = "1Gi"
         }
-        initContainers = [
+        extraInitContainers = [
           {
             name    = "fix-permissions"
             image   = "alpine:3.18"
