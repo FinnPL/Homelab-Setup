@@ -37,6 +37,31 @@ resource "helm_release" "argocd" {
         enabled = false
       }
 
+      repoServer = {
+        volumes = [
+          {
+            name = "nfs-tmp"
+            persistentVolumeClaim = {
+              claimName = "nfs-client"
+            }
+          }
+        ]
+
+        volumeMounts = [
+          {
+            name      = "nfs-tmp"
+            mountPath = "/nfs-tmp"
+          }
+        ]
+
+        env = [
+          {
+            name  = "TMPDIR"
+            value = "/nfs-tmp"
+          }
+        ]
+      }
+
       applicationSet = {
         enabled = true
       }
