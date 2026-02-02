@@ -14,6 +14,17 @@ resource "helm_release" "argocd" {
 
   values = [
     yamlencode({
+      server = {
+        extraArgs = ["--insecure"]
+      }
+      configs = {
+        params = {
+          "server.insecure" = "true"
+        }
+        cm = {
+          "url" = "https://argocd.lippok.dev"
+        }
+      }
       redis = {
         enabled = true
         volumes = [
