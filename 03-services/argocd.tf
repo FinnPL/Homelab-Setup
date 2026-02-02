@@ -106,3 +106,41 @@ resource "kubernetes_persistent_volume_claim_v1" "argocd_repo_server" {
 
   depends_on = [kubernetes_storage_class_v1.nfs]
 }
+
+# Root Application for App of Apps pattern
+resource "kubectl_manifest" "argocd_root_app" {
+  yaml_body = yamlencode({
+    apiVersion = "argoproj.io/v1alpha1"
+    kind       = "Application"
+    metadata = {
+      name      = "root"
+      namespace = kubernetes_namespace_v1.argocd.metadata[0].name
+      finalizers = [
+        "resources-finalizer.argocd.argoproj.io"
+      ]
+    }
+    spec = {
+      project = "default"
+      source = {
+        repoURL        = "https://github.com/FinnPL/Homelab-Setup.git"
+        targetRevision = "main"
+        path           = "apps"
+      }
+      destination = {
+        server    = "https://kubernetes.default.svc"
+        namespace = "argocd"
+      }
+      syncPolicy = {
+        automated = {
+          prune    = true
+          selfHeal = true
+        }
+        syncOptions = [
+          "CreateNamespace=true"
+        ]
+      }
+    }
+  })
+
+  depends_on = [helm_release.argocd]
+}
