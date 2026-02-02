@@ -19,7 +19,7 @@ resource "helm_release" "cert_manager" {
         enabled = true
       }
       config = {
-        apiVersion       = "controller.cert-manager.io/v1alpha1"
+        apiVersion       = "controller.config.cert-manager.io/v1alpha1"
         kind             = "ControllerConfiguration"
         enableGatewayAPI = true
       }
