@@ -5,12 +5,13 @@ resource "kubernetes_namespace_v1" "cert_manager" {
 }
 
 resource "helm_release" "cert_manager" {
-  name       = "cert-manager"
-  repository = "https://charts.jetstack.io"
-  chart      = "cert-manager"
-  version    = "1.17.2"
-  namespace  = kubernetes_namespace_v1.cert_manager.metadata[0].name
-  timeout    = 300
+  name            = "cert-manager"
+  repository      = "https://charts.jetstack.io"
+  chart           = "cert-manager"
+  version         = "1.17.2"
+  namespace       = kubernetes_namespace_v1.cert_manager.metadata[0].name
+  timeout         = 600
+  cleanup_on_fail = true
 
   values = [
     yamlencode({
