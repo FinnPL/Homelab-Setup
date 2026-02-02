@@ -34,6 +34,7 @@ jobs:
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
       TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_acme_email: ${{ vars.ACME_EMAIL }}
 
     steps:
       - name: Checkout Code

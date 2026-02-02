@@ -4,6 +4,11 @@ variable "cloudflare_api_token" {
   sensitive   = true
 }
 
+variable "acme_email" {
+  description = "Email address for Let's Encrypt certificate registration"
+  type        = string
+}
+
 variable "gateway_api_version" {
   description = "Version of Gateway API CRDs to install"
   type        = string
