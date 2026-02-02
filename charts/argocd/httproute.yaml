@@ -1,0 +1,15 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: argocd
+  namespace: argocd
+spec:
+  parentRefs:
+    - name: main-gateway
+      namespace: gateway
+  hostnames:
+    - argocd.lippok.dev
+  rules:
+    - backendRefs:
+        - name: argocd-server
+          port: 80
