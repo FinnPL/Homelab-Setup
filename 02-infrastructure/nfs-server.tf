@@ -65,7 +65,7 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
   started      = true
   unprivileged = false
 
-  tags = sort(["kubernetes", "storage", "nfs"])
+  tags = sort(["kubernetes", "storage", "nfs", "terraform"])
 
   provisioner "remote-exec" {
     inline = [
