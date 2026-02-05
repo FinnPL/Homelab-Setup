@@ -19,6 +19,11 @@ resource "kubernetes_storage_class_v1" "nfs" {
     server = data.terraform_remote_state.infrastructure.outputs.nfs_server.ip
     share  = data.terraform_remote_state.infrastructure.outputs.nfs_server.export_path
   }
-  mount_options = ["nfsvers=4.1"]
+  mount_options = [
+    "nfsvers=4.1",
+    "hard",
+    "noatime",
+    "nodiratime"
+  ]
   depends_on    = [helm_release.csi_driver_nfs]
 }
