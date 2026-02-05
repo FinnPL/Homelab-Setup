@@ -26,6 +26,7 @@ locals {
   talos_controlplane_ip = lookup(local.host_ips, "talos_controlplane", null)
   github_runner_ip      = lookup(local.host_ips, "github_runner", null)
   nfs_server_ip         = lookup(local.host_ips, "nfs_server", null)
+  postgres_server_ip    = lookup(local.host_ips, "postgres_server", "10.10.1.85")
 
   talos_worker_ips = [for v in [
     try(local.host_ips.talos_worker_1, null),
