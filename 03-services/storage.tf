@@ -25,5 +25,5 @@ resource "kubernetes_storage_class_v1" "nfs" {
     "noatime",
     "nodiratime"
   ]
-  depends_on    = [helm_release.csi_driver_nfs]
+  depends_on = [helm_release.csi_driver_nfs]
 }
