@@ -2,7 +2,7 @@ resource "helm_release" "crossplane" {
   name             = "crossplane"
   repository       = "https://charts.crossplane.io/stable"
   chart            = "crossplane"
-  version          = "2.2.0"
+  version          = "2.1.4"
   namespace        = "crossplane-system"
   create_namespace = true
 }
