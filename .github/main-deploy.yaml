@@ -1,0 +1,71 @@
+name: "Orchestrator: Homelab Deploy"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "00-global/**"
+      - "01-network/**"
+      - "02-infrastructure/**"
+      - "03-services/**"
+      - ".github/workflows/**"
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      global: ${{ steps.filter.outputs.global }}
+      network: ${{ steps.filter.outputs.network }}
+      infra: ${{ steps.filter.outputs.infra }}
+      services: ${{ steps.filter.outputs.services }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            global:
+              - '00-global/**'
+            network:
+              - '01-network/**'
+            infra:
+              - '02-infrastructure/**'
+            services:
+              - '03-services/**'
+
+  deploy-global:
+    needs: changes
+    if: needs.changes.outputs.global == 'true'
+    uses: ./.github/workflows/00-global.yaml
+    secrets: inherit
+
+  deploy-network:
+    needs: [changes, deploy-global]
+    if: |
+      always() && 
+      (needs.changes.outputs.network == 'true') && 
+      (needs.deploy-global.result == 'success' || needs.deploy-global.result == 'skipped')
+    uses: ./.github/workflows/01-network.yaml
+    secrets: inherit
+
+  deploy-infra:
+    needs: [changes, deploy-network]
+    if: |
+      always() && 
+      (needs.changes.outputs.infra == 'true') && 
+      (needs.deploy-network.result == 'success' || needs.deploy-network.result == 'skipped')
+    uses: ./.github/workflows/02-infrastructure.yaml
+    secrets: inherit
+
+  deploy-services:
+    needs: [changes, deploy-infra]
+    if: |
+      always() && 
+      (needs.changes.outputs.services == 'true') && 
+      (needs.deploy-infra.result == 'success' || needs.deploy-infra.result == 'skipped')
+    uses: ./.github/workflows/03-services.yaml
+    secrets: inherit

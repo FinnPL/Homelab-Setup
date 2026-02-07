@@ -1,15 +1,7 @@
 name: "Terraform: 01-network"
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "01-network/**"
-      - ".github/workflows/01-network.yaml"
-  pull_request:
-    paths:
-      - "01-network/**"
+  workflow_call:
   workflow_dispatch:
     inputs:
       apply:
