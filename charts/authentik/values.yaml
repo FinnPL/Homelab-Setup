@@ -1,0 +1,79 @@
+authentik:
+  nameOverride: authentik
+  
+  # For testing only, will be handled by HC Vault once deployed
+  secret_key: "qOidwAXE/T4L0DuUq3WEe2ECZ/WWMadCMOjq3UD6cHg="
+  
+  error_reporting:
+    enabled: true
+  postgresql:
+    enabled: true
+  redis:
+    enabled: true
+
+redis:
+  architecture: standalone
+  master:
+    persistence:
+      enabled: false
+    extraVolumes:
+      - name: redis-ram-data
+        emptyDir:
+          medium: Memory
+          sizeLimit: 1Gi
+    extraVolumeMounts:
+      - name: redis-ram-data
+        mountPath: /bitnami/redis/data
+
+postgresql:
+  enabled: false
+
+server:
+  env:
+    - name: AUTHENTIK_POSTGRESQL__HOST
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: endpoint
+    - name: AUTHENTIK_POSTGRESQL__PORT
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: port
+    - name: AUTHENTIK_POSTGRESQL__USER
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: username
+    - name: AUTHENTIK_POSTGRESQL__PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: password
+    - name: AUTHENTIK_POSTGRESQL__NAME
+      value: "authentik-db"
+
+worker:
+  env:
+    - name: AUTHENTIK_POSTGRESQL__HOST
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: endpoint
+    - name: AUTHENTIK_POSTGRESQL__PORT
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: port
+    - name: AUTHENTIK_POSTGRESQL__USER
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: username
+    - name: AUTHENTIK_POSTGRESQL__PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: password
+    - name: AUTHENTIK_POSTGRESQL__NAME
+      value: "authentik-db"

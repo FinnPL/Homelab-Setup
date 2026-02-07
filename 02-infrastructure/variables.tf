@@ -71,7 +71,7 @@ variable "windows_vm_config" {
     vmid      = 100
     name      = "windows-server-2025"
     cores     = 4
-    memory    = 8192
+    memory    = 4096
     disk_size = 100
   }
 }
@@ -127,7 +127,7 @@ variable "talos_controlplane_config" {
     name      = "talos-controlplane"
     cores     = 4
     memory    = 4096
-    disk_size = 50
+    disk_size = 20
   }
 }
 
@@ -178,7 +178,7 @@ variable "github_runner_config" {
     vmid      = 310
     name      = "github-runner-01"
     cores     = 2
-    memory    = 4096
+    memory    = 2048
     disk_size = 40
   }
 }
@@ -246,6 +246,36 @@ variable "nfs_hdd_storage" {
 
 variable "nfs_root_password" {
   description = "Root password for the NFS LXC container"
+  type        = string
+  sensitive   = true
+}
+
+variable "postgres_server_config" {
+  description = "Postgres LXC container configuration"
+  type = object({
+    vmid      = number
+    name      = string
+    cores     = number
+    memory    = number
+    disk_size = number
+  })
+  default = {
+    vmid      = 410
+    name      = "postgres-db"
+    cores     = 2
+    memory    = 2048
+    disk_size = 10
+  }
+}
+
+variable "postgres_root_password" {
+  description = "Root password for the Postgres LXC OS"
+  type        = string
+  sensitive   = true
+}
+
+variable "postgres_admin_password" {
+  description = "Password for the database superuser"
   type        = string
   sensitive   = true
 }

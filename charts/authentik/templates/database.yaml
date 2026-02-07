@@ -1,0 +1,39 @@
+apiVersion: postgresql.sql.crossplane.io/v1alpha1
+kind: Database
+metadata:
+  name: authentik-db
+spec:
+  forProvider:
+    encoding: UTF8
+  providerConfigRef:
+    name: default
+---
+apiVersion: postgresql.sql.crossplane.io/v1alpha1
+kind: Role
+metadata:
+  name: authentik-user
+spec:
+  forProvider:
+    privileges:
+      LOGIN: true
+      CREATEDB: true
+  writeConnectionSecretToRef:
+    name: authentik-db-conn
+    namespace: {{ .Release.Namespace }}
+  providerConfigRef:
+    name: default
+---
+apiVersion: postgresql.sql.crossplane.io/v1alpha1
+kind: Grant
+metadata:
+  name: authentik-grant
+spec:
+  forProvider:
+    privileges:
+      - ALL
+    roleRef:
+      name: authentik-user
+    databaseRef:
+      name: authentik-db
+  providerConfigRef:
+    name: default

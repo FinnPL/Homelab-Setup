@@ -8,7 +8,6 @@ resource "proxmox_virtual_environment_cluster_firewall" "main" {
 locals {
   nfs_client_ips = concat(
     [
-      "10.10.1.41",          # tf-Pi4 REMOVE AFTER SWITCHING
       local.proxmox_host_ip, # nuc
       local.talos_controlplane_ip
     ],

@@ -1,15 +1,11 @@
 name: "Terraform: 03-services"
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "03-services/**"
-      - ".github/workflows/03-services.yaml"
+  workflow_call:
   pull_request:
     paths:
       - "03-services/**"
+      - ".github/workflows/03-services.yaml"
   workflow_dispatch:
     inputs:
       apply:
