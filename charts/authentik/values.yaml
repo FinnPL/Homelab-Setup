@@ -26,9 +26,54 @@ redis:
         mountPath: /bitnami/redis/data
 
 postgresql:
-  architecture: standalone
-  primary:
-    persistence:
-      enabled: true
-      storageClass: "nfs-client"
-      size: 10Gi
+  enabled: false
+
+server:
+  env:
+    - name: AUTHENTIK_POSTGRESQL__HOST
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: endpoint
+    - name: AUTHENTIK_POSTGRESQL__PORT
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: port
+    - name: AUTHENTIK_POSTGRESQL__USER
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: username
+    - name: AUTHENTIK_POSTGRESQL__PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: password
+    - name: AUTHENTIK_POSTGRESQL__NAME
+      value: "authentik-db"
+
+worker:
+  env:
+    - name: AUTHENTIK_POSTGRESQL__HOST
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: endpoint
+    - name: AUTHENTIK_POSTGRESQL__PORT
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: port
+    - name: AUTHENTIK_POSTGRESQL__USER
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: username
+    - name: AUTHENTIK_POSTGRESQL__PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: authentik-db-conn
+          key: password
+    - name: AUTHENTIK_POSTGRESQL__NAME
+      value: "authentik-db"
