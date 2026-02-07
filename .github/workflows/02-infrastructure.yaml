@@ -2,6 +2,10 @@ name: "Terraform: 02-infrastructure"
 
 on:
   workflow_call:
+  pull_request:
+    paths:
+      - "02-infrastructure/**"
+      - ".github/workflows/02-infrastructure.yaml"
   workflow_dispatch:
     inputs:
       apply:

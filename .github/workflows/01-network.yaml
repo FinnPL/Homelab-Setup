@@ -2,6 +2,10 @@ name: "Terraform: 01-network"
 
 on:
   workflow_call:
+  pull_request:
+    paths:
+      - "01-network/**"
+      - ".github/workflows/01-network.yaml"
   workflow_dispatch:
     inputs:
       apply:

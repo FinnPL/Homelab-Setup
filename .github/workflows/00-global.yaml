@@ -2,6 +2,10 @@ name: "Terraform: 00-global"
 
 on:
   workflow_call:
+  pull_request:
+    paths:
+      - "00-global/**"
+      - ".github/workflows/00-global.yaml"
 
 permissions:
   contents: read
