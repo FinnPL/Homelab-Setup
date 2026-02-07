@@ -10,7 +10,10 @@ on:
       - "02-infrastructure/**"
       - "03-services/**"
       - ".github/workflows/**"
-
+permissions:
+  contents: read
+  pull-requests: write
+  
 jobs:
   changes:
     runs-on: ubuntu-latest
