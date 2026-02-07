@@ -28,7 +28,6 @@ resource "proxmox_virtual_environment_container" "postgres_server" {
   network_interface {
     name        = "eth0"
     bridge      = var.proxmox_bridge
-    firewall    = true
     mac_address = local.host_vm_macs.postgres_server
   }
 
