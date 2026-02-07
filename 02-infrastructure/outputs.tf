@@ -29,3 +29,12 @@ output "nfs_server" {
     storage_size = var.nfs_server_config.data_disk_size
   }
 }
+
+output "postgres_server" {
+  description = "Connection details for the shared Postgres server"
+  value = {
+    ip       = local.postgres_server_ip
+    password = var.postgres_admin_password
+  }
+  sensitive = true
+}
