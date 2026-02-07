@@ -44,6 +44,8 @@ jobs:
       TF_VAR_github_pat: ${{ secrets.GH_PAT }}
       # NFS
       TF_VAR_nfs_root_password: ${{ secrets.NFS_ROOT_PASSWORD }}
+      TF_VAR_postgres_root_password: ${{ secrets.POSTGRES_ROOT_PASSWORD }}
+      TF_VAR_postgres_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
 
     steps:
       - name: Checkout Code
