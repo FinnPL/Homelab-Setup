@@ -20,5 +20,5 @@ variable "crossplane_provider_sql_version" {
   description = "Version of the Crossplane SQL Provider"
   type        = string
   # renovate: datasource=docker depName=xpkg.upbound.io/crossplane-contrib/provider-sql
-  default     = "v0.13.0"
+  default = "v0.13.0"
 }

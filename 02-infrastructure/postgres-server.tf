@@ -53,13 +53,13 @@ resource "proxmox_virtual_environment_container" "postgres_server" {
       "set -e",
       "apt-get update",
       "apt-get install -y postgresql postgresql-contrib",
-      
+
       "sed -i \"s/#listen_addresses = 'localhost'/listen_addresses = '*' /\" /etc/postgresql/*/main/postgresql.conf",
 
       "echo 'host  all  all  ${local.athena_subnet}  scram-sha-256' >> /etc/postgresql/*/main/pg_hba.conf",
-      
+
       "systemctl restart postgresql",
-      
+
       "sudo -u postgres psql -c \"ALTER USER postgres PASSWORD '${var.postgres_admin_password}';\""
     ]
 
