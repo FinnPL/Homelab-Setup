@@ -58,7 +58,17 @@ resource "proxmox_virtual_environment_container" "postgres_server" {
     inline = [
       "set -e",
       "exec > /tmp/terraform_debug.log 2>&1",
+
       "apt-get update",
+      "apt-get install -y locales",
+      "echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen",
+      "echo 'de_DE.UTF-8 UTF-8' >> /etc/locale.gen",
+      "locale-gen",
+
+      "export LANG=en_US.UTF-8",
+      "export LC_ALL=en_US.UTF-8",
+      "update-locale LANG=en_US.UTF-8",
+
       "apt-get install -y postgresql postgresql-contrib sudo",
 
       "sed -i \"s/#listen_addresses = 'localhost'/listen_addresses = '*' /\" /etc/postgresql/*/main/postgresql.conf",
