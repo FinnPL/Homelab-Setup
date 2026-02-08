@@ -5,6 +5,7 @@ metadata:
 spec:
   forProvider:
     encoding: UTF8
+    owner: authentik-user
   providerConfigRef:
     name: default
 ---
