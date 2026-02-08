@@ -7,7 +7,7 @@ authentik:
   error_reporting:
     enabled: true
   postgresql:
-    enabled: true
+    enabled: false
   redis:
     enabled: true
 
