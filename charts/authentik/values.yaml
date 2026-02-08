@@ -9,23 +9,10 @@ authentik:
   postgresql:
     enabled: false
 
-  redis:
-    enabled: true
-    architecture: standalone
-    master:
-      persistence:
-        enabled: false
-      extraVolumes:
-        - name: redis-ram-data
-          emptyDir:
-            medium: Memory
-            sizeLimit: 1Gi
-      extraVolumeMounts:
-        - name: redis-ram-data
-          mountPath: /bitnami/redis/data
-
   server:
     env:
+      - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
+        value: "600"
       - name: AUTHENTIK_SECRET_KEY
         valueFrom:
           secretKeyRef:
@@ -56,6 +43,8 @@ authentik:
 
   worker:
     env:
+      - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
+        value: "600"
       - name: AUTHENTIK_SECRET_KEY
         valueFrom:
           secretKeyRef:
