@@ -30,7 +30,7 @@ authentik:
         valueFrom:
           secretKeyRef:
             name: authentik
-            key: secret_key
+            key: AUTHENTIK_SECRET_KEY
       - name: AUTHENTIK_POSTGRESQL__HOST
         valueFrom:
           secretKeyRef:
@@ -60,7 +60,7 @@ authentik:
         valueFrom:
           secretKeyRef:
             name: authentik
-            key: secret_key
+            key: AUTHENTIK_SECRET_KEY
       - name: AUTHENTIK_POSTGRESQL__HOST
         valueFrom:
           secretKeyRef:
