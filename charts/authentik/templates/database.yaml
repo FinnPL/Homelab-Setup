@@ -15,8 +15,8 @@ metadata:
 spec:
   forProvider:
     privileges:
-      LOGIN: true
-      CREATEDB: true
+      login: true
+      createDb: true
   writeConnectionSecretToRef:
     name: authentik-db-conn
     namespace: {{ .Release.Namespace }}
