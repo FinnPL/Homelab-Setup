@@ -57,6 +57,7 @@ resource "proxmox_virtual_environment_container" "postgres_server" {
   provisioner "remote-exec" {
     inline = [
       "set -e",
+      "exec > /tmp/terraform_debug.log 2>&1",
       "apt-get update",
       "apt-get install -y postgresql postgresql-contrib",
 
