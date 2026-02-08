@@ -6,6 +6,13 @@ resource "proxmox_virtual_environment_container" "postgres_server" {
 
   initialization {
     hostname = var.postgres_server_config.name
+
+    ip_config {
+      ipv4 {
+        address = "dhcp"
+      }
+    }
+
     user_account {
       password = var.postgres_root_password
       keys     = [file(pathexpand(var.github_runner_ssh_public_key_path))]
