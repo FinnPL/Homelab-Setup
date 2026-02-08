@@ -59,7 +59,7 @@ resource "proxmox_virtual_environment_container" "postgres_server" {
       "set -e",
       "exec > /tmp/terraform_debug.log 2>&1",
       "apt-get update",
-      "apt-get install -y postgresql postgresql-contrib",
+      "apt-get install -y postgresql postgresql-contrib sudo",
 
       "sed -i \"s/#listen_addresses = 'localhost'/listen_addresses = '*' /\" /etc/postgresql/*/main/postgresql.conf",
 
