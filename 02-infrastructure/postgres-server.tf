@@ -63,7 +63,7 @@ resource "proxmox_virtual_environment_container" "postgres_server" {
 
       "sed -i \"s/#listen_addresses = 'localhost'/listen_addresses = '*' /\" /etc/postgresql/*/main/postgresql.conf",
 
-      "echo 'host  all  all  ${local.athena_subnet}  scram-sha-256' >> /etc/postgresql/*/main/pg_hba.conf",
+      "echo 'host  all  all  ${local.athena_subnet}  scram-sha-256' | tee -a /etc/postgresql/*/main/pg_hba.conf",
 
       "systemctl restart postgresql",
 
