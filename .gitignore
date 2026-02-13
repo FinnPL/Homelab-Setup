@@ -49,3 +49,6 @@ Desktop.ini
 .terraform/
 
 kubeconfig.yaml
+kubeconfig
+talosconfig.yaml
+talosconfig
