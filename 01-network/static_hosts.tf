@@ -105,3 +105,12 @@ resource "unifi_user" "tf_postgres_server" {
   network_id       = unifi_network.tf_vlan_athena.id
   note             = "Managed by Terraform"
 }
+
+resource "unifi_user" "tf_vault_server" {
+  mac              = var.host_vm_macs["vault_server"]
+  name             = "tf-Vault-Server"
+  fixed_ip         = "10.10.1.90"
+  local_dns_record = "vault.athena"
+  network_id       = unifi_network.tf_vlan_athena.id
+  note             = "Managed by Terraform"
+}
