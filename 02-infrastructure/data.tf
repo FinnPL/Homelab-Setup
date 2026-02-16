@@ -27,6 +27,7 @@ locals {
   github_runner_ip      = lookup(local.host_ips, "github_runner", null)
   nfs_server_ip         = lookup(local.host_ips, "nfs_server", null)
   postgres_server_ip    = lookup(local.host_ips, "postgres_server", "10.10.1.85")
+  vault_server_ip       = lookup(local.host_ips, "vault_server", "10.10.1.90")
 
   talos_worker_ips = [for v in [
     try(local.host_ips.talos_worker_1, null),
@@ -41,4 +42,5 @@ locals {
   windows_server_mac     = try(local.host_vm_macs.windows_server, null)
   github_runner_mac      = try(local.host_vm_macs.github_runner, null)
   nfs_server_mac         = try(local.host_vm_macs.nfs_server, null)
+  vault_server_mac       = try(local.host_vm_macs.vault_server, null)
 }

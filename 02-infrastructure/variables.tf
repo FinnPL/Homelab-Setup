@@ -39,6 +39,16 @@ variable "proxmox_bridge" {
 }
 
 # =============================================================================
+# AWS Configuration
+# =============================================================================
+
+variable "aws_region" {
+  description = "AWS region for infrastructure resources (Vault auto-unseal KMS key)"
+  type        = string
+  default     = "eu-central-1"
+}
+
+# =============================================================================
 # Storage Configuration
 # =============================================================================
 
@@ -250,6 +260,10 @@ variable "nfs_root_password" {
   sensitive   = true
 }
 
+# =============================================================================
+# Postgres Server Configuration
+# =============================================================================
+
 variable "postgres_server_config" {
   description = "Postgres LXC container configuration"
   type = object({
@@ -278,4 +292,44 @@ variable "postgres_admin_password" {
   description = "Password for the database superuser"
   type        = string
   sensitive   = true
+}
+
+# =============================================================================
+# Vault Server Configuration
+# =============================================================================
+
+variable "vault_server_config" {
+  description = "HashiCorp Vault LXC configuration"
+  type = object({
+    vmid      = number
+    name      = string
+    cores     = number
+    memory    = number
+    disk_size = number
+  })
+  default = {
+    vmid      = 420
+    name      = "vault"
+    cores     = 2
+    memory    = 2048
+    disk_size = 10
+  }
+}
+
+variable "vault_root_password" {
+  description = "Root password for the Vault LXC"
+  type        = string
+  sensitive   = true
+}
+
+variable "vault_auto_unseal_kms_alias" {
+  description = "AWS KMS alias used for Vault auto-unseal"
+  type        = string
+  default     = "alias/homelab-vault-auto-unseal"
+}
+
+variable "vault_auto_unseal_iam_user_name" {
+  description = "IAM user name used by Vault for AWS KMS auto-unseal"
+  type        = string
+  default     = "vault-auto-unseal"
 }

@@ -38,3 +38,12 @@ output "postgres_server" {
   }
   sensitive = true
 }
+
+output "vault_server" {
+  description = "HashiCorp Vault server details"
+  value = {
+    ip       = local.vault_server_ip
+    ui_url   = "http://${local.vault_server_ip}:8200"
+    api_addr = "http://${local.vault_server_ip}:8200"
+  }
+}

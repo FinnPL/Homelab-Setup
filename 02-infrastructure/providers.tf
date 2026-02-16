@@ -6,6 +6,10 @@ terraform {
       source  = "bpg/proxmox"
       version = "0.93.1"
     }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
     github = {
       source  = "integrations/github"
       version = "6.10"
@@ -22,6 +26,10 @@ terraform {
 }
 
 provider "talos" {}
+
+provider "aws" {
+  region = var.aws_region
+}
 
 provider "github" {
   token = var.github_pat
