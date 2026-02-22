@@ -4,55 +4,115 @@ resource "kubernetes_namespace_v1" "vault" {
   }
 }
 
-resource "kubectl_manifest" "vault_service" {
+resource "kubernetes_service_v1" "vault_external" {
+  metadata {
+    name      = "vault-external"
+    namespace = kubernetes_namespace_v1.vault.metadata[0].name
+  }
+  spec {
+    type = "ClusterIP"
+    port {
+      name        = "https"
+      protocol    = "TCP"
+      port        = 8200
+      target_port = 8200
+      app_protocol = "https"
+    }
+  }
+}
+
+resource "kubernetes_endpoints_v1" "vault_external" {
+  metadata {
+    name      = kubernetes_service_v1.vault_external.metadata[0].name
+    namespace = kubernetes_namespace_v1.vault.metadata[0].name
+  }
+  subset {
+    address {
+      ip = data.terraform_remote_state.infrastructure.outputs.vault_server.ip
+    }
+    port {
+      name     = "https"
+      port     = 8200
+      protocol = "TCP"
+    }
+  }
+}
+
+resource "kubernetes_config_map_v1" "vault_backend_ca" {
+  metadata {
+    name      = "vault-backend-ca"
+    namespace = kubernetes_namespace_v1.vault.metadata[0].name
+  }
+  data = {
+    "ca.crt" = data.terraform_remote_state.infrastructure.outputs.vault_server.ca_cert
+  }
+}
+
+resource "kubectl_manifest" "vault_backend_tls_policy" {
   yaml_body = yamlencode({
-    apiVersion = "v1"
-    kind       = "Service"
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind       = "BackendTLSPolicy"
     metadata = {
-      name      = "vault-external"
+      name      = "vault-external-tls"
       namespace = kubernetes_namespace_v1.vault.metadata[0].name
     }
     spec = {
-      type = "ClusterIP"
-      ports = [
+      targetRefs = [
         {
-          name       = "http"
-          protocol   = "TCP"
-          port       = 8200
-          targetPort = 8200
+          group       = ""
+          kind        = "Service"
+          name        = kubernetes_service_v1.vault_external.metadata[0].name
+          sectionName = "https"
+        }
+      ]
+      validation = {
+        hostname = "vault.lippok.dev"
+        caCertificateRefs = [
+          {
+            group = ""
+            kind  = "ConfigMap"
+            name  = kubernetes_config_map_v1.vault_backend_ca.metadata[0].name
+          }
+        ]
+      }
+    }
+  })
+
+  depends_on = [
+    kubectl_manifest.gateway_api_crds
+  ]
+}
+
+resource "kubectl_manifest" "vault_httproute" {
+  yaml_body = yamlencode({
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind       = "HTTPRoute"
+    metadata = {
+      name      = "vault"
+      namespace = kubernetes_namespace_v1.vault.metadata[0].name
+    }
+    spec = {
+      parentRefs = [
+        {
+          name      = "main-gateway"
+          namespace = "gateway"
+        }
+      ]
+      hostnames = ["vault.lippok.dev"]
+      rules = [
+        {
+          backendRefs = [
+            {
+              name = kubernetes_service_v1.vault_external.metadata[0].name
+              port = 8200
+            }
+          ]
         }
       ]
     }
   })
 
-  depends_on = [kubernetes_namespace_v1.vault]
-}
-
-resource "kubectl_manifest" "vault_endpoints" {
-  yaml_body = yamlencode({
-    apiVersion = "v1"
-    kind       = "Endpoints"
-    metadata = {
-      name      = "vault-external"
-      namespace = kubernetes_namespace_v1.vault.metadata[0].name
-    }
-    subsets = [
-      {
-        addresses = [
-          {
-            ip = data.terraform_remote_state.infrastructure.outputs.vault_server.ip
-          }
-        ]
-        ports = [
-          {
-            name     = "http"
-            port     = 8200
-            protocol = "TCP"
-          }
-        ]
-      }
-    ]
-  })
-
-  depends_on = [kubectl_manifest.vault_service]
+  depends_on = [
+    kubectl_manifest.gateway_api_crds
+  ]
 }

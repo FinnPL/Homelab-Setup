@@ -22,6 +22,10 @@ terraform {
       source  = "hashicorp/local"
       version = "2.6"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "4.0.6"
+    }
   }
 }
 
