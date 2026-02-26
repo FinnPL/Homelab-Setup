@@ -8,7 +8,7 @@ terraform {
     }
     github = {
       source  = "integrations/github"
-      version = "6.10"
+      version = "6.11"
     }
     talos = {
       source  = "siderolabs/talos"
@@ -16,7 +16,7 @@ terraform {
     }
     local = {
       source  = "hashicorp/local"
-      version = "2.6"
+      version = "2.7"
     }
   }
 }
