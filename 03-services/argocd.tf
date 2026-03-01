@@ -4,6 +4,16 @@ resource "kubernetes_namespace_v1" "argocd" {
   }
 }
 
+locals {
+  argocd_oidc_config = yamlencode({
+    name            = "Authentik"
+    issuer          = "https://auth.lippok.dev/application/o/argocd/"
+    clientID        = "argocd"
+    clientSecret    = "$oidc.authentik.clientSecret"
+    requestedScopes = ["openid", "profile", "email", "groups"]
+  })
+}
+
 resource "helm_release" "argocd" {
   name       = "argocd"
   repository = "https://argoproj.github.io/argo-helm"
@@ -22,7 +32,13 @@ resource "helm_release" "argocd" {
           "server.insecure" = "true"
         }
         cm = {
-          "url" = "https://argocd.lippok.dev"
+          "url"         = "https://argocd.lippok.dev"
+          "oidc.config" = local.argocd_oidc_config
+        }
+        rbac = {
+          "policy.csv"     = "g, authentik-admins, role:admin"
+          "policy.default" = "role:readonly"
+          "scopes"         = "[groups]"
         }
       }
       redis = {

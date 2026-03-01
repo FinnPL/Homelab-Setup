@@ -43,6 +43,11 @@ authentik:
             key: password
       - name: AUTHENTIK_POSTGRESQL__NAME
         value: "authentik-db"
+      - name: AUTHENTIK_ARGOCD_OIDC_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: authentik-secrets
+            key: argocd-oidc-client-secret
 
   worker:
     env:
@@ -75,3 +80,8 @@ authentik:
             key: password
       - name: AUTHENTIK_POSTGRESQL__NAME
         value: "authentik-db"
+      - name: AUTHENTIK_ARGOCD_OIDC_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: authentik-secrets
+            key: argocd-oidc-client-secret

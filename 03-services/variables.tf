@@ -30,3 +30,9 @@ variable "authentik_secret_key" {
   type        = string
   sensitive   = true
 }
+
+variable "argocd_oidc_client_secret" {
+  description = "OIDC client secret shared between Authentik and ArgoCD"
+  type        = string
+  sensitive   = true
+}

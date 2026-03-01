@@ -132,3 +132,17 @@ resource "kubernetes_secret_v1" "seed_authentik_config" {
     "secret-key" = var.authentik_secret_key
   }
 }
+
+resource "kubernetes_secret_v1" "seed_argocd_oidc" {
+  metadata {
+    name      = "argocd-oidc"
+    namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+    }
+  }
+
+  data = {
+    "client-secret" = var.argocd_oidc_client_secret
+  }
+}
