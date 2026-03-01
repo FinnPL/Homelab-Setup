@@ -22,3 +22,11 @@ variable "crossplane_provider_sql_version" {
   # renovate: datasource=docker depName=xpkg.upbound.io/crossplane-contrib/provider-sql
   default = "v0.13.0"
 }
+
+# Temporary Secrets until Vault is deployed:
+
+variable "authentik_secret_key" {
+  description = "Authentik secret key for session signing"
+  type        = string
+  sensitive   = true
+}
