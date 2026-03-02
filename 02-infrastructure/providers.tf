@@ -4,7 +4,7 @@ terraform {
   required_providers {
     proxmox = {
       source  = "bpg/proxmox"
-      version = "0.93.1"
+      version = "0.97.1"
     }
     github = {
       source  = "integrations/github"
