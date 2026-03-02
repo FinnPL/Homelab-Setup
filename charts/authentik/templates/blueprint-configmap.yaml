@@ -31,7 +31,7 @@ data:
           authorization_flow: !Find [authentik_flows.flow, [slug, default-provider-authorization-explicit-consent]]
           client_type: confidential
           client_id: argocd
-          client_secret: !Env [AUTHENTIK_ARGOCD_OIDC_SECRET]
+          client_secret: !Env AUTHENTIK_ARGOCD_OIDC_SECRET
           redirect_uris: |-
             https://argocd.lippok.dev/auth/callback
             http://localhost:8085/auth/callback
