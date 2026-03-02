@@ -2,10 +2,13 @@ authentik:
   nameOverride: authentik
   
   authentik:
-    secret_key: "qOidwAXE/T4L0DuUq3WEe2ECZ/WWMadCMOjq3UD6cHg=" # For testing only, will be handled by HC Vault once deployed
     error_reporting:
       enabled: true
-  
+
+  blueprints:
+    configMaps:
+      - authentik-custom-blueprints
+
   postgresql:
     enabled: false
 
@@ -16,8 +19,8 @@ authentik:
       - name: AUTHENTIK_SECRET_KEY
         valueFrom:
           secretKeyRef:
-            name: authentik
-            key: AUTHENTIK_SECRET_KEY
+            name: authentik-secrets
+            key: secret-key
       - name: AUTHENTIK_POSTGRESQL__HOST
         valueFrom:
           secretKeyRef:
@@ -40,6 +43,11 @@ authentik:
             key: password
       - name: AUTHENTIK_POSTGRESQL__NAME
         value: "authentik-db"
+      - name: AUTHENTIK_ARGOCD_OIDC_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: authentik-secrets
+            key: argocd-oidc-client-secret
 
   worker:
     env:
@@ -48,8 +56,8 @@ authentik:
       - name: AUTHENTIK_SECRET_KEY
         valueFrom:
           secretKeyRef:
-            name: authentik
-            key: AUTHENTIK_SECRET_KEY
+            name: authentik-secrets
+            key: secret-key
       - name: AUTHENTIK_POSTGRESQL__HOST
         valueFrom:
           secretKeyRef:
@@ -72,3 +80,8 @@ authentik:
             key: password
       - name: AUTHENTIK_POSTGRESQL__NAME
         value: "authentik-db"
+      - name: AUTHENTIK_ARGOCD_OIDC_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: authentik-secrets
+            key: argocd-oidc-client-secret

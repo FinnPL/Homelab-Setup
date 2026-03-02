@@ -31,6 +31,8 @@ jobs:
       TF_INPUT: "false"
       TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       TF_VAR_acme_email: ${{ vars.ACME_EMAIL }}
+      TF_VAR_authentik_secret_key: ${{ secrets.AUTHENTIK_SECRET_KEY }}
+      TF_VAR_argocd_oidc_client_secret: ${{ secrets.ARGOCD_OIDC_CLIENT_SECRET }}
 
     steps:
       - name: Checkout Code
