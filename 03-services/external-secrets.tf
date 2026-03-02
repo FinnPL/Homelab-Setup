@@ -41,6 +41,13 @@ resource "kubernetes_namespace_v1" "secret_store" {
   }
 }
 
+resource "kubernetes_service_account_v1" "eso_store_reader" {
+  metadata {
+    name      = "eso-store-reader"
+    namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+  }
+}
+
 resource "kubernetes_role_v1" "eso_secret_reader" {
   metadata {
     name      = "eso-secret-reader"
@@ -68,6 +75,39 @@ resource "kubernetes_role_binding_v1" "eso_secret_reader" {
 
   subject {
     kind      = "ServiceAccount"
+    name      = kubernetes_service_account_v1.eso_store_reader.metadata[0].name
+    namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+  }
+}
+
+resource "kubernetes_role_v1" "eso_token_requester" {
+  metadata {
+    name      = "eso-token-requester"
+    namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+  }
+
+  rule {
+    api_groups     = [""]
+    resources      = ["serviceaccounts/token"]
+    resource_names = [kubernetes_service_account_v1.eso_store_reader.metadata[0].name]
+    verbs          = ["create"]
+  }
+}
+
+resource "kubernetes_role_binding_v1" "eso_token_requester" {
+  metadata {
+    name      = "eso-token-requester"
+    namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "Role"
+    name      = kubernetes_role_v1.eso_token_requester.metadata[0].name
+  }
+
+  subject {
+    kind      = "ServiceAccount"
     name      = "external-secrets"
     namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
   }
@@ -87,6 +127,21 @@ resource "kubectl_manifest" "cluster_secret_store" {
       provider = {
         kubernetes = {
           remoteNamespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+          server = {
+            url = "https://kubernetes.default.svc"
+            caProvider = {
+              type      = "ConfigMap"
+              name      = "kube-root-ca.crt"
+              key       = "ca.crt"
+              namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
+            }
+          }
+          auth = {
+            serviceAccount = {
+              name      = kubernetes_service_account_v1.eso_store_reader.metadata[0].name
+              namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+            }
+          }
         }
       }
     }
