@@ -87,6 +87,15 @@ resource "kubectl_manifest" "cluster_secret_store" {
       provider = {
         kubernetes = {
           remoteNamespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+          server = {
+            url = "https://kubernetes.default.svc"
+            caProvider = {
+              type      = "ConfigMap"
+              name      = "kube-root-ca.crt"
+              key       = "ca.crt"
+              namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
+            }
+          }
         }
       }
     }
