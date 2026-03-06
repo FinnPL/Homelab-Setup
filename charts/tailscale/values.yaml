@@ -1,0 +1,6 @@
+tailscale-operator:
+  operatorConfig:
+    hostname: tailscale-operator
+    logging: info
+    defaultTags:
+      - "tag:k8s"
