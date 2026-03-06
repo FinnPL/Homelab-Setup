@@ -16,7 +16,7 @@ resource "helm_release" "external_secrets" {
   name       = "external-secrets"
   repository = "https://charts.external-secrets.io"
   chart      = "external-secrets"
-  version    = "0.14.3"
+  version    = "2.0.1"
   namespace  = kubernetes_namespace_v1.external_secrets.metadata[0].name
   timeout    = 600
 
@@ -118,7 +118,7 @@ resource "kubernetes_role_binding_v1" "eso_token_requester" {
 
 resource "kubectl_manifest" "cluster_secret_store" {
   yaml_body = yamlencode({
-    apiVersion = "external-secrets.io/v1beta1"
+    apiVersion = "external-secrets.io/v1"
     kind       = "ClusterSecretStore"
     metadata = {
       name = "cluster-secret-store"
