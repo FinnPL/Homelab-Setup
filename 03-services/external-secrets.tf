@@ -179,3 +179,18 @@ resource "kubernetes_secret_v1" "seed_argocd_oidc" {
     "client-secret" = var.argocd_oidc_client_secret
   }
 }
+
+resource "kubernetes_secret_v1" "seed_tailscale_oauth" {
+  metadata {
+    name      = "tailscale-oauth"
+    namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+    }
+  }
+
+  data = {
+    "oauth-client-id" = var.tailscale_oauth_client_id
+    "oauth-secret"    = var.tailscale_oauth_secret
+  }
+}

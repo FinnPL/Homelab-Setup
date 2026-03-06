@@ -33,6 +33,8 @@ jobs:
       TF_VAR_acme_email: ${{ vars.ACME_EMAIL }}
       TF_VAR_authentik_secret_key: ${{ secrets.AUTHENTIK_SECRET_KEY }}
       TF_VAR_argocd_oidc_client_secret: ${{ secrets.ARGOCD_OIDC_CLIENT_SECRET }}
+      TF_VAR_tailscale_oauth_client_id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+      TF_VAR_tailscale_oauth_secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
 
     steps:
       - name: Checkout Code

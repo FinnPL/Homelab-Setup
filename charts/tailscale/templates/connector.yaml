@@ -1,0 +1,15 @@
+apiVersion: tailscale.com/v1alpha1
+kind: Connector
+metadata:
+  name: tailscale-exit-node
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  tags:
+    - tag:k8s
+  hostname: k8s-exit-node
+  exitNode: true
+  subnetRouter:
+    advertiseRoutes:
+      - 10.10.1.0/24
