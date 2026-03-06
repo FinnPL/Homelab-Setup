@@ -118,7 +118,7 @@ resource "kubernetes_role_binding_v1" "eso_token_requester" {
 
 resource "kubectl_manifest" "cluster_secret_store" {
   yaml_body = yamlencode({
-    apiVersion = "external-secrets.io/v1beta1"
+    apiVersion = "external-secrets.io/v1"
     kind       = "ClusterSecretStore"
     metadata = {
       name = "cluster-secret-store"
