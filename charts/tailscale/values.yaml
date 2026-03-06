@@ -3,4 +3,4 @@ tailscale-operator:
     hostname: tailscale-operator
     logging: info
     defaultTags:
-      - "tag:k8s-operator"
+      - "tag:k8s"
