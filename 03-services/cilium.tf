@@ -37,6 +37,47 @@ resource "helm_release" "cilium" {
           ]
         }
       }
+
+      hubble = {
+        enabled = true
+        relay = {
+          enabled = true
+        }
+        ui = {
+          enabled = true
+        }
+        metrics = {
+          enableOpenMetrics = true
+          enabled = [
+            "dns",
+            "drop",
+            "tcp",
+            "flow",
+            "port-distribution",
+            "icmp",
+            "httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction"
+          ]
+          serviceMonitor = {
+            enabled = false # Enable once Prometheus is set up
+          }
+        }
+      }
+      
+      prometheus = {
+        enabled = true
+        serviceMonitor = {
+          enabled = false # Enable once Prometheus is set up
+        }
+      }
+      
+      operator = {
+        prometheus = {
+          enabled = true
+          serviceMonitor = {
+            enabled = false # Enable once Prometheus is set up
+          }
+        }
+      }
     })
   ]
   depends_on = [kubectl_manifest.gateway_api_crds]
@@ -79,6 +120,44 @@ resource "kubectl_manifest" "cilium_l2_policy" {
   })
 
   depends_on = [helm_release.cilium]
+}
+
+resource "kubectl_manifest" "hubble_ui_http_route" {
+  yaml_body = yamlencode({
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind       = "HTTPRoute"
+    metadata = {
+      name      = "hubble-ui"
+      namespace = "kube-system"
+    }
+    spec = {
+      parentRefs = [
+        {
+          name        = "main-gateway"
+          namespace   = kubernetes_namespace_v1.gateway.metadata[0].name
+          sectionName = "https"
+        }
+      ]
+      hostnames = [
+        "hubble.lippok.dev"
+      ]
+      rules = [
+        {
+          backendRefs = [
+            {
+              name = "hubble-ui"
+              port = 80
+            }
+          ]
+        }
+      ]
+    }
+  })
+
+  depends_on = [
+    helm_release.cilium,
+    kubectl_manifest.main_gateway
+  ]
 }
 
 data "http" "gateway_api_crds" {
