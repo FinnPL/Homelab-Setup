@@ -62,14 +62,14 @@ resource "helm_release" "cilium" {
           }
         }
       }
-      
+
       prometheus = {
         enabled = true
         serviceMonitor = {
           enabled = false # Enable once Prometheus is set up
         }
       }
-      
+
       operator = {
         prometheus = {
           enabled = true
