@@ -19,11 +19,11 @@ data "talos_machine_configuration" "db_worker" {
           "dedicated" = "database"
         }
         taints = [
-            {
-                key    = "dedicated"
-                value  = "database"
-                effect = "NoSchedule"
-            }
+          {
+            key    = "dedicated"
+            value  = "database"
+            effect = "NoSchedule"
+          }
         ]
         features = {
           kubePrism = {
