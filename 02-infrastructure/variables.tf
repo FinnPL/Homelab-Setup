@@ -148,6 +148,24 @@ variable "talos_workers_enabled" {
   default     = [true, true, true, false, false]
 }
 
+variable "talos_db_worker_config" {
+  description = "Dedicated Talos DB worker VM configuration"
+  type = object({
+    vmid      = number
+    name      = string
+    cores     = number
+    memory    = number
+    disk_size = number
+  })
+  default = {
+    vmid      = 206
+    name      = "talos-worker-db"
+    cores     = 2
+    memory    = 5120
+    disk_size = 10
+  }
+}
+
 # =============================================================================
 # NFS Server Configuration
 # =============================================================================
