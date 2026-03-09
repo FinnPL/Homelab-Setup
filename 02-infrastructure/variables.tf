@@ -202,16 +202,15 @@ variable "github_runner_ssh_user" {
   default     = "debian"
 }
 
-variable "github_runner_ssh_public_key_path" {
-  description = "Path to the SSH public key used for cloud-init (authorized_keys)"
+variable "proxmox_ssh_private_key" {
+  description = "Raw SSH private key content for remote-exec"
   type        = string
-  default     = "~/.ssh/id_rsa.pub"
+  sensitive   = true
 }
 
-variable "github_runner_ssh_private_key_path" {
-  description = "Path to the SSH private key used by the remote-exec provisioner"
+variable "proxmox_ssh_public_key" {
+  description = "Raw SSH public key string for authorized_keys"
   type        = string
-  default     = "~/.ssh/id_rsa"
 }
 
 # =============================================================================

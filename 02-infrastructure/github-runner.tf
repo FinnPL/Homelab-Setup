@@ -26,7 +26,7 @@ resource "proxmox_virtual_environment_file" "cloud_init_runner" {
           shell: /bin/bash
           sudo: ['ALL=(ALL) NOPASSWD:ALL']
           ssh_authorized_keys:
-            - ${trimspace(file(pathexpand(var.github_runner_ssh_public_key_path)))}
+            - ${trimspace(var.proxmox_ssh_public_key)}
 
       runcmd:
         - systemctl enable --now qemu-guest-agent
@@ -124,7 +124,7 @@ resource "proxmox_virtual_environment_vm" "github_runner" {
     connection {
       type        = "ssh"
       user        = var.github_runner_ssh_user
-      private_key = file(pathexpand(var.github_runner_ssh_private_key_path))
+      private_key = var.proxmox_ssh_private_key
       host        = local.github_runner_ip
       timeout     = "10m"
     }

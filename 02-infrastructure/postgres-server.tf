@@ -15,7 +15,11 @@ resource "proxmox_virtual_environment_container" "postgres_server" {
 
     user_account {
       password = var.postgres_root_password
-      keys     = [file(pathexpand(var.github_runner_ssh_public_key_path))]
+      keys = [
+        <<-EOT
+        ${trimspace(var.proxmox_ssh_public_key)}
+        EOT
+      ]
     }
   }
 
@@ -83,7 +87,7 @@ resource "proxmox_virtual_environment_container" "postgres_server" {
     connection {
       type        = "ssh"
       user        = "root"
-      private_key = file(pathexpand(var.github_runner_ssh_private_key_path))
+      private_key = var.proxmox_ssh_private_key
       host        = local.postgres_server_ip
       timeout     = "5m"
     }
