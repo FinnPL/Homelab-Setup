@@ -15,7 +15,7 @@ resource "proxmox_virtual_environment_container" "postgres_server" {
 
     user_account {
       password = var.postgres_root_password
-      keys     = [var.proxmox_ssh_public_key]
+      keys     = [trimspace(var.proxmox_ssh_public_key)]
     }
   }
 
