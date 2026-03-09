@@ -193,7 +193,7 @@ variable "github_runner_version" {
   description = "GitHub Actions runner release version"
   type        = string
   # renovate: datasource=github-releases depName=actions/runner versioning=semver extractVersion=^v?(?<version>.*)$
-  default = "2.331.0"
+  default = "2.332.0"
 }
 
 variable "github_runner_ssh_user" {
