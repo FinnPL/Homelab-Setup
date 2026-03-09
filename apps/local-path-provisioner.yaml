@@ -8,9 +8,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/rancher/local-path-provisioner.git
-    targetRevision: v0.0.34
-    path: deploy/chart/local-path-provisioner
+    repoURL: https://charts.rancher.io
+    targetRevision: 0.0.34
+    chart: local-path-provisioner
     helm:
       valuesObject:
         storageClass:
