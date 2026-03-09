@@ -24,8 +24,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: Terraform
     concurrency:
-      group: terraform-network
-      cancel-in-progress: false
+      group: ${{ github.event_name == 'pull_request' && format('terraform-network-pr-{0}', github.event.pull_request.number) || 'terraform-network' }}
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     defaults:
       run:
         working-directory: ./01-network
@@ -79,7 +79,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -out .planfile -input=false
+        run: terraform plan -lock-timeout=10m -out .planfile -input=false
         continue-on-error: true
 
       - name: Comment Terraform Plan
@@ -99,4 +99,4 @@ jobs:
         if: |
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           (github.event_name == 'workflow_dispatch' && inputs.apply == true)
-        run: terraform apply -auto-approve -input=false
+        run: terraform apply -lock-timeout=10m -auto-approve -input=false
