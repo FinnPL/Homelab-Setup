@@ -113,7 +113,7 @@ resource "kubectl_manifest" "cilium_l2_policy" {
       nodeSelector = {
         matchExpressions = [] # Selects all nodes
       }
-      interfaces      = ["eth0", "end0"]
+      interfaces      = ["eth0", "end0", "ens18"]
       externalIPs     = true
       loadBalancerIPs = true
     }
