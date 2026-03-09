@@ -10,7 +10,11 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
     hostname = var.nfs_server_config.name
     user_account {
       password = var.nfs_root_password
-      keys     = [trimspace(var.proxmox_ssh_public_key)]
+      keys = [
+        <<-EOT
+        ${trimspace(var.proxmox_ssh_public_key)}
+        EOT
+      ]
     }
   }
 
