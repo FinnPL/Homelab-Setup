@@ -26,7 +26,7 @@ resource "proxmox_virtual_environment_file" "cloud_init_runner" {
           shell: /bin/bash
           sudo: ['ALL=(ALL) NOPASSWD:ALL']
           ssh_authorized_keys:
-            - ${var.proxmox_ssh_public_key}
+            - ${trimspace(var.proxmox_ssh_public_key)}
 
       runcmd:
         - systemctl enable --now qemu-guest-agent
