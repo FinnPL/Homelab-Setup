@@ -18,8 +18,10 @@ data "talos_machine_configuration" "db_worker" {
         nodeLabels = {
           "dedicated" = "database"
         }
-        nodeTaints = {
-          "dedicated" = "database:NoSchedule"
+        kubelet = {
+          extraArgs = {
+            "register-with-taints" = "dedicated=database:NoSchedule"
+          }
         }
         features = {
           kubePrism = {
