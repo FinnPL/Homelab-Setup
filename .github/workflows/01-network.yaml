@@ -21,8 +21,11 @@ permissions:
 jobs:
   terraform:
     name: "Terraform Network"
-    runs-on: [self-hosted, proxmox, docker]
+    runs-on: ubuntu-latest
     environment: Terraform
+    concurrency:
+      group: terraform-network
+      cancel-in-progress: false
     defaults:
       run:
         working-directory: ./01-network
@@ -37,6 +40,13 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v6
+
+      - name: Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
