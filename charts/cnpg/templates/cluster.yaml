@@ -4,6 +4,7 @@ metadata:
   name: cnpg-cluster
 spec:
   instances: 1
+  enableSuperuserAccess: true
 
   postgresql:
     parameters:
