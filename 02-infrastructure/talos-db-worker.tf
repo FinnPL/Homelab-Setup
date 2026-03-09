@@ -58,7 +58,7 @@ resource "proxmox_virtual_environment_vm" "talos_db_worker" {
   started = true
 
   machine = "q35"
-  bios    = "seabios"
+  bios    = "ovmf"
 
   boot_order = ["scsi0", "ide0"]
 
@@ -70,6 +70,13 @@ resource "proxmox_virtual_environment_vm" "talos_db_worker" {
 
   memory {
     dedicated = var.talos_db_worker_config.memory
+  }
+
+  efi_disk {
+    datastore_id      = var.proxmox_storage
+    file_format       = "raw"
+    type              = "4m"
+    pre_enrolled_keys = false
   }
 
   disk {
