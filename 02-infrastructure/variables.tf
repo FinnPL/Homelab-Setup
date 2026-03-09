@@ -38,6 +38,17 @@ variable "proxmox_bridge" {
   default     = "vmbr0"
 }
 
+variable "proxmox_ssh_private_key" {
+  description = "Raw SSH private key content for remote-exec"
+  type        = string
+  sensitive   = true
+}
+
+variable "proxmox_ssh_public_key" {
+  description = "Raw SSH public key string for authorized_keys"
+  type        = string
+}
+
 # =============================================================================
 # Storage Configuration
 # =============================================================================
@@ -135,82 +146,6 @@ variable "talos_workers_enabled" {
   description = "Enable flags for each worker node (indices 0-4 map to workers 1-5)"
   type        = list(bool)
   default     = [true, true, true, false, false]
-}
-
-# =============================================================================
-# GitHub Actions Runner Configuration
-# =============================================================================
-
-variable "github_pat" {
-  description = "GitHub personal access token (needs repo/admin:org scope for runners)"
-  type        = string
-  sensitive   = true
-}
-
-variable "github_owner" {
-  description = "GitHub user or organization that owns the repository"
-  type        = string
-  default     = "FinnPL"
-}
-
-variable "github_repository" {
-  description = "GitHub repository name to register the runner against"
-  type        = string
-  default     = "Homelab-Setup"
-}
-
-variable "github_runner_template_vmid" {
-  description = "Proxmox VMID of an existing Debian cloud-init template to clone for the runner"
-  type        = number
-  default     = 9000
-}
-
-variable "github_runner_config" {
-  description = "Self-hosted runner VM settings"
-  type = object({
-    vmid      = number
-    name      = string
-    cores     = number
-    memory    = number
-    disk_size = number
-  })
-  default = {
-    vmid      = 310
-    name      = "github-runner-01"
-    cores     = 2
-    memory    = 2048
-    disk_size = 40
-  }
-}
-
-variable "github_runner_labels" {
-  description = "Labels to assign to the GitHub self-hosted runner"
-  type        = list(string)
-  default     = ["proxmox", "docker", "self-hosted"]
-}
-
-variable "github_runner_version" {
-  description = "GitHub Actions runner release version"
-  type        = string
-  # renovate: datasource=github-releases depName=actions/runner versioning=semver extractVersion=^v?(?<version>.*)$
-  default = "2.331.0"
-}
-
-variable "github_runner_ssh_user" {
-  description = "SSH user configured on the runner template"
-  type        = string
-  default     = "debian"
-}
-
-variable "proxmox_ssh_private_key" {
-  description = "Raw SSH private key content for remote-exec"
-  type        = string
-  sensitive   = true
-}
-
-variable "proxmox_ssh_public_key" {
-  description = "Raw SSH public key string for authorized_keys"
-  type        = string
 }
 
 # =============================================================================
