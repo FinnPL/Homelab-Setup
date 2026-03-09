@@ -34,6 +34,7 @@ locals {
     try(local.host_ips.talos_worker_3, null),
     try(local.host_ips.talos_worker_4, null),
     try(local.host_ips.talos_worker_5, null),
+    try(local.host_ips.talos_worker_6, null),
   ] : v if v != null]
 
   # Resolve MACs from 01-network outputs

@@ -97,6 +97,15 @@ resource "unifi_user" "tf_talos_worker_5" {
   note             = "Managed by Terraform"
 }
 
+resource "unifi_user" "tf_talos_worker_6" {
+  mac              = var.host_vm_macs["talos_worker_6"]
+  name             = "tf-Talos-Worker-6"
+  fixed_ip         = "10.10.1.66"
+  local_dns_record = "talos-w6.athena"
+  network_id       = unifi_network.tf_vlan_athena.id
+  note             = "Managed by Terraform"
+}
+
 resource "unifi_user" "tf_postgres_server" {
   mac              = var.host_vm_macs["postgres_server"]
   name             = "tf-Postgres-Shared"
