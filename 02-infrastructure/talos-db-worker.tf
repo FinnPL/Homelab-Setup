@@ -15,6 +15,16 @@ data "talos_machine_configuration" "db_worker" {
   config_patches = [
     yamlencode({
       machine = {
+        nodeLabels = {
+          "dedicated" = "database"
+        }
+        taints = [
+            {
+                key    = "dedicated"
+                value  = "database"
+                effect = "NoSchedule"
+            }
+        ]
         features = {
           kubePrism = {
             enabled = true
