@@ -139,6 +139,10 @@ resource "talos_machine_configuration_apply" "db_worker" {
   node                        = local.talos_db_worker_ip
   endpoint                    = local.talos_db_worker_ip
 
+  lifecycle {
+    replace_triggered_by = [proxmox_virtual_environment_vm.talos_db_worker]
+  }
+
   depends_on = [
     talos_machine_bootstrap.this,
     proxmox_virtual_environment_vm.talos_db_worker
