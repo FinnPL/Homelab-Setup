@@ -18,13 +18,9 @@ data "talos_machine_configuration" "db_worker" {
         nodeLabels = {
           "dedicated" = "database"
         }
-        taints = [
-          {
-            key    = "dedicated"
-            value  = "database"
-            effect = "NoSchedule"
-          }
-        ]
+        nodeTaints = {
+          "dedicated" = "database:NoSchedule"
+        }
         features = {
           kubePrism = {
             enabled = true
