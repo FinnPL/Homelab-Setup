@@ -10,7 +10,7 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
     hostname = var.nfs_server_config.name
     user_account {
       password = var.nfs_root_password
-      keys     = [file(pathexpand(var.github_runner_ssh_public_key_path))]
+      keys     = [var.proxmox_ssh_public_key]
     }
   }
 
@@ -83,7 +83,7 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
     connection {
       type        = "ssh"
       user        = "root"
-      private_key = file(pathexpand(var.github_runner_ssh_private_key_path))
+      private_key = var.proxmox_ssh_private_key
       host        = local.nfs_server_ip
       timeout     = "5m"
     }
