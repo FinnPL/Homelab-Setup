@@ -1,0 +1,36 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: shared-postgres
+  namespace: cnpg-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  instances: 1
+  enableSuperuserAccess: true
+
+  affinity:
+    nodeSelector:
+      dedicated: database
+    tolerations:
+      - key: "dedicated"
+        operator: "Equal"
+        value: "database"
+        effect: "NoSchedule"
+
+  storage:
+    size: 10Gi
+    storageClass: local-path
+
+  managed:
+    roles:
+      - name: authentik-user
+        ensure: present
+        login: true
+        createdb: true
+        passwordSecret:
+          name: authentik-user-password
+
+  postgresql:
+    pg_hba:
+      - hostnossl all all all md5

@@ -1,0 +1,14 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: authentik-db
+  namespace: cnpg-system
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  name: authentik-db
+  owner: authentik-user
+  encoding: UTF8
+  cluster:
+    name: shared-postgres
+  databaseReclaimPolicy: retain

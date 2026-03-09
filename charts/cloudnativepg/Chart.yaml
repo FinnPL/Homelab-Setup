@@ -1,0 +1,7 @@
+apiVersion: v2
+name: cloudnativepg
+version: 1.0.0
+dependencies:
+  - name: cloudnative-pg
+    version: 0.28.1
+    repository: https://cloudnative-pg.github.io/charts

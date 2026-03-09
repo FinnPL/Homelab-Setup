@@ -152,6 +152,11 @@ resource "kubectl_manifest" "cluster_secret_store" {
 
 # Seed Secrets (Temporary Backend Data)
 
+resource "random_password" "authentik_db" {
+  length  = 32
+  special = false
+}
+
 resource "kubernetes_secret_v1" "seed_authentik_config" {
   metadata {
     name      = "authentik-config"
@@ -162,7 +167,8 @@ resource "kubernetes_secret_v1" "seed_authentik_config" {
   }
 
   data = {
-    "secret-key" = var.authentik_secret_key
+    "secret-key"  = var.authentik_secret_key
+    "db-password" = random_password.authentik_db.result
   }
 }
 

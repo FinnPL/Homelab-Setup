@@ -16,13 +16,6 @@ variable "gateway_api_version" {
   default = "v1.4.1"
 }
 
-variable "crossplane_provider_sql_version" {
-  description = "Version of the Crossplane SQL Provider"
-  type        = string
-  # renovate: datasource=docker depName=xpkg.upbound.io/crossplane-contrib/provider-sql
-  default = "v0.13.0"
-}
-
 # Temporary Secrets until Vault is deployed:
 
 variable "authentik_secret_key" {

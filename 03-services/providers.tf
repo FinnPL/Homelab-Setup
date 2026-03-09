@@ -18,6 +18,10 @@ terraform {
       source  = "gavinbunney/kubectl"
       version = "1.19.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "3.7.2"
+    }
   }
 }
 
