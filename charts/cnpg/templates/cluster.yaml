@@ -6,6 +6,11 @@ spec:
   instances: 1
   enableSuperuserAccess: true
 
+  bootstrap:
+    initdb:
+      secret:
+        name: crossplane-pg-credentials
+
   postgresql:
     parameters:
       shared_buffers: "256MB"
