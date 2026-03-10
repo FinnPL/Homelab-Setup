@@ -212,7 +212,7 @@ resource "kubernetes_secret_v1" "seed_cnpg_superuser" {
   data = {
     username = "postgres"
     password = random_password.cnpg_superuser.result
-    endpoint = "cnpg-cluster-rw" # The internal DNS name CNPG creates
+    endpoint = "cnpg-cluster-rw.cnpg-system.svc.cluster.local"
     port     = "5432"
   }
 }
