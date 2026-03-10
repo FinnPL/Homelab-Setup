@@ -1,0 +1,16 @@
+apiVersion: postgresql.sql.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  credentials:
+    source: PostgreSQLConnectionSecret
+    connectionSecretRef:
+      namespace: cnpg-system
+      name: cnpg-cluster-superuser
+      keys:
+        username: username
+        password: password
+        endpoint: host
+        port: port
+  sslMode: require
