@@ -5,6 +5,8 @@ metadata:
 spec:
   instances: 1
   enableSuperuserAccess: true
+  superuserSecret:
+    name: crossplane-pg-credentials
 
   postgresql:
     parameters:

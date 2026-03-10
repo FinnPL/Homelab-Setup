@@ -194,3 +194,25 @@ resource "kubernetes_secret_v1" "seed_tailscale_oauth" {
     "oauth-secret"    = var.tailscale_oauth_secret
   }
 }
+
+resource "random_password" "cnpg_superuser" {
+  length  = 32
+  special = false
+}
+
+resource "kubernetes_secret_v1" "seed_cnpg_superuser" {
+  metadata {
+    name      = "cnpg-superuser"
+    namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+    }
+  }
+
+  data = {
+    username = "postgres"
+    password = random_password.cnpg_superuser.result
+    endpoint = "cnpg-cluster-rw" # The internal DNS name CNPG creates
+    port     = "5432"
+  }
+}

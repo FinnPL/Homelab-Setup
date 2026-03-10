@@ -7,5 +7,5 @@ spec:
     source: PostgreSQLConnectionSecret
     connectionSecretRef:
       namespace: cnpg-system
-      name: cnpg-cluster-superuser
+      name: crossplane-pg-credentials
   sslMode: require
