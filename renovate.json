@@ -1,103 +1,63 @@
 {
-    "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-    "extends": [
-        "config:recommended",
-        ":semanticCommits"
-    ],
-    "labels": [
-        "dependencies"
-    ],
-    "terraform": {
-        "enabled": true
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits"
+  ],
+  "labels": ["dependencies"],
+  "terraform": {
+    "enabled": true
+  },
+  "kubernetes": {
+    "fileMatch": ["(^|/)apps/.+\\.ya?ml$", "(^|/)charts/.+\\.ya?ml$"]
+  },
+  "argocd": {
+    "fileMatch": ["(^|/)apps/.+\\.ya?ml$"]
+  },
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["\\.tf$", "\\.ya?ml$"],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?:\\s+versioning=(?<versioning>.*?))?(?:\\s+extractVersion=(?<extractVersion>.*?))?\\s+(?:default\\s*=\\s*\"|package:\\s*.*:)(?<currentValue>[^\"\\n]+)\"?"
+      ]
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Group Terraform provider updates (excluding infrastructure-critical)",
+      "matchManagers": ["terraform"],
+      "groupName": "terraform providers",
+      "matchPackageNames": ["!/talos/", "!/proxmox/"]
     },
-    "kubernetes": {
-        "managerFilePatterns": [
-            "/apps\\/.*\\.ya?ml$/",
-            "/charts\\/.*\\.ya?ml$/"
-        ]
+    {
+      "description": "Talos provider",
+      "matchManagers": ["terraform"],
+      "labels": ["dependencies", "infrastructure-critical"],
+      "matchPackageNames": ["/talos/"]
     },
-    "customManagers": [
-        {
-            "customType": "regex",
-            "managerFilePatterns": [
-                "/\\.tf$/"
-            ],
-            "matchStrings": [
-                "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?:\\s+versioning=(?<versioning>.*?))?(?:\\s+extractVersion=(?<extractVersion>.*?))?\\s+default\\s*=\\s*\"(?<currentValue>.*?)\""
-            ]
-        }
-    ],
-    "packageRules": [
-        {
-            "description": "Group Terraform provider updates (excluding infrastructure-critical)",
-            "matchManagers": [
-                "terraform"
-            ],
-            "groupName": "terraform providers",
-            "matchPackageNames": [
-                "!/talos/",
-                "!/proxmox/"
-            ]
-        },
-        {
-            "description": "Talos provider",
-            "matchManagers": [
-                "terraform"
-            ],
-            "labels": [
-                "dependencies",
-                "infrastructure-critical"
-            ],
-            "matchPackageNames": [
-                "/talos/"
-            ]
-        },
-        {
-            "description": "Proxmox provider",
-            "matchManagers": [
-                "terraform"
-            ],
-            "labels": [
-                "dependencies",
-                "infrastructure-critical"
-            ],
-            "matchPackageNames": [
-                "/proxmox/"
-            ]
-        },
-        {
-            "description": "Helm charts",
-            "matchManagers": [
-                "terraform"
-            ],
-            "matchDatasources": [
-                "helm"
-            ],
-            "groupName": "helm charts",
-            "labels": [
-                "dependencies",
-                "helm"
-            ]
-        },
-        {
-            "description": "Kubernetes version",
-            "matchPackageNames": [
-                "kubernetes/kubernetes"
-            ],
-            "labels": [
-                "dependencies",
-                "infrastructure-critical"
-            ]
-        },
-        {
-            "description": "Talos OS version",
-            "matchPackageNames": [
-                "siderolabs/talos"
-            ],
-            "labels": [
-                "dependencies",
-                "infrastructure-critical"
-            ]
-        }
-    ]
+    {
+      "description": "Proxmox provider",
+      "matchManagers": ["terraform"],
+      "labels": ["dependencies", "infrastructure-critical"],
+      "matchPackageNames": ["/proxmox/"]
+    },
+    {
+      "description": "Helm charts",
+      "matchManagers": ["terraform", "argocd"],
+      "matchDatasources": ["helm"],
+      "groupName": "helm charts",
+      "labels": ["dependencies", "helm"]
+    },
+    {
+      "description": "Kubernetes version",
+      "matchPackageNames": ["kubernetes/kubernetes"],
+      "labels": ["dependencies", "infrastructure-critical"]
+    },
+    {
+      "description": "Talos OS version",
+      "matchPackageNames": ["siderolabs/talos"],
+      "labels": ["dependencies", "infrastructure-critical"]
+    }
+  ]
 }
