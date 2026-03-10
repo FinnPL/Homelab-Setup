@@ -1,0 +1,7 @@
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-sql-postgres
+spec:
+  # renovate: datasource=docker depName=xpkg.upbound.io/crossplane-contrib/provider-sql
+  package: xpkg.upbound.io/crossplane-contrib/provider-sql:v0.13.0
