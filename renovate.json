@@ -16,14 +16,20 @@
             "/charts\\/.*\\.ya?ml$/"
         ]
     },
+    "argocd": {
+        "fileMatch": [
+            "/apps\\/.*\\.ya?ml$/"
+        ]
+    },
     "customManagers": [
         {
             "customType": "regex",
-            "managerFilePatterns": [
-                "/\\.tf$/"
+            "fileMatch": [
+                "\\.tf$",
+                "charts/.+\\.ya?ml$"
             ],
             "matchStrings": [
-                "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?:\\s+versioning=(?<versioning>.*?))?(?:\\s+extractVersion=(?<extractVersion>.*?))?\\s+default\\s*=\\s*\"(?<currentValue>.*?)\""
+                "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?:\\s+versioning=(?<versioning>.*?))?(?:\\s+extractVersion=(?<extractVersion>.*?))?\\s+(?:default\\s*=\\s*\"|package:\\s*)(?<currentValue>.*?)\"?"
             ]
         }
     ],
@@ -68,7 +74,8 @@
         {
             "description": "Helm charts",
             "matchManagers": [
-                "terraform"
+                "terraform",
+                "argocd"
             ],
             "matchDatasources": [
                 "helm"
