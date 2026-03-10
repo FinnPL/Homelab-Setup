@@ -8,9 +8,4 @@ spec:
     connectionSecretRef:
       namespace: cnpg-system
       name: cnpg-cluster-superuser
-      keys:
-        username: username
-        password: password
-        endpoint: host
-        port: port
   sslMode: require
