@@ -62,6 +62,12 @@ kube-prometheus-stack:
                 storage: 2Gi
                 
   grafana:
+    additionalDataSources:
+      - name: Loki
+        type: loki
+        url: http://loki.monitoring.svc.cluster.local:3100
+        access: proxy
+        isDefault: false
     persistence:
       enabled: false 
     envValueFrom:
