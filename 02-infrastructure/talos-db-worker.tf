@@ -22,6 +22,14 @@ data "talos_machine_configuration" "db_worker" {
           extraArgs = {
             "register-with-taints" = "dedicated=database:NoSchedule"
           }
+          extraMounts = [
+            {
+              destination = "/var/lib/local-path-provisioner"
+              type        = "bind"
+              source      = "/var/lib/local-path-provisioner"
+              options     = ["bind", "rshared", "rw"]
+            }
+          ]
         }
         features = {
           kubePrism = {
