@@ -48,6 +48,13 @@ authentik:
           secretKeyRef:
             name: authentik-secrets
             key: argocd-oidc-client-secret
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+        labels:
+          release: kube-prometheus-stack
 
   worker:
     env:
@@ -85,3 +92,10 @@ authentik:
           secretKeyRef:
             name: authentik-secrets
             key: argocd-oidc-client-secret
+    metrics:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+        interval: 30s
+        labels:
+          release: kube-prometheus-stack
