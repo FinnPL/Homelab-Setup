@@ -1,6 +1,12 @@
 kube-prometheus-stack:
   prometheus:
     prometheusSpec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 2000
+        fsGroup: 2000
+        fsGroupChangePolicy: "OnRootMismatch"
+        
       resources:
         requests:
           memory: 512Mi
@@ -26,6 +32,12 @@ kube-prometheus-stack:
 
   alertmanager:
     alertmanagerSpec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 2000
+        fsGroup: 2000
+        fsGroupChangePolicy: "OnRootMismatch"
+        
       resources:
         requests:
           memory: 50Mi
@@ -50,15 +62,31 @@ kube-prometheus-stack:
                 storage: 2Gi
                 
   grafana:
-    # Using Postgres from crossplane instead
     persistence:
       enabled: false 
-    envFromSecret: grafana-db-credentials 
+    envValueFrom:
+      DB_HOST:
+        secretKeyRef:
+          name: grafana-db-credentials
+          key: endpoint
+      DB_PORT:
+        secretKeyRef:
+          name: grafana-db-credentials
+          key: port
+      DB_USER:
+        secretKeyRef:
+          name: grafana-db-credentials
+          key: username
+      DB_PASSWORD:
+        secretKeyRef:
+          name: grafana-db-credentials
+          key: password
+          
     grafana.ini:
       database:
         type: postgres
-        host: $__env{DB_HOST}
-        name: $__env{DB_NAME}
+        host: $__env{DB_HOST}:$__env{DB_PORT}
+        name: grafana-db
         user: $__env{DB_USER}
         password: $__env{DB_PASSWORD}
         ssl_mode: require
