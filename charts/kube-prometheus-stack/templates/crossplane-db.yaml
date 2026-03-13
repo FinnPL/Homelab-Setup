@@ -1,0 +1,26 @@
+apiVersion: postgresql.sql.crossplane.io/v1alpha1
+kind: Database
+metadata:
+  name: grafana-db
+spec:
+  providerConfigRef:
+    name: default
+  deletionPolicy: Orphan
+---
+apiVersion: postgresql.sql.crossplane.io/v1alpha1
+kind: Role
+metadata:
+  name: grafana-role
+spec:
+  providerConfigRef:
+    name: default
+  passwordSecretRef:
+    namespace: monitoring
+    name: grafana-db-credentials
+    key: DB_PASSWORD
+  privileges:
+    login: true
+  deletionPolicy: Orphan
+  writeConnectionSecretToRef:
+    namespace: monitoring
+    name: grafana-db-credentials
