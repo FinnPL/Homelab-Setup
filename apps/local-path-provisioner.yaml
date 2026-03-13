@@ -17,6 +17,7 @@ spec:
           name: local-path
           create: true
           defaultClass: false
+          defaultVolumeType: local
         tolerations:
           - key: dedicated
             operator: Equal
