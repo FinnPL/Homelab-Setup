@@ -14,7 +14,7 @@ spec:
       effective_cache_size: "512MB"
       work_mem: "4MB"
       maintenance_work_mem: "64MB"
-      max_connections: "50"
+      max_connections: "70"
 
   resources:
     requests:
