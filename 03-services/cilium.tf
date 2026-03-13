@@ -42,6 +42,16 @@ resource "helm_release" "cilium" {
         enabled = true
         relay = {
           enabled = true
+          prometheus = {
+            enabled = true
+            serviceMonitor = {
+              enabled  = true
+              interval = "30s"
+              labels = {
+                release = "kube-prometheus-stack"
+              }
+            }
+          }
         }
         ui = {
           enabled = true
@@ -49,16 +59,17 @@ resource "helm_release" "cilium" {
         metrics = {
           enableOpenMetrics = true
           enabled = [
-            "dns",
+            "dns:query;ignoreAAAA",
             "drop",
             "tcp",
-            "flow",
-            "port-distribution",
-            "icmp",
-            "httpV2:exemplars=true;labelsContext=source_ip,source_namespace,source_workload,destination_ip,destination_namespace,destination_workload,traffic_direction"
+            "icmp"
           ]
           serviceMonitor = {
-            enabled = false # Enable once Prometheus is set up
+            enabled  = true
+            interval = "30s"
+            labels = {
+              release = "kube-prometheus-stack"
+            }
           }
         }
       }
@@ -66,7 +77,11 @@ resource "helm_release" "cilium" {
       prometheus = {
         enabled = true
         serviceMonitor = {
-          enabled = false # Enable once Prometheus is set up
+          enabled  = true
+          interval = "30s"
+          labels = {
+            release = "kube-prometheus-stack"
+          }
         }
       }
 
@@ -74,7 +89,11 @@ resource "helm_release" "cilium" {
         prometheus = {
           enabled = true
           serviceMonitor = {
-            enabled = false # Enable once Prometheus is set up
+            enabled  = true
+            interval = "30s"
+            labels = {
+              release = "kube-prometheus-stack"
+            }
           }
         }
       }
