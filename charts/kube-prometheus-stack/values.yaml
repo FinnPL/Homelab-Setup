@@ -1,0 +1,64 @@
+kube-prometheus-stack:
+  prometheus:
+    prometheusSpec:
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: 100m
+        limits:
+          memory: 1024Mi
+          cpu: 500m
+      nodeSelector:
+        dedicated: database
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "database"
+          effect: "NoSchedule"
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: local-path
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 20Gi
+
+  alertmanager:
+    alertmanagerSpec:
+      resources:
+        requests:
+          memory: 50Mi
+          cpu: 10m
+        limits:
+          memory: 100Mi
+          cpu: 100m
+      nodeSelector:
+        dedicated: database
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "database"
+          effect: "NoSchedule"
+      storage:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: local-path
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 2Gi
+                
+  grafana:
+    # Using Postgres from crossplane instead
+    persistence:
+      enabled: false 
+    envFromSecret: grafana-db-credentials 
+    grafana.ini:
+      database:
+        type: postgres
+        host: $__env{DB_HOST}
+        name: $__env{DB_NAME}
+        user: $__env{DB_USER}
+        password: $__env{DB_PASSWORD}
+        ssl_mode: require
