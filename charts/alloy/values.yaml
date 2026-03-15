@@ -1,0 +1,56 @@
+alloy:
+  alloy:
+    storagePath: /tmp/alloy
+    mounts:
+      varlog: true
+      dockercontainers: true
+      extra:
+        - name: alloy-storage
+          mountPath: /tmp/alloy
+    configMap:
+      create: true
+      content: |
+        discovery.kubernetes "pods" {
+          role = "pod"
+        }
+
+        loki.source.kubernetes "pods" {
+          targets    = discovery.kubernetes.pods.targets
+          forward_to = [loki.process.pod_logs.receiver]
+        }
+
+        loki.process "pod_logs" {
+          forward_to = [loki.write.local.receiver]
+
+          stage.cri {}
+
+          stage.labels {
+            values = {
+              namespace = "namespace",
+              pod       = "pod",
+              container = "container",
+              node      = "node",
+            }
+          }
+        }
+
+        loki.source.kubernetes_events "events" {
+          job_name = "kubernetes-events"
+          log_format = "json"
+          forward_to = [loki.write.local.receiver]
+        }
+
+        loki.write "local" {
+          endpoint {
+            url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+          }
+        }
+  
+  controller:
+    type: daemonset
+    volumes:
+      extra:
+        - name: alloy-storage
+          emptyDir:
+            medium: Memory
+            sizeLimit: 128Mi
