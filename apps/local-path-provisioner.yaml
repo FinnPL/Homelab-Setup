@@ -31,6 +31,8 @@ spec:
               effect: NoSchedule
         nodePathMap:
           - node: DEFAULT_PATH_FOR_NON_LISTED_NODES
+            paths: []
+          - node: talos-worker-db
             paths:
               - /var/lib/local-path-provisioner
   destination:
