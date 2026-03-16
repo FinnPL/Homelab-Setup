@@ -82,11 +82,16 @@ alloy-agent:
 
           // 3. Construct the actual log file path on disk for Containerd
           rule {
-            source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name", "__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
-            action        = "replace"
-            regex         = "(.*);(.*);(.*);(.*)"
+            source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name", "__meta_kubernetes_pod_uid"]
+            separator     = "_"
+            target_label  = "__tmp_pod_dir"
+          }
+
+          rule {
+            source_labels = ["__tmp_pod_dir", "__meta_kubernetes_pod_container_name"]
+            separator     = "/"
             target_label  = "__path__"
-            replacement   = "/var/log/pods/$1_$2_$3/$4/*.log"
+            replacement   = "/var/log/pods/$1/*.log"
           }
         }
 
