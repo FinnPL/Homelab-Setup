@@ -24,6 +24,11 @@ resource "helm_release" "argocd" {
 
   values = [
     yamlencode({
+      global = {
+        logging = {
+          level = "warn"
+        }
+      }
       server = {
         extraArgs = ["--insecure"]
       }

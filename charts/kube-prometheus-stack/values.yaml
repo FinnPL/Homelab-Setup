@@ -96,3 +96,9 @@ kube-prometheus-stack:
         user: $__env{DB_USER}
         password: $__env{DB_PASSWORD}
         ssl_mode: require
+      server:
+        router_logging: false
+      log:
+        mode: console
+        level: info
+        filters: tsdb.loki:warn
