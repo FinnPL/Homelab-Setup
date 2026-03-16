@@ -113,6 +113,7 @@ alloy-agent:
   controller:
     type: daemonset
     hostNetwork: true
+    dnsPolicy: ClusterFirstWithHostNet
     volumes:
       extra:
         - name: alloy-data
