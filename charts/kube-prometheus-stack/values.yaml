@@ -60,6 +60,8 @@ kube-prometheus-stack:
             resources:
               requests:
                 storage: 2Gi
+
+      externalUrl: https://alerts.lippok.dev
       
       secrets:
         - alertmanager-discord
@@ -88,12 +90,12 @@ kube-prometheus-stack:
               title: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}'
               title_link: ''
               text: |-
-                *Alert:* {{ .CommonLabels.alertname }}
-                *Status:* {{ .Status | toUpper }}
-                *Severity:* {{ if .CommonLabels.severity }}{{ .CommonLabels.severity }}{{ else }}unknown{{ end }}
-                *Namespace:* {{ if .CommonLabels.namespace }}{{ .CommonLabels.namespace }}{{ else }}n/a{{ end }}
-                *Summary:* {{ if .CommonAnnotations.summary }}{{ .CommonAnnotations.summary }}{{ else }}n/a{{ end }}
-                *Alertmanager:* {{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}
+                **Alert:** {{ .CommonLabels.alertname }}
+                **Status:** {{ .Status | toUpper }}
+                **Severity:** {{ if .CommonLabels.severity }}{{ .CommonLabels.severity }}{{ else }}unknown{{ end }}
+                **Namespace:** {{ if .CommonLabels.namespace }}{{ .CommonLabels.namespace }}{{ else }}n/a{{ end }}
+                **Summary:** {{ if .CommonAnnotations.summary }}{{ .CommonAnnotations.summary }}{{ else }}n/a{{ end }}
+                **Alertmanager:** https://alerts.lippok.dev/#/alerts?receiver={{ .Receiver }}
 
   grafana:
     additionalDataSources:
