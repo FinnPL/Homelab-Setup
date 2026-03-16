@@ -244,3 +244,17 @@ resource "kubernetes_secret_v1" "seed_gatus_discord" {
     "webhook-url" = var.gatus_discord_webhook_url
   }
 }
+
+resource "kubernetes_secret_v1" "seed_alertmanager_discord" {
+  metadata {
+    name      = "alertmanager-discord"
+    namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+    }
+  }
+
+  data = {
+    "webhook-url" = var.alertmanager_discord_webhook_url
+  }
+}

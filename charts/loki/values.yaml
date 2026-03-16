@@ -54,7 +54,22 @@ loki:
     enabled: false
   resultsCache:
     enabled: false
-  lokiCanary:
-    enabled: false
+  ruler:
+    enabled: true
+    alertmanager_url: http://kube-prometheus-stack-alertmanager.monitoring.svc.cluster.local:9093
+    directories:
+      Default:
+        rules.txt: |
+          groups:
+            - name: log-errors
+              rules:
+                - alert: HighErrorRate
+                  expr: sum(rate({namespace!=""} |= "error" [5m])) > 10
+                  for: 5m
+                  labels:
+                    severity: warning
+                  annotations:
+                    summary: "High number of error logs detected"
+
   test:
     enabled: false

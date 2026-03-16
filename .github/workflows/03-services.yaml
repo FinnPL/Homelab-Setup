@@ -40,6 +40,7 @@ jobs:
       TF_VAR_tailscale_oauth_client_id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
       TF_VAR_tailscale_oauth_secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
       TF_VAR_gatus_discord_webhook_url: ${{ secrets.GATUS_DISCORD_WEBHOOK_URL }}
+      TF_VAR_alertmanager_discord_webhook_url: ${{ secrets.ALERTMANAGER_DISCORD_WEBHOOK_URL }}
 
     steps:
       - name: Checkout Code
