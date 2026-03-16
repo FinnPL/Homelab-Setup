@@ -15,8 +15,7 @@
 ![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=flat&logo=cloudflare&logoColor=white)
 
 
-A GitOps-driven multi-site homelab leveraging IaC via Terraform and CI/CD to orchestrate a Talos Kubernetes cluster with Cilium CNI on Proxmox via ArgoCD.
-
+A GitOps-driven multi-site homelab managed by ArgoCD, bootstrapped via Terraform IaC and CI/CD to deploy a Talos Kubernetes cluster on Proxmox with Cilium CNI and a full OTel-based Prometheus/Loki monitoring stack.
 </div>
 
 ## IaC Overview
