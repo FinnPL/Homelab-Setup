@@ -1,0 +1,204 @@
+gatus:
+  env:
+    DISCORD_WEBHOOK_URL:
+      valueFrom:
+        secretKeyRef:
+          name: gatus-secrets
+          key: webhook-url
+
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+  config:
+    storage:
+      type: sqlite
+      path: /data/data.db
+
+    alerting:
+      discord:
+        webhook-url: "${DISCORD_WEBHOOK_URL}"
+
+    endpoints:
+      # Mail Servers
+      - name: "Mail Server"
+        group: "Mail"
+        url: "icmp://mail.lippok.eu"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Mail Server HTTPS"
+        group: "Mail"
+        url: "https://mail.lippok.eu"
+        interval: 60s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 2000"
+          - "[CERTIFICATE_EXPIRATION] > 24h"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Mail IMAP"
+        group: "Mail"
+        url: "tcp://mail.lippok.eu:993"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 2000"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Mail SMTP"
+        group: "Mail"
+        url: "tcp://mail.lippok.eu:587"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 2000"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      # NAS
+      - name: "Apollo NAS"
+        group: "NAS"
+        url: "https://apollo.lippok.dev"
+        interval: 60s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 2000"
+          - "[CERTIFICATE_EXPIRATION] > 24h"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Apollo NAS Ping"
+        group: "NAS"
+        url: "icmp://apollo.athena"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      # Routers
+      - name: "FritzBox"
+        group: "Routers"
+        url: "icmp://192.168.178.1"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "FritzBox HTTPS"
+        group: "Routers"
+        url: "https://fb.lippok.dev"
+        interval: 60s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 2000"
+          - "[CERTIFICATE_EXPIRATION] > 24h"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Router Vieta"
+        group: "Routers"
+        url: "icmp://10.10.0.1"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Router Minerva"
+        group: "Routers"
+        url: "icmp://10.0.0.1"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      # Servers
+      - name: "Pi3 Athena"
+        group: "Servers"
+        url: "icmp://pi3.athena"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      # K8s Websites
+      - name: "ArgoCD"
+        group: "Kubernetes"
+        url: "https://argocd.lippok.dev"
+        interval: 60s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 2000"
+          - "[CERTIFICATE_EXPIRATION] > 24h"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Authentik"
+        group: "Kubernetes"
+        url: "https://auth.lippok.dev"
+        interval: 60s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 2000"
+          - "[CERTIFICATE_EXPIRATION] > 24h"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Grafana"
+        group: "Kubernetes"
+        url: "https://grafana.lippok.dev"
+        interval: 60s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 2000"
+          - "[CERTIFICATE_EXPIRATION] > 24h"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
