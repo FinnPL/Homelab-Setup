@@ -48,7 +48,10 @@ alloy-agent:
             address       = "127.0.0.1:5140"
             protocol      = "udp"
             syslog_format = "raw"
-            labels        = { job = "talos-syslog" }
+            labels        = { 
+              job = "talos-syslog",
+              node = env("HOSTNAME")
+            }
           }
           forward_to = [loki.process.talos_json.receiver]
         }
