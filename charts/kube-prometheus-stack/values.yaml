@@ -94,6 +94,7 @@ kube-prometheus-stack:
 
     grafana.ini:
       server:
+        domain: grafana.lippok.dev
         root_url: https://grafana.lippok.dev
       database:
         type: postgres
