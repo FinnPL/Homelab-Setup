@@ -5,6 +5,26 @@ gatus:
         secretKeyRef:
           name: gatus-secrets
           key: webhook-url
+    GATUS_DB_HOST:
+      valueFrom:
+        secretKeyRef:
+          name: gatus-db-credentials
+          key: endpoint
+    GATUS_DB_PORT:
+      valueFrom:
+        secretKeyRef:
+          name: gatus-db-credentials
+          key: port
+    GATUS_DB_USER:
+      valueFrom:
+        secretKeyRef:
+          name: gatus-db-credentials
+          key: username
+    GATUS_DB_PASS:
+      valueFrom:
+        secretKeyRef:
+          name: gatus-db-credentials
+          key: password
 
   resources:
     requests:
@@ -16,8 +36,8 @@ gatus:
 
   config:
     storage:
-      type: sqlite
-      path: /data/data.db
+      type: postgres
+      path: "postgres://${GATUS_DB_USER}:${GATUS_DB_PASS}@${GATUS_DB_HOST}:${GATUS_DB_PORT}/gatus-db?sslmode=require"
 
     alerting:
       discord:
@@ -152,6 +172,73 @@ gatus:
       - name: "Pi3 Athena"
         group: "Servers"
         url: "icmp://pi3.athena"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Intel NUC"
+        group: "Servers"
+        url: "icmp://nuc.athena"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      # K8s Workers
+      - name: "Talos Worker 1"
+        group: "K8s Nodes"
+        url: "icmp://talos-w1.athena"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Talos Worker 2"
+        group: "K8s Nodes"
+        url: "icmp://talos-w2.athena"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Talos Worker 3"
+        group: "K8s Nodes"
+        url: "icmp://talos-w3.athena"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Talos DB Worker"
+        group: "K8s Nodes"
+        url: "icmp://talos-w6.athena"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Talos Control Plane"
+        group: "K8s Nodes"
+        url: "icmp://talos-cp.athena"
         interval: 60s
         conditions:
           - "[CONNECTED] == true"

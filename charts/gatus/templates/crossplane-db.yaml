@@ -1,0 +1,40 @@
+apiVersion: postgresql.sql.crossplane.io/v1alpha1
+kind: Role
+metadata:
+  name: gatus-user
+spec:
+  forProvider:
+    privileges:
+      login: true
+  writeConnectionSecretToRef:
+    name: gatus-db-credentials
+    namespace: {{ .Release.Namespace }}
+  providerConfigRef:
+    name: default
+---
+apiVersion: postgresql.sql.crossplane.io/v1alpha1
+kind: Database
+metadata:
+  name: gatus-db
+spec:
+  forProvider:
+    encoding: UTF8
+    owner: gatus-user
+  providerConfigRef:
+    name: default
+  deletionPolicy: Orphan
+---
+apiVersion: postgresql.sql.crossplane.io/v1alpha1
+kind: Grant
+metadata:
+  name: gatus-grant
+spec:
+  forProvider:
+    privileges:
+      - ALL
+    roleRef:
+      name: gatus-user
+    databaseRef:
+      name: gatus-db
+  providerConfigRef:
+    name: default
