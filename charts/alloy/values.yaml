@@ -101,7 +101,7 @@ alloy-agent:
           // 1. Map all Kubernetes pod labels into Loki log stream labels
           rule {
             action = "labelmap"
-            regex  = "__meta_kubernetes_pod_label_(.+)"
+            regex  = "__meta_kubernetes_pod_label_(app|app_kubernetes_io_name|app_kubernetes_io_instance|component|release)"
           }
 
           // 2. Explicitly label the namespace, pod name, and container
