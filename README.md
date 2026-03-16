@@ -1,222 +1,142 @@
 <div align="center">
-   
-# Homelab Setup
-   
-[![Pi4 - Deploy Docker Compose](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi4-deploy.yml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi4-deploy.yml)
-[![Pi3 - Deploy Docker Compose](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi3-deploy.yml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/pi3-deploy.yml)
-[![Docker Compose Syntax Check](https://github.com/FinnPL/Homelab-Setup/actions/workflows/docker-syntax.yml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/docker-syntax.yml)
 
-This repository contains the Terraform and Docker configuration for my multi-site homelab setup, featuring automated CI/CD deployment, comprehensive monitoring, and networking.
+# Homelab Setup
+
+[![Orchestrator](https://github.com/FinnPL/Homelab-Setup/actions/workflows/main-deploy.yaml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/main-deploy.yaml)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat&logo=github-actions&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-623CE4?style=flat&logo=terraform&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat&logo=kubernetes&logoColor=white)
+![Helm](https://img.shields.io/badge/Helm-0F1628?style=flat&logo=helm&logoColor=white)
+<br />
+![Talos](https://img.shields.io/badge/Talos_Linux-364EBD?style=flat&logo=linux&logoColor=white)
+![Proxmox](https://img.shields.io/badge/Proxmox-E57024?style=flat&logo=proxmox&logoColor=white)
+![Cilium](https://img.shields.io/badge/Cilium-20B2AA?style=flat&logo=cilium&logoColor=white)
+![UniFi](https://img.shields.io/badge/Ubiquiti_UniFi-0559C9?style=flat&logo=ubiquiti&logoColor=white)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=flat&logo=cloudflare&logoColor=white)
+
+
+A GitOps-driven multi-site homelab managed by ArgoCD, bootstrapped via Terraform IaC and CI/CD to deploy a Talos Kubernetes cluster on Proxmox with Cilium CNI and a full OTel-based Prometheus/Loki monitoring stack.
 </div>
 
-![NWD](https://github.com/user-attachments/assets/5e6225d0-8305-421c-8ee2-33f057eb3ace)
+## IaC Overview
 
+Four Terraform layers, deployed sequentially via GitHub Actions. Each layer has its own S3-backed state and feeds outputs into the next.
 
-## Sites Overview
-The homelab consists of two geographically separated sites connected via VPN:
+| Layer | Scope | What it configures |
+|:------|:------|:-------------------|
+| `00-global` | S3 state backend, shared config | AWS S3 bucket for Terraform state |
+| `01-network` | VLANs, firewall, DHCP, DNS | UniFi networks, Cloudflare DNS records |
+| `02-infrastructure` | VMs, Kubernetes bootstrap, storage | Proxmox VMs/LXCs, Talos Linux cluster |
+| `03-services` | Cluster platform bootstrapping (CNI, certs, ingress, secrets) | Helm releases, K8s resources, Cloudflare DNS |
+| **ArgoCD** | Application workloads via GitOps | App of Apps pattern from this repo |
 
-<table width="100%">
-  <tr>
-    <th width="50%" align="center">Vieta Site (Primary)</th>
-    <th width="50%" align="center">Minerva Site (Secondary)</th>
-  </tr>
-  <tr>
-    <td valign="top">
-      <ul>
-        <li><strong>Pi4:</strong> Main orchestration node running Docker services</li>
-        <li><strong>Apollo NAS:</strong> Primary storage and backup system</li>
-      </ul>
-    </td>
-    <td valign="top">
-      <ul>
-        <li><strong>Pi3:</strong> Secondary node for monitoring and services</li>
-        <li><strong>Zeus NAS:</strong> Secondary storage with synchronization to Apollo</li>
-      </ul>
-    </td>
-  </tr>
-</table>
+### CI/CD Pipeline
 
-> [!NOTE]
-> <img align="right" width="255" height="315" alt="rack-plan" src="https://github.com/user-attachments/assets/32db0ecd-c6e9-4bf9-8fc1-1621b8900dbb" />
-> Long-term direction: migrate away from Docker Compose and run services via Helm charts on a Talos-based Kubernetes cluster (RPis), with the control plane hosted on an Intel NUC running Proxmox.
-> 
-> Future plans for Vieta Site include a 10-inch desktop rack equipped with custom 3D-printed mounting brackets to organize the hardware.
-> <br clear="right" />
+Push to `main` triggers an orchestrator workflow that detects which layers changed and runs them in order. PRs get a Terraform plan comment for review. Tailscale connects the GitHub runner to the homelab network.
 
-## Network & Security
-Each site implements a dual-VLAN architecture to separate domestic devices from infrastructure.
+---
 
-| VLAN Name | Type | Description |
-| :--- | :--- | :--- |
-| **Default** | Standard | General devices (Phones, Laptops, IoT) |
-| **Athena** | Infrastructure | Dedicated homelab network for all services |
+## 01 Network
 
-### Security Model
-* **VPN Tunnel:** Secure connection between Athena VLANs across sites.
-* **NAS Sync:** Automated data replication between *Apollo* and *Zeus*.
-* **Firewall Enforcement:** Access to Athena network from Default VLAN is exclusively through Traefik reverse proxy. No direct access to homelab services bypassing the proxy
+Manages the entire Vieta site network through the UniFi controller API and Cloudflare. This includes VLANs, zone-based firewall policies, switch port profiles, static DHCP reservations with local DNS, and Cloudflare DNS records.
 
-## Infrastructure as Code
-The homelab utilizes Terraform as the Infrastructure as Code (IaC) principles through Terraform to ensure a declarative, reproducible, and version-controlled foundation for the entire network and server stack.
+### VLANs
 
-Terraform is organized into numbered layers (each with its own backend state).
+| VLAN | ID | Subnet | Purpose |
+|:-----|:---|:-------|:--------|
+| Default | 10 | `10.10.10.0/24` | Consumer devices, IoT, mDNS enabled |
+| Athena | 20 | `10.10.1.0/24` | Homelab infrastructure, network-isolated |
 
-- `00-global/`: Shared Terraform foundation (remote state backend, base provider config)
-- `01-network/`: UniFi network state (VLANs, DHCP reservations, port profiles) + Cloudflare DNS
-- `02-infrastructure/`: Proxmox + Talos bootstrap for my Kubernetes homelab
-- `03-services/`: Helm charts deployed onto the cluster *(planned / not implemented yet)*
+### Zone-Based Firewall
 
-## Services Architecture
+| Rule | From | To | Ports | Action |
+|:-----|:-----|:---|:------|:-------|
+| Service access | Internal (Default) | Athena | 22, 443, 445 | Allow |
+| VPN gateway | Athena | External (`10.0.3.2`) | All | Allow |
+| VPN lockout | Internal (Default) | External (`10.0.3.2`) | All | Block |
 
-### Core Infrastructure
-| Service | Description | URL | Purpose |
-|---------|-------------|-----|---------|
-| **Traefik** | Reverse Proxy & Load Balancer | All `*.lippok.dev` | SSL termination, routing, authentication |
-| **Portainer** | Docker Management | `port.lippok.dev` | Container orchestration and monitoring |
+Inter-VLAN traffic is blocked by default (network isolation). Only SSH, HTTPS, and SMB are permitted from Default into Athena.
 
-### Monitoring & Observability Stack
-| Service | Description | URL | Metrics Port |
-|---------|-------------|-----|--------------|
-| **Prometheus** | Metrics Collection | `prometheus.lippok.dev` | :9090 |
-| **Grafana** | Data Visualization | `grafana.lippok.dev` | :3000 |
-| **Alertmanager** | Alert Management | `alerts.lippok.dev` | :9093 |
-| **Gatus** | Uptime Monitoring | `gatus.lippok.dev` | :8080 |
+### DNS
 
-### Grafana Dashboard Overview
-<img width="2495" height="1198" alt="Grafana Dashboard" src="https://github.com/user-attachments/assets/43318626-acb7-4344-9612-efcbe777f76f" />
+Cloudflare manages the `lippok.dev` zone. A wildcard and root A record are created in `03-services` pointing to the Kubernetes Gateway LoadBalancer IP.
 
+---
 
-### Data Collection & Exporters
-| Service | Target | Port | Metrics |
-|---------|--------|------|---------|
-| **Node Exporter** | Pi4 System Metrics | :9100 | CPU, Memory, Disk, Network |
-| **Node Exporter (Pi3)** | Pi3 System Metrics | :9100 | CPU, Memory, Disk, Network |
-| **cAdvisor** | Docker Container Metrics | :8080 | Container resources and performance |
-| **UnPoller (Local)** | UniFi Controller (10.10.0.1) | :9130 | Local network statistics |
-| **UnPoller (Remote)** | UniFi Controller (10.0.0.1) | :9131 | Remote network statistics |
-| **Mailcow Exporter** | Mail Server (mail.lippok.eu) | :9099 | Email service metrics |
-| **FritzBox Exporter** | Router (192.168.178.1) | :9787 | ISP connection and router stats |
+## 02 Infrastructure
 
-### User Interface & Dashboard
-| Service | Description | URL | Features |
-|---------|-------------|-----|----------|
-| **Homepage** | Unified Dashboard | `olympus.lippok.dev` | Service status, weather, quick access |
+Provisions VMs and containers on a Proxmox host (Intel NUC) and bootstraps a Talos-based Kubernetes cluster. All IPs and MACs are sourced from `01-network` via remote state.
 
-## Configuration & Setup
+### Talos Kubernetes Cluster
 
-### Prerequisites
-- Docker and Docker Compose installed
-- `apache2-utils` for password hashing
-- `envsubst` for template processing
+- **OS:** Talos Linux -- immutable, API-driven, no SSH
+- **Image:** Built via Talos Image Factory with `qemu-guest-agent` extension
+- **CNI:** Set to `none` at bootstrap (Cilium installed in `03-services`)
+- **kube-proxy:** Disabled (Cilium takes over)
+- **KubePrism:** Enabled on port 7445 for HA API server discovery
 
-### Environment Variables
-The setup uses **environment variable substitution** for configuration files that don't natively support `.env` files.
+| Node Role | Count | Platform |
+|:----------|:------|:---------|
+| Control plane | 1 | Proxmox VM |
+| Workers (general) | 3 | Bare-metal (Athena VLAN) |
+| Worker (database) | 1 | Proxmox VM, tainted `dedicated=database:NoSchedule` |
 
-#### Required Environment Variables
-Create a `.env` file in `src/Pi4/` with the following variables:
+### NFS Server
 
-```bash
-# Traefik Authentication
-TRAEFIK_USER=admin
-TRAEFIK_PASSWORD=<hashed_password>
-TRAEFIK_PASSWORD_UNHASHED=<plain_password>
+Debian 12 LXC container with dual storage (SSD for OS, HDD for data). Exports `/srv/nfs/kubernetes` to the cluster. Proxmox firewall defaults to `DROP`; only K8s nodes and the NUC are whitelisted via IP set.
 
-# Cloudflare DNS (for Let's Encrypt)
-CLOUDFLARE_EMAIL=your-email@domain.com
-CF_DNS_API_TOKEN=your_cloudflare_token
+### Outputs
 
-# Container Passwords
-PORTAINER_PASSWORD=<hashed_password>
-GRAFANA_ADMIN_PASSWORD=your_secure_password
+Exports `kubeconfig`, `talosconfig`, cluster info, and NFS server details for the next layer.
 
-# API Keys & Integration
-HOMEPAGE_VAR_OPENWEATHERMAP_API_KEY=your_weather_api_key
-HOMEPAGE_VAR_MAILCOW_API_KEY=your_mailcow_api_key
-HOMEPAGE_VAR_PORTAINER_API_KEY=your_portainer_api_key
+---
 
-# UniFi Credentials
-HOMEPAGE_VAR_UNIFI_USER=unifi_username
-HOMEPAGE_VAR_UNIFI_PASSWORD=unifi_password
+## 03 Services (Cluster Platform)
 
-# Router Credentials
-FRITZBOX_USERNAME=fritz_username
-FRITZBOX_PASSWORD=fritz_password
+Bootstraps all platform-level services that make the cluster operational. Reads state from both `01-network` (LB CIDR) and `02-infrastructure` (kubeconfig, NFS server). Everything here is a prerequisite for the application workloads managed by ArgoCD.
 
-# Notification Webhooks
-DISCORD_WEBHOOK_URL=your_discord_webhook_url
+### Cilium
 
-# Tailscale Configuration
-TAILSCALE_AUTHKEY=your_tailscale_auth_key
-```
+Replaces kube-proxy and acts as the cluster CNI.
 
-### Password Hashing
-Generate hashed passwords for Traefik and Portainer:
+| Feature | Status |
+|:--------|:-------|
+| kube-proxy replacement | Enabled |
+| L2 Announcements | Enabled (all nodes) |
+| Gateway API | Enabled (`cilium` gatewayClassName) |
+| Hubble (observability) | Enabled with UI and relay |
+| LoadBalancer IP Pool | Sourced from `01-network` output |
 
-```bash
-# Install apache2-utils if not present
-sudo apt-get install apache2-utils
+### Kubernetes Gateway API
 
-# Generate password hash for Traefik/Portainer
-htpasswd -nb admin your_password
-# Copy the full output for TRAEFIK_PASSWORD
+A single `Gateway` resource handles all ingress with HTTP (80) and HTTPS (443) listeners. The HTTPS listener terminates TLS with a wildcard `*.lippok.dev` certificate. Services are exposed by creating `HTTPRoute` resources in their own namespaces.
 
-# For Portainer, extract just the hash part
-htpasswd -nb -B admin your_password | cut -d ":" -f 2
-# Copy the hash for PORTAINER_PASSWORD
-```
+### cert-manager
 
-### Template Processing
-The setup uses `.template` files that are processed with `envsubst` to inject environment variables:
+- **Issuer:** Let's Encrypt (production ACME)
+- **Challenge:** DNS-01 via Cloudflare API token
+- **Certificate:** Wildcard `*.lippok.dev` + root, stored in the `gateway` namespace
 
-- `traefik.yml.template` → `traefik.yml`
-- `prometheus.yml.template` → `prometheus.yml`  
-- `alertmanager.yml.template` → `alertmanager.yml`
+### NFS Storage
 
-### Installation Methods
+| Component | Details |
+|:----------|:--------|
+| CSI Driver | `csi-driver-nfs` |
+| StorageClass | `nfs-client` (default), NFS 4.1 |
+| NFS Server | IP and export path from `02-infrastructure` outputs |
 
-#### Option 1: Automated CI/CD (Recommended)
-The repository includes GitHub Actions for automated deployment of both Pi4 and Pi3 sites.  
-**Note:** To use this method, you must install custom GitHub Actions runners on your target machines.  
-Additionally, add all required environment variables as GitHub repository secrets.
+### External Secrets Operator
 
-1. **Fork the repository**
-2. **Install a custom GitHub Actions runner** on your deployment target
-3. **Configure GitHub Secrets** with all required environment variables
-4. **Push to main branch** – deployment happens automatically
+Manages secret distribution across namespaces.
 
-#### Option 2: Manual Deployment
+- **Backend (current):** Kubernetes secrets in a dedicated `secret-store` namespace
+- **Backend (planned):** HashiCorp Vault
+- **ClusterSecretStore** reads from the temporary backend via a dedicated ServiceAccount + RBAC
 
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/FinnPL/Homelab-Setup.git
-   cd Homelab-Setup/src/Pi4
-   ```
+Terraform seeds the initial secrets (Authentik, ArgoCD OIDC, Tailscale OAuth, CNPG superuser).
 
-2. **Create and configure `.env` file:**
-   ```bash
-   nano .env
-   # Add all required environment variables
-   ```
+---
 
-3. **Generate configuration files from templates:**
-   ```bash
-   # Export environment variables
-   set -a && source .env && set +a
-   
-   # Process templates
-   envsubst < traefik/traefik.yml.template > traefik/traefik.yml
-   envsubst < prometheus/prometheus.yml.template > prometheus/prometheus.yml
-   envsubst < alertmanager/alertmanager.yml.template > alertmanager/alertmanager.yml
-   ```
+## ArgoCD GitOps
 
-4. **Deploy the stack:**
-   ```bash
-   docker compose up -d
-   ```
-
-5. **Configure Portainer API:**
-   - Access Portainer at `https://port.lippok.dev`
-   - Navigate to **User settings → API tokens**
-   - Generate and copy the API key
-   - Add `HOMEPAGE_VAR_PORTAINER_API_KEY` to `.env`
-   - Restart homepage: `docker compose restart homepage`
+Deployed via Helm in `03-services`. All application workloads beyond the platform services are managed through ArgoCD's **App of Apps** pattern. A root Application watches the `apps/` directory in this repo and automatically syncs each application definition to the cluster.

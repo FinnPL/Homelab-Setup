@@ -29,6 +29,18 @@ data "talos_machine_configuration" "worker" {
           disabled = true
         }
       }
+    }),
+    yamlencode({
+      machine = {
+        logging = {
+          destinations = [
+            {
+              endpoint = "udp://127.0.0.1:5140"
+              format   = "json_lines"
+            }
+          ]
+        }
+      }
     })
   ]
 }

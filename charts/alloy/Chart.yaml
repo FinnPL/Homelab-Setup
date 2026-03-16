@@ -1,0 +1,14 @@
+apiVersion: v2
+name: alloy
+description: An umbrella chart for deploying Alloy as a DaemonSet and StatefulSet
+type: application
+version: 1.0.0
+dependencies:
+  - name: alloy
+    version: 1.6.2
+    repository: https://grafana.github.io/helm-charts
+    alias: alloy-agent
+  - name: alloy
+    version: 1.6.2
+    repository: https://grafana.github.io/helm-charts
+    alias: alloy-receiver

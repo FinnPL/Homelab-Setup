@@ -1,0 +1,223 @@
+alloy-agent:
+  enabled: true
+  alloy:
+    resources:
+      limits:
+        memory: "256Mi"
+        cpu: "500m"
+      requests:
+        memory: "128Mi"
+        cpu: "100m"
+
+    clustering:
+      enabled: false
+
+    storagePath: /var/lib/alloy/data
+
+    mounts:
+      extra:
+        - name: alloy-data
+          mountPath: /var/lib/alloy/data
+
+        - name: varlogpods
+          mountPath: /var/log/pods
+          readOnly: true
+        - name: varlog
+          mountPath: /var/log
+          readOnly: true
+
+    extraPorts:
+      - name: syslog
+        port: 5140
+        targetPort: 5140
+        protocol: UDP
+        hostPort: 5140
+
+    stabilityLevel: experimental
+
+    configMap:
+      content: |
+        logging {
+          level  = "info"
+          format = "logfmt"
+        }
+
+        // --- Talos OS system logs (json_lines over UDP) ---
+        loki.source.syslog "talos" {
+          listener {
+            address       = "127.0.0.1:5140"
+            protocol      = "udp"
+            syslog_format = "raw"
+            labels        = { job = "talos-syslog" }
+          }
+          forward_to = [loki.process.talos_json.receiver]
+        }
+
+        loki.relabel "talos_node" {
+          forward_to = [loki.process.talos_json.receiver]
+
+          rule {
+            target_label = "node"
+            replacement  = env("HOSTNAME")
+          }
+        }
+
+        loki.process "talos_json" {
+          // Parse the raw JSON line from Talos
+          stage.json {
+            expressions = {
+              msg            = "msg",
+              talos_level    = "\"talos-level\"",
+              talos_service  = "\"talos-service\"",
+              talos_time     = "\"talos-time\"",
+            }
+          }
+
+          // Promote extracted fields to labels
+          stage.labels {
+            values = {
+              level   = "talos_level",
+              service = "talos_service",
+            }
+          }
+
+          // Use the original Talos timestamp
+          stage.timestamp {
+            source = "talos_time"
+            format = "RFC3339Nano"
+          }
+
+          // Set the log line to just the message
+          stage.output {
+            source = "msg"
+          }
+
+          forward_to = [loki.write.default.receiver]
+        }
+
+        // --- Pod logs ---
+        discovery.kubernetes "pods" {
+          role = "pod"
+          selectors {
+            role  = "pod"
+            field = "spec.nodeName=" + env("HOSTNAME")
+          }
+        }
+
+        discovery.relabel "pods" {
+          targets = discovery.kubernetes.pods.targets
+
+          // 1. Map all Kubernetes pod labels into Loki log stream labels
+          rule {
+            action = "labelmap"
+            regex  = "__meta_kubernetes_pod_label_(app|app_kubernetes_io_name|app_kubernetes_io_instance|component|release)"
+          }
+
+          // 2. Explicitly label the namespace, pod name, and container
+          rule {
+            source_labels = ["__meta_kubernetes_namespace"]
+            target_label  = "namespace"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_name"]
+            target_label  = "pod"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_name"]
+            target_label  = "container"
+          }
+
+          // 3. Construct the actual log file path on disk for Containerd
+          rule {
+            source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name", "__meta_kubernetes_pod_uid"]
+            separator     = "_"
+            target_label  = "__tmp_pod_dir"
+          }
+
+          rule {
+            source_labels = ["__tmp_pod_dir", "__meta_kubernetes_pod_container_name"]
+            separator     = "/"
+            target_label  = "__path__"
+            replacement   = "/var/log/pods/$1/*.log"
+          }
+        }
+
+        local.file_match "pod_logs" {
+          path_targets = discovery.relabel.pods.output
+        }
+
+        loki.source.file "pod_logs" {
+          targets    = local.file_match.pod_logs.targets
+          forward_to = [loki.write.default.receiver]
+        }
+
+        loki.write "default" {
+          endpoint {
+            url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+          }
+        }
+
+  controller:
+    type: daemonset
+    hostNetwork: true
+    dnsPolicy: ClusterFirstWithHostNet
+    volumes:
+      extra:
+        - name: alloy-data
+          emptyDir:
+            medium: Memory
+            sizeLimit: 100Mi
+        - name: varlogpods
+          hostPath:
+            path: /var/log/pods
+        - name: varlog
+          hostPath:
+            path: /var/log
+
+alloy-receiver:
+  enabled: true
+  alloy:
+    clustering:
+      enabled: false
+
+    configMap:
+      content: |
+        logging {
+          level  = "info"
+          format = "logfmt"
+        }
+
+        loki.source.kubernetes_events "events" {
+          job_name   = "kubernetes-events"
+          forward_to = [loki.write.default.receiver]
+        }
+
+        loki.write "default" {
+          endpoint {
+            url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+          }
+        }
+
+  rbac:
+    create: true
+    rules:
+      - apiGroups: [""]
+        resources: ["events"]
+        verbs: ["get", "list", "watch"]
+
+  controller:
+    type: statefulset
+    replicas: 1
+    nodeSelector:
+      dedicated: "database"
+    tolerations:
+      - key: "dedicated"
+        operator: "Equal"
+        value: "database"
+        effect: "NoSchedule"
+
+  ingress:
+    enabled: false
+  
+  service:
+    type: ClusterIP
