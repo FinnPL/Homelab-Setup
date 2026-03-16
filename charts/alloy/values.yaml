@@ -84,8 +84,7 @@ alloy-agent:
           rule {
             source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name", "__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
             action        = "replace"
-            separator     = "/"
-            regex         = "(.*)/(.*)/(.*)/(.*)"
+            regex         = "(.*);(.*);(.*);(.*)"
             target_label  = "__path__"
             replacement   = "/var/log/pods/$1_$2_$3/$4/*.log"
           }
