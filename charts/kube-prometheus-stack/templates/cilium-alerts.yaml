@@ -1,0 +1,46 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cilium-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: cilium.rules
+      rules:
+        - alert: CiliumAgentTargetsMissing
+          annotations:
+            description: Cilium agent targets disappeared from Prometheus target discovery.
+            summary: Cilium agent targets are missing.
+          expr: absent(up{job="cilium-agent"})
+          for: 15m
+          labels:
+            severity: critical
+
+        - alert: CiliumAgentDown
+          annotations:
+            description: One or more Cilium agent scrape targets are unreachable.
+            summary: One or more Cilium agent targets are down.
+          expr: up{job="cilium-agent"} == 0
+          for: 10m
+          labels:
+            severity: warning
+
+        - alert: CiliumOperatorTargetsMissing
+          annotations:
+            description: Cilium operator targets disappeared from Prometheus target discovery.
+            summary: Cilium operator targets are missing.
+          expr: absent(up{job="cilium-operator"})
+          for: 15m
+          labels:
+            severity: warning
+
+        - alert: HubbleRelayTargetsMissing
+          annotations:
+            description: Hubble relay targets disappeared from Prometheus target discovery.
+            summary: Hubble relay metrics targets are missing.
+          expr: absent(up{job="hubble-relay-metrics"})
+          for: 15m
+          labels:
+            severity: warning
