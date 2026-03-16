@@ -81,6 +81,19 @@ kube-prometheus-stack:
         - name: 'discord'
           slack_configs:
             - api_url_file: /etc/alertmanager/secrets/alertmanager-discord/discord.url
+              send_resolved: true
+              username: 'Alertmanager'
+              icon_emoji: ':rotating_light:'
+              color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
+              title: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}'
+              title_link: ''
+              text: |-
+                *Alert:* {{ .CommonLabels.alertname }}
+                *Status:* {{ .Status | toUpper }}
+                *Severity:* {{ if .CommonLabels.severity }}{{ .CommonLabels.severity }}{{ else }}unknown{{ end }}
+                *Namespace:* {{ if .CommonLabels.namespace }}{{ .CommonLabels.namespace }}{{ else }}n/a{{ end }}
+                *Summary:* {{ if .CommonAnnotations.summary }}{{ .CommonAnnotations.summary }}{{ else }}n/a{{ end }}
+                *Alertmanager:* {{ .ExternalURL }}/#/alerts?receiver={{ .Receiver }}
 
   grafana:
     additionalDataSources:
