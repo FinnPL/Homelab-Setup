@@ -1,5 +1,7 @@
 loki:
   loki:
+    server:
+      log_level: warn
     commonConfig:
       replication_factor: 1
     auth_enabled: false

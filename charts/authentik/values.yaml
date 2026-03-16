@@ -2,6 +2,7 @@ authentik:
   nameOverride: authentik
   
   authentik:
+    log_level: warning
     error_reporting:
       enabled: true
 
