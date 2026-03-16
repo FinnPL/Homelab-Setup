@@ -48,6 +48,11 @@ authentik:
           secretKeyRef:
             name: authentik-secrets
             key: argocd-oidc-client-secret
+      - name: AUTHENTIK_GRAFANA_OIDC_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: authentik-secrets
+            key: grafana-oidc-client-secret
     metrics:
       enabled: true
       serviceMonitor:
@@ -92,6 +97,11 @@ authentik:
           secretKeyRef:
             name: authentik-secrets
             key: argocd-oidc-client-secret
+      - name: AUTHENTIK_GRAFANA_OIDC_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: authentik-secrets
+            key: grafana-oidc-client-secret
     metrics:
       enabled: true
       serviceMonitor:

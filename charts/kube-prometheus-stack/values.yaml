@@ -87,8 +87,14 @@ kube-prometheus-stack:
         secretKeyRef:
           name: grafana-db-credentials
           key: password
-          
+      GRAFANA_OIDC_SECRET:
+        secretKeyRef:
+          name: grafana-oidc-credentials
+          key: client-secret
+
     grafana.ini:
+      server:
+        root_url: https://grafana.lippok.dev
       database:
         type: postgres
         host: $__env{DB_HOST}:$__env{DB_PORT}
@@ -96,3 +102,14 @@ kube-prometheus-stack:
         user: $__env{DB_USER}
         password: $__env{DB_PASSWORD}
         ssl_mode: require
+      auth.generic_oauth:
+        enabled: true
+        name: Authentik
+        allow_sign_up: true
+        client_id: grafana
+        client_secret: $__env{GRAFANA_OIDC_SECRET}
+        scopes: openid email profile groups
+        auth_url: https://auth.lippok.dev/application/o/authorize/
+        token_url: https://auth.lippok.dev/application/o/token/
+        api_url: https://auth.lippok.dev/application/o/userinfo/
+        role_attribute_path: contains(groups, 'authentik Admins') && 'GrafanaAdmin' || 'Viewer'
