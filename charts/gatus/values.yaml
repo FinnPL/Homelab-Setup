@@ -120,6 +120,31 @@ gatus:
             failure-threshold: 3
             success-threshold: 2
 
+      - name: "Zeus NAS"
+        group: "NAS"
+        url: "https://zeus.lippok.dev"
+        interval: 60s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 2000"
+          - "[CERTIFICATE_EXPIRATION] > 24h"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Zeus NAS Ping"
+        group: "NAS"
+        url: "icmp://zeus.athena"
+        interval: 60s
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
       # Routers
       - name: "FritzBox"
         group: "Routers"
