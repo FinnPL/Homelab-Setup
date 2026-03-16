@@ -54,6 +54,8 @@ loki:
     enabled: false
   resultsCache:
     enabled: false
+  lokiCanary:
+    enabled: false
   ruler:
     enabled: true
     alertmanager_url: http://kube-prometheus-stack-alertmanager.monitoring.svc.cluster.local:9093
