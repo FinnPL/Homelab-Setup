@@ -60,6 +60,7 @@ data "talos_machine_configuration" "db_worker" {
           destinations = [
             {
               endpoint = "udp://127.0.0.1:5140"
+              format   = "json_lines"
             }
           ]
         }

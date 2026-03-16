@@ -33,6 +33,8 @@ alloy-agent:
         protocol: UDP
         hostPort: 5140
 
+    stabilityLevel: experimental
+
     configMap:
       content: |
         logging {
@@ -40,15 +42,51 @@ alloy-agent:
           format = "logfmt"
         }
 
+        // --- Talos OS system logs (json_lines over UDP) ---
         loki.source.syslog "talos" {
           listener {
-            address  = "127.0.0.1:5140"
-            protocol = "udp"
-            labels   = { job = "talos-syslog" }
+            address       = "127.0.0.1:5140"
+            protocol      = "udp"
+            syslog_format = "raw"
+            labels        = { job = "talos-syslog" }
           }
+          forward_to = [loki.process.talos_json.receiver]
+        }
+
+        loki.process "talos_json" {
+          // Parse the raw JSON line from Talos
+          stage.json {
+            expressions = {
+              msg            = "msg",
+              talos_level    = "\"talos-level\"",
+              talos_service  = "\"talos-service\"",
+              talos_time     = "\"talos-time\"",
+            }
+          }
+
+          // Promote extracted fields to labels
+          stage.labels {
+            values = {
+              level   = "talos_level",
+              service = "talos_service",
+            }
+          }
+
+          // Use the original Talos timestamp
+          stage.timestamp {
+            source = "talos_time"
+            format = "RFC3339Nano"
+          }
+
+          // Set the log line to just the message
+          stage.output {
+            source = "msg"
+          }
+
           forward_to = [loki.write.default.receiver]
         }
 
+        // --- Pod logs ---
         discovery.kubernetes "pods" {
           role = "pod"
           selectors {
