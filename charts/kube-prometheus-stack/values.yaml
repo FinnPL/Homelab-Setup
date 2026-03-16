@@ -95,7 +95,8 @@ kube-prometheus-stack:
     grafana.ini:
       server:
         domain: grafana.lippok.dev
-        root_url: https://grafana.lippok.dev
+        root_url: https://grafana.lippok.dev/
+        router_logging: false
       database:
         type: postgres
         host: $__env{DB_HOST}:$__env{DB_PORT}
@@ -114,8 +115,6 @@ kube-prometheus-stack:
         token_url: https://auth.lippok.dev/application/o/token/
         api_url: https://auth.lippok.dev/application/o/userinfo/
         role_attribute_path: contains(groups, 'authentik Admins') && 'GrafanaAdmin' || 'Viewer'
-      server:
-        router_logging: false
       log:
         mode: console
         level: info
