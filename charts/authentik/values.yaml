@@ -16,7 +16,7 @@ authentik:
   server:
     env:
       - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
-        value: "600"
+        value: "60"
       - name: AUTHENTIK_SECRET_KEY
         valueFrom:
           secretKeyRef:
@@ -65,7 +65,7 @@ authentik:
   worker:
     env:
       - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
-        value: "600"
+        value: "60"
       - name: AUTHENTIK_SECRET_KEY
         valueFrom:
           secretKeyRef:
