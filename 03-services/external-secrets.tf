@@ -180,6 +180,20 @@ resource "kubernetes_secret_v1" "seed_argocd_oidc" {
   }
 }
 
+resource "kubernetes_secret_v1" "seed_grafana_oidc" {
+  metadata {
+    name      = "grafana-oidc"
+    namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+    }
+  }
+
+  data = {
+    "client-secret" = var.grafana_oidc_client_secret
+  }
+}
+
 resource "kubernetes_secret_v1" "seed_tailscale_oauth" {
   metadata {
     name      = "tailscale-oauth"

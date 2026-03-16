@@ -37,6 +37,12 @@ variable "argocd_oidc_client_secret" {
   sensitive   = true
 }
 
+variable "grafana_oidc_client_secret" {
+  description = "OIDC client secret shared between Authentik and Grafana"
+  type        = string
+  sensitive   = true
+}
+
 variable "tailscale_oauth_client_id" {
   description = "Tailscale OAuth Client ID"
   type        = string
