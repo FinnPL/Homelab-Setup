@@ -133,7 +133,6 @@ data "talos_machine_configuration" "controlplane" {
           destinations = [
             {
               endpoint = "udp://127.0.0.1:5140"
-              format   = "syslog"
             }
           ]
         }
