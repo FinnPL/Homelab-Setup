@@ -36,7 +36,7 @@ resource "helm_release" "argocd" {
           "oidc.config" = local.argocd_oidc_config
         }
         rbac = {
-          "policy.csv"     = "g, authentik-admins, role:admin"
+          "policy.csv"     = "g, authentik Admins, role:admin"
           "policy.default" = "role:readonly"
           "scopes"         = "[groups]"
         }
