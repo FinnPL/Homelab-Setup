@@ -79,8 +79,8 @@ kube-prometheus-stack:
               - severity =~ "warning|critical"
       receivers:
         - name: 'discord'
-          discord_configs:
-            - webhook_url_file: /etc/alertmanager/secrets/alertmanager-discord/discord.url
+          slack_configs:
+            - api_url_file: /etc/alertmanager/secrets/alertmanager-discord/discord.url
 
   grafana:
     additionalDataSources:
