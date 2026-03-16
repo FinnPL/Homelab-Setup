@@ -1,4 +1,11 @@
 kube-prometheus-stack:
+  defaultRules:
+    rules:
+      kubeProxy: false
+
+  kubeProxy:
+    enabled: false
+
   prometheus:
     prometheusSpec:
       securityContext:
@@ -10,10 +17,10 @@ kube-prometheus-stack:
       resources:
         requests:
           memory: 512Mi
-          cpu: 100m
+          cpu: 250m
         limits:
           memory: 1024Mi
-          cpu: 500m
+          cpu: 1000m
       nodeSelector:
         dedicated: database
       tolerations:
