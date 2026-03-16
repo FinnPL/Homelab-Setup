@@ -54,3 +54,15 @@ variable "tailscale_oauth_secret" {
   type        = string
   sensitive   = true
 }
+
+variable "gatus_discord_webhook_url" {
+  description = "Discord webhook URL for Gatus uptime alerts"
+  type        = string
+  sensitive   = true
+}
+
+variable "alertmanager_discord_webhook_url" {
+  description = "Discord webhook URL for Alertmanager metrics and logs alerts"
+  type        = string
+  sensitive   = true
+}

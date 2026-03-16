@@ -60,7 +60,28 @@ kube-prometheus-stack:
             resources:
               requests:
                 storage: 2Gi
-                
+      
+      secrets:
+        - alertmanager-discord
+
+    config:
+      global:
+        resolve_timeout: 5m
+      route:
+        group_by: ['namespace', 'alertname']
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 12h
+        receiver: 'discord'
+        routes:
+          - receiver: 'discord'
+            matchers:
+              - severity =~ "warning|critical"
+      receivers:
+        - name: 'discord'
+          discord_configs:
+            - webhook_url_file: /etc/alertmanager/secrets/alertmanager-discord/discord.url
+
   grafana:
     additionalDataSources:
       - name: Loki
@@ -89,7 +110,7 @@ kube-prometheus-stack:
           key: password
       GRAFANA_OIDC_SECRET:
         secretKeyRef:
-          name: grafana-oidc-credentials
+          name: grafana-secrets
           key: client-secret
 
     grafana.ini:
