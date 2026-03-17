@@ -1,21 +1,38 @@
-{{- $namespace := .Values.namespace -}}
-{{- $gateway := .Values.gateway -}}
-{{- $proxy := .Values.proxy -}}
-{{- range .Values.proxyBackends }}
+{{- define "gateway-external-routes.renderBackendProxy" -}}
+{{- $root := .root -}}
+{{- $backend := .backend -}}
+{{- $namespace := $root.Values.namespace -}}
+{{- $gateway := $root.Values.gateway -}}
+{{- $proxy := $root.Values.proxy -}}
+{{- $upstreamName := printf "%s_upstream" ($backend.name | replace "-" "_") -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .name }}-external-proxy-nginx
+  name: {{ $backend.name }}-external-proxy-nginx
   namespace: {{ $namespace }}
 data:
   default.conf: |
+{{- if $backend.endpoints }}
+    upstream {{ $upstreamName }} {
+{{- range $backend.endpoints }}
+      server {{ . }}:{{ default $backend.servicePort $backend.upstreamPort }};
+{{- end }}
+    }
+
+{{- end }}
     server {
       listen {{ $proxy.containerPort }};
+{{- if $backend.upstreamHost }}
       resolver {{ $proxy.resolver }} valid=10s ipv6=off;
+{{- end }}
 
       location / {
-        set $upstream "{{ .upstreamHost }}:{{ .upstreamPort }}";
+{{- if $backend.endpoints }}
+        proxy_pass http://{{ $upstreamName }};
+{{- else }}
+        set $upstream "{{ $backend.upstreamHost }}:{{ $backend.upstreamPort }}";
         proxy_pass http://$upstream;
+{{- end }}
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -27,17 +44,17 @@ data:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .name }}-external-proxy
+  name: {{ $backend.name }}-external-proxy
   namespace: {{ $namespace }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: {{ .name }}-external-proxy
+      app: {{ $backend.name }}-external-proxy
   template:
     metadata:
       labels:
-        app: {{ .name }}-external-proxy
+        app: {{ $backend.name }}-external-proxy
     spec:
       securityContext:
         runAsNonRoot: true
@@ -63,26 +80,26 @@ spec:
       volumes:
         - name: nginx-conf
           configMap:
-            name: {{ .name }}-external-proxy-nginx
+            name: {{ $backend.name }}-external-proxy-nginx
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .name }}-external
+  name: {{ $backend.name }}-external
   namespace: {{ $namespace }}
 spec:
   selector:
-    app: {{ .name }}-external-proxy
+    app: {{ $backend.name }}-external-proxy
   ports:
     - name: http
-      port: {{ .servicePort }}
+      port: {{ $backend.servicePort }}
       targetPort: {{ $proxy.containerPort }}
       protocol: TCP
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: {{ .name }}
+  name: {{ $backend.name }}
   namespace: {{ $namespace }}
 spec:
   parentRefs:
@@ -90,10 +107,10 @@ spec:
       namespace: {{ $gateway.namespace }}
       sectionName: {{ $gateway.sectionName }}
   hostnames:
-    - {{ .hostname | quote }}
+    - {{ $backend.hostname | quote }}
   rules:
     - backendRefs:
-        - name: {{ .name }}-external
-          port: {{ .servicePort }}
+        - name: {{ $backend.name }}-external
+          port: {{ $backend.servicePort }}
 ---
 {{- end }}

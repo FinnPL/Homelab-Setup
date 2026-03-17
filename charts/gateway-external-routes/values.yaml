@@ -10,7 +10,7 @@ proxy:
   containerPort: 8080
   resolver: kube-dns.kube-system.svc.cluster.local
 
-proxyBackends:
+backends:
   - name: apollo
     hostname: apollo.lippok.dev
     servicePort: 5000
@@ -23,7 +23,6 @@ proxyBackends:
     upstreamHost: zeus.athena
     upstreamPort: 80
 
-staticBackends:
   - name: fritzbox
     hostname: fb.lippok.dev
     servicePort: 80
