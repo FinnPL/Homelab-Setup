@@ -24,6 +24,13 @@ resource "proxmox_virtual_environment_user_token" "metrics_exporter" {
   comment               = "Managed by Terraform for Prometheus Proxmox exporter"
 }
 
+resource "proxmox_virtual_environment_acl" "metrics_exporter_user" {
+  path      = var.proxmox_exporter_acl_path
+  role_id   = var.proxmox_exporter_role_id
+  user_id   = proxmox_virtual_environment_user.metrics_exporter.user_id
+  propagate = true
+}
+
 resource "proxmox_virtual_environment_acl" "metrics_exporter_token" {
   path      = var.proxmox_exporter_acl_path
   role_id   = var.proxmox_exporter_role_id

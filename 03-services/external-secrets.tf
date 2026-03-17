@@ -269,9 +269,12 @@ resource "kubernetes_secret_v1" "seed_proxmox_exporter" {
   }
 
   data = {
-    "user"        = data.terraform_remote_state.infrastructure.outputs.proxmox_exporter_credentials.user
-    "token-name"  = data.terraform_remote_state.infrastructure.outputs.proxmox_exporter_credentials.token_name
-    "token-value" = data.terraform_remote_state.infrastructure.outputs.proxmox_exporter_credentials.token_value
+    "user"       = data.terraform_remote_state.infrastructure.outputs.proxmox_exporter_credentials.user
+    "token-name" = data.terraform_remote_state.infrastructure.outputs.proxmox_exporter_credentials.token_name
+    "token-value" = trimprefix(
+      data.terraform_remote_state.infrastructure.outputs.proxmox_exporter_credentials.token_value,
+      "${data.terraform_remote_state.infrastructure.outputs.proxmox_exporter_credentials.user}!${data.terraform_remote_state.infrastructure.outputs.proxmox_exporter_credentials.token_name}="
+    )
   }
 }
 
