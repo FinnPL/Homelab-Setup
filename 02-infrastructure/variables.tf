@@ -2,12 +2,6 @@
 # Proxmox Configuration
 # =============================================================================
 
-variable "proxmox_api_token" {
-  description = "Proxmox API Token in format: user@realm!tokenid=token-secret"
-  type        = string
-  sensitive   = true
-}
-
 variable "proxmox_insecure" {
   description = "Skip TLS verification for Proxmox API (set to true for self-signed certs)"
   type        = bool
@@ -47,6 +41,30 @@ variable "proxmox_ssh_private_key" {
 variable "proxmox_ssh_public_key" {
   description = "Raw SSH public key string for authorized_keys"
   type        = string
+}
+
+variable "proxmox_exporter_user_id" {
+  description = "Proxmox user ID for the exporter token (for example prometheus-exporter@pve)"
+  type        = string
+  default     = "prometheus-exporter@pve"
+}
+
+variable "proxmox_exporter_token_name" {
+  description = "Token name created for the Proxmox exporter user"
+  type        = string
+  default     = "metrics"
+}
+
+variable "proxmox_exporter_role_id" {
+  description = "Proxmox role assigned to the exporter token"
+  type        = string
+  default     = "PVEAuditor"
+}
+
+variable "proxmox_exporter_acl_path" {
+  description = "ACL path for the exporter token permissions"
+  type        = string
+  default     = "/"
 }
 
 # =============================================================================

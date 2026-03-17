@@ -41,6 +41,8 @@ jobs:
       TF_VAR_tailscale_oauth_secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
       TF_VAR_gatus_discord_webhook_url: ${{ secrets.GATUS_DISCORD_WEBHOOK_URL }}
       TF_VAR_alertmanager_discord_webhook_url: ${{ secrets.ALERTMANAGER_DISCORD_WEBHOOK_URL }}
+      TF_VAR_unifi_exporter_username: ${{ secrets.UNIFI_EXPORTER_USERNAME }}
+      TF_VAR_unifi_exporter_password: ${{ secrets.UNIFI_EXPORTER_PASSWORD }}
 
     steps:
       - name: Checkout Code
