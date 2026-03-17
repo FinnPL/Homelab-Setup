@@ -42,9 +42,12 @@ output "postgres_server" {
 output "proxmox_exporter_credentials" {
   description = "Managed read-only Proxmox token components for the Proxmox metrics exporter"
   value = {
-    user        = proxmox_virtual_environment_user.metrics_exporter.user_id
-    token_name  = proxmox_virtual_environment_user_token.metrics_exporter.token_name
-    token_value = proxmox_virtual_environment_user_token.metrics_exporter.value
+    user       = proxmox_virtual_environment_user.metrics_exporter.user_id
+    token_name = proxmox_virtual_environment_user_token.metrics_exporter.token_name
+    token_value = trimprefix(
+      proxmox_virtual_environment_user_token.metrics_exporter.value,
+      "${proxmox_virtual_environment_user.metrics_exporter.user_id}!${proxmox_virtual_environment_user_token.metrics_exporter.token_name}="
+    )
   }
   sensitive = true
 }
