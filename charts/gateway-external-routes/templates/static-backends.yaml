@@ -26,9 +26,11 @@ ports:
     port: {{ $backend.servicePort }}
     protocol: TCP
 endpoints:
-  - addresses:
 {{- range $backend.endpoints }}
+  - addresses:
       - {{ . | quote }}
+    conditions:
+      ready: true
 {{- end }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
