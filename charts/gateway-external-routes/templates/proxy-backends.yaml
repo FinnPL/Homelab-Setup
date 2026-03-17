@@ -1,0 +1,99 @@
+{{- $namespace := .Values.namespace -}}
+{{- $gateway := .Values.gateway -}}
+{{- $proxy := .Values.proxy -}}
+{{- range .Values.proxyBackends }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .name }}-external-proxy-nginx
+  namespace: {{ $namespace }}
+data:
+  default.conf: |
+    server {
+      listen {{ $proxy.containerPort }};
+      resolver {{ $proxy.resolver }} valid=10s ipv6=off;
+
+      location / {
+        set $upstream "{{ .upstreamHost }}:{{ .upstreamPort }}";
+        proxy_pass http://$upstream;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection "";
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .name }}-external-proxy
+  namespace: {{ $namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .name }}-external-proxy
+  template:
+    metadata:
+      labels:
+        app: {{ .name }}-external-proxy
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: nginx
+          image: {{ $proxy.image }}
+          ports:
+            - name: http
+              containerPort: {{ $proxy.containerPort }}
+              protocol: TCP
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: nginx-conf
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+              readOnly: true
+      volumes:
+        - name: nginx-conf
+          configMap:
+            name: {{ .name }}-external-proxy-nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .name }}-external
+  namespace: {{ $namespace }}
+spec:
+  selector:
+    app: {{ .name }}-external-proxy
+  ports:
+    - name: http
+      port: {{ .servicePort }}
+      targetPort: {{ $proxy.containerPort }}
+      protocol: TCP
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .name }}
+  namespace: {{ $namespace }}
+spec:
+  parentRefs:
+    - name: {{ $gateway.name }}
+      namespace: {{ $gateway.namespace }}
+      sectionName: {{ $gateway.sectionName }}
+  hostnames:
+    - {{ .hostname | quote }}
+  rules:
+    - backendRefs:
+        - name: {{ .name }}-external
+          port: {{ .servicePort }}
+---
+{{- end }}

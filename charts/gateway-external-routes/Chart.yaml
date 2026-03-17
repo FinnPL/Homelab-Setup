@@ -1,0 +1,4 @@
+apiVersion: v2
+name: gateway-external-routes
+version: 1.0.0
+type: application

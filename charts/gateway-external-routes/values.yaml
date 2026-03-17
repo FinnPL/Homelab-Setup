@@ -1,0 +1,31 @@
+namespace: gateway
+
+gateway:
+  name: main-gateway
+  namespace: gateway
+  sectionName: https
+
+proxy:
+  image: nginxinc/nginx-unprivileged:1.27-alpine
+  containerPort: 8080
+  resolver: kube-dns.kube-system.svc.cluster.local
+
+proxyBackends:
+  - name: apollo
+    hostname: apollo.lippok.dev
+    servicePort: 5000
+    upstreamHost: apollo.athena
+    upstreamPort: 5000
+
+  - name: zeus
+    hostname: zeus.lippok.dev
+    servicePort: 80
+    upstreamHost: zeus.athena
+    upstreamPort: 80
+
+staticBackends:
+  - name: fritzbox
+    hostname: fb.lippok.dev
+    servicePort: 80
+    endpoints:
+      - 192.168.178.1
