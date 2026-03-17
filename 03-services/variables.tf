@@ -66,3 +66,15 @@ variable "alertmanager_discord_webhook_url" {
   type        = string
   sensitive   = true
 }
+
+variable "unifi_exporter_username" {
+  description = "UniFi exporter API username"
+  type        = string
+  sensitive   = true
+}
+
+variable "unifi_exporter_password" {
+  description = "UniFi exporter API password"
+  type        = string
+  sensitive   = true
+}

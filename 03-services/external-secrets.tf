@@ -258,3 +258,34 @@ resource "kubernetes_secret_v1" "seed_alertmanager_discord" {
     "webhook-url" = var.alertmanager_discord_webhook_url
   }
 }
+
+resource "kubernetes_secret_v1" "seed_proxmox_exporter" {
+  metadata {
+    name      = "proxmox-exporter"
+    namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+    }
+  }
+
+  data = {
+    "user"        = data.terraform_remote_state.infrastructure.outputs.proxmox_exporter_credentials.user
+    "token-name"  = data.terraform_remote_state.infrastructure.outputs.proxmox_exporter_credentials.token_name
+    "token-value" = data.terraform_remote_state.infrastructure.outputs.proxmox_exporter_credentials.token_value
+  }
+}
+
+resource "kubernetes_secret_v1" "seed_unifi_exporter" {
+  metadata {
+    name      = "unifi-exporter"
+    namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+    }
+  }
+
+  data = {
+    "username" = var.unifi_exporter_username
+    "password" = var.unifi_exporter_password
+  }
+}

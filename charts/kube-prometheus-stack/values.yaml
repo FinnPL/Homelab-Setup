@@ -162,3 +162,82 @@ kube-prometheus-stack:
         mode: console
         level: info
         filters: tsdb.loki:warn
+
+proxmoxExporter:
+  enabled: true
+  image:
+    repository: prompve/prometheus-pve-exporter
+    # renovate: datasource=docker depName=prompve/prometheus-pve-exporter
+    tag: v3.8.1
+    pullPolicy: IfNotPresent
+
+  # Proxmox VE host to scrape via /pve?target=<host>
+  target: nuc.athena
+  verifySsl: false
+
+  service:
+    port: 9221
+
+  metrics:
+    path: /pve
+    module: default
+    cluster: "1"
+    node: "1"
+    interval: 30s
+    scrapeTimeout: 15s
+
+  resources:
+    requests:
+      cpu: 20m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+  secret:
+    name: proxmox-exporter-secrets
+    remoteKey: proxmox-exporter
+
+unifiExporter:
+  enabled: true
+  image:
+    repository: ghcr.io/unpoller/unpoller
+    # renovate: datasource=docker depName=ghcr.io/unpoller/unpoller
+    tag: v2.34.0
+    pullPolicy: IfNotPresent
+
+  verifySsl: false
+
+  defaults:
+    saveSites: true
+
+  controllers:
+    - role: vieta
+      url: https://10.10.0.1
+      sites:
+        - all
+    - role: minerva
+      url: https://10.0.0.1
+      sites:
+        - all
+
+  service:
+    port: 9130
+
+  metrics:
+    namespace: unpoller
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 15s
+
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 300m
+      memory: 256Mi
+
+  secret:
+    name: unifi-exporter-secrets
+    remoteKey: unifi-exporter
