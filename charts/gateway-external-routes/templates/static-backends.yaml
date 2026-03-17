@@ -13,20 +13,23 @@ spec:
       port: {{ $backend.servicePort }}
       protocol: TCP
 ---
-apiVersion: v1
-kind: Endpoints
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
 metadata:
   name: {{ $backend.name }}-external
   namespace: {{ $namespace }}
-subsets:
+  labels:
+    kubernetes.io/service-name: {{ $backend.name }}-external
+addressType: IPv4
+ports:
+  - name: http
+    port: {{ $backend.servicePort }}
+    protocol: TCP
+endpoints:
   - addresses:
 {{- range $backend.endpoints }}
-      - ip: {{ . | quote }}
+      - {{ . | quote }}
 {{- end }}
-    ports:
-      - name: http
-        port: {{ $backend.servicePort }}
-        protocol: TCP
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
