@@ -121,7 +121,7 @@ alloy-agent:
           listener {
             address       = "0.0.0.0:5142"
             protocol      = "udp"
-            syslog_format = "rfc3164"
+            syslog_format = "raw"
             labels        = { job = "unifi-syslog" }
           }
           forward_to = [loki.write.default.receiver]
