@@ -110,7 +110,7 @@ alloy-agent:
           listener {
             address       = "0.0.0.0:5141"
             protocol      = "udp"
-            syslog_format = "raw"
+            syslog_format = "rfc3164"
             labels        = { job = "proxmox-syslog" }
           }
           forward_to = [loki.write.default.receiver]
