@@ -1,0 +1,3 @@
+{{- range .Values.backends }}
+{{ include "gateway-external-routes.renderBackendProxy" (dict "root" $ "backend" .) }}
+{{- end }}
