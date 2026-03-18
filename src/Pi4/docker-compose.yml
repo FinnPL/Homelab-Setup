@@ -75,7 +75,7 @@ services:
 
   # Monitoring Stack
   prometheus:
-    image: prom/prometheus:v3.8.0
+    image: prom/prometheus:v3.10.0
     container_name: prometheus
     restart: always
     command:
