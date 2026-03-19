@@ -9,9 +9,6 @@ image:
 securityContext:
   readOnlyRootFilesystem: true
 
-nginx:
-  globalDirectives: "daemon off; pid /dev/shm/nginx.pid;"
-
 service:
   port: 80
 
