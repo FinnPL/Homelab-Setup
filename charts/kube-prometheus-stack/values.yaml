@@ -8,6 +8,7 @@ kube-prometheus-stack:
 
   prometheus:
     prometheusSpec:
+      externalUrl: https://prometheus.lippok.dev
       securityContext:
         runAsUser: 1000
         runAsGroup: 2000
@@ -92,17 +93,29 @@ kube-prometheus-stack:
             - api_url_file: /etc/alertmanager/secrets/alertmanager-discord/discord.url
               send_resolved: true
               username: 'Alertmanager'
-              icon_emoji: ':rotating_light:'
               color: '{{ if eq .Status "firing" }}danger{{ else }}good{{ end }}'
               title: '[{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }}'
-              title_link: ''
+              title_link: 'https://alerts.lippok.dev/#/alerts?receiver={{ .Receiver }}'
               text: |-
-                **Alert:** {{ .CommonLabels.alertname }}
-                **Status:** {{ .Status | toUpper }}
-                **Severity:** {{ if .CommonLabels.severity }}{{ .CommonLabels.severity }}{{ else }}unknown{{ end }}
-                **Namespace:** {{ if .CommonLabels.namespace }}{{ .CommonLabels.namespace }}{{ else }}n/a{{ end }}
-                **Summary:** {{ if .CommonAnnotations.summary }}{{ .CommonAnnotations.summary }}{{ else }}n/a{{ end }}
-                **Alertmanager:** https://alerts.lippok.dev/#/alerts?receiver={{ .Receiver }}
+                {{- range .Alerts }}
+                **Severity:** `{{ .Labels.severity | toUpper }}`
+                **Description:** {{ or .Annotations.description .Annotations.summary "N/A" }}
+                
+                **Target Details:**
+                {{- if .Labels.namespace }}
+                - **Namespace:** `{{ .Labels.namespace }}`{{ end }}
+                {{- if .Labels.pod }}
+                - **Pod:** `{{ .Labels.pod }}`{{ end }}
+                {{- if .Labels.node }}
+                - **Node:** `{{ .Labels.node }}`{{ end }}
+                {{- if .Labels.job }}
+                - **Job:** `{{ .Labels.job }}`{{ end }}
+                
+                **Links:**
+                [Prometheus Graph]({{ .GeneratorURL }}) {{- if .Annotations.runbook_url }} | [Runbook]({{ .Annotations.runbook_url }}){{ end }}
+                
+                ---
+                {{- end }}
 
   grafana:
     additionalDataSources:
