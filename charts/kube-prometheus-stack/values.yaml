@@ -99,7 +99,7 @@ kube-prometheus-stack:
               text: |-
                 {{- range .Alerts }}
                 **Severity:** `{{ .Labels.severity | toUpper }}`
-                **Description:** {{ if .Annotations.description }}{{ .Annotations.description }}{{ else }}{{ .Annotations.summary | default "N/A" }}{{ end }}
+                **Description:** {{ or .Annotations.description .Annotations.summary "N/A" }}
                 
                 **Target Details:**
                 {{- if .Labels.namespace }}
