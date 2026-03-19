@@ -1,0 +1,46 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/corentinth/it-tools
+  # renovate: datasource=docker depName=ghcr.io/corentinth/it-tools versioning=loose
+  tag: 2024.10.22-7ca5933
+  pullPolicy: IfNotPresent
+
+securityContext:
+  readOnlyRootFilesystem: true
+
+nginx:
+  globalDirectives: "daemon off; pid /dev/shm/nginx.pid; client_body_temp_path /dev/shm/client_temp; proxy_temp_path /dev/shm/proxy_temp; fastcgi_temp_path /dev/shm/fastcgi_temp; uwsgi_temp_path /dev/shm/uwsgi_temp; scgi_temp_path /dev/shm/scgi_temp;"
+
+service:
+  port: 80
+
+resources:
+  requests:
+    cpu: 25m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+probes:
+  readiness:
+    path: /
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  liveness:
+    path: /
+    initialDelaySeconds: 15
+    periodSeconds: 20
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+httproute:
+  enabled: true
+  gateway:
+    name: main-gateway
+    namespace: gateway
+  hostnames:
+    - it-tools.lippok.dev
