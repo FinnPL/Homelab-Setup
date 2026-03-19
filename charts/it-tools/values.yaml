@@ -9,9 +9,6 @@ image:
 securityContext:
   readOnlyRootFilesystem: true
 
-nginx:
-  globalDirectives: "daemon off; pid /dev/shm/nginx.pid; client_body_temp_path /dev/shm/client_temp; proxy_temp_path /dev/shm/proxy_temp; fastcgi_temp_path /dev/shm/fastcgi_temp; uwsgi_temp_path /dev/shm/uwsgi_temp; scgi_temp_path /dev/shm/scgi_temp;"
-
 service:
   port: 80
 

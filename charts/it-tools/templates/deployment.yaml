@@ -21,13 +21,16 @@ spec:
         - name: it-tools
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          args:
-            - nginx
-            - -g
-            - {{ .Values.nginx.globalDirectives | quote }}
           securityContext:
             readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
             allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-tmp
+              mountPath: /tmp
+            - name: nginx-run
+              mountPath: /var/run
           ports:
             - name: http
               containerPort: 80
@@ -50,3 +53,13 @@ spec:
             failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
           resources:
 {{ toYaml .Values.resources | indent 12 }}
+      volumes:
+        - name: nginx-cache
+          emptyDir:
+            medium: Memory
+        - name: nginx-tmp
+          emptyDir:
+            medium: Memory
+        - name: nginx-run
+          emptyDir:
+            medium: Memory
