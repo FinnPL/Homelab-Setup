@@ -1,46 +1,69 @@
-replicaCount: 1
-
-image:
-  repository: ghcr.io/corentinth/it-tools
-  # renovate: datasource=docker depName=ghcr.io/corentinth/it-tools versioning=loose
-  tag: 2024.10.22-7ca5933
-  pullPolicy: IfNotPresent
-
-securityContext:
-  readOnlyRootFilesystem: true
-
-nginx:
-  globalDirectives: "daemon off; pid /dev/shm/nginx.pid; client_body_temp_path /dev/shm/client_temp; proxy_temp_path /dev/shm/proxy_temp; fastcgi_temp_path /dev/shm/fastcgi_temp; uwsgi_temp_path /dev/shm/uwsgi_temp; scgi_temp_path /dev/shm/scgi_temp;"
-
-service:
-  port: 80
-
-resources:
-  requests:
-    cpu: 25m
-    memory: 64Mi
-  limits:
-    cpu: 200m
-    memory: 256Mi
-
-probes:
-  readiness:
-    path: /
-    initialDelaySeconds: 5
-    periodSeconds: 10
-    timeoutSeconds: 3
-    failureThreshold: 3
-  liveness:
-    path: /
-    initialDelaySeconds: 15
-    periodSeconds: 20
-    timeoutSeconds: 3
-    failureThreshold: 3
-
-httproute:
-  enabled: true
-  gateway:
-    name: main-gateway
-    namespace: gateway
-  hostnames:
-    - it-tools.lippok.dev
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: it-tools
+  labels:
+    app.kubernetes.io/name: it-tools
+    app.kubernetes.io/part-of: homelab
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: it-tools
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: it-tools
+        app.kubernetes.io/part-of: homelab
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: it-tools
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args:
+            - nginx
+            - -g
+            - {{ .Values.nginx.globalDirectives | quote }}
+          securityContext:
+            readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
+            allowPrivilegeEscalation: false
+          volumeMounts:
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-tmp
+              mountPath: /tmp
+            - name: nginx-run
+              mountPath: /var/run
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.probes.readiness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.probes.liveness.path }}
+              port: http
+            initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+            periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+            timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+            failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+      volumes:
+        - name: nginx-cache
+          emptyDir:
+            medium: Memory
+        - name: nginx-tmp
+          emptyDir:
+            medium: Memory
+        - name: nginx-run
+          emptyDir:
+            medium: Memory
