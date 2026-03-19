@@ -21,10 +21,6 @@ spec:
         - name: it-tools
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          args:
-            - nginx
-            - -g
-            - {{ .Values.nginx.globalDirectives | quote }}
           securityContext:
             readOnlyRootFilesystem: {{ .Values.securityContext.readOnlyRootFilesystem }}
             allowPrivilegeEscalation: false
