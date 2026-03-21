@@ -31,6 +31,10 @@ spec:
               mountPath: /tmp
             - name: nginx-run
               mountPath: /var/run
+            - name: nginx-logging-config
+              mountPath: /etc/nginx/conf.d/10-error-log.conf
+              subPath: 10-error-log.conf
+              readOnly: true
           ports:
             - name: http
               containerPort: 80
@@ -63,3 +67,6 @@ spec:
         - name: nginx-run
           emptyDir:
             medium: Memory
+        - name: nginx-logging-config
+          configMap:
+            name: it-tools-nginx-logging
