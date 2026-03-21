@@ -9,6 +9,9 @@ image:
 securityContext:
   readOnlyRootFilesystem: true
 
+nginx:
+  errorLogLevel: warn
+
 service:
   port: 80
 

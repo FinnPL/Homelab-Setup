@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: it-tools-nginx-logging
+  labels:
+    app.kubernetes.io/name: it-tools
+    app.kubernetes.io/part-of: homelab
+data:
+  10-error-log.conf: |
+    error_log /dev/stderr {{ default "warn" .Values.nginx.errorLogLevel }};
