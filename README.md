@@ -125,6 +125,8 @@ A single `Gateway` resource handles all ingress with HTTP (80) and HTTPS (443) l
 | StorageClass | `nfs-client` (default), NFS 4.1 |
 | NFS Server | IP and export path from `02-infrastructure` outputs |
 
+> Planned migration (once the new NAS/TrueNAS is online): remove the temporary Proxmox database worker VM, NFS LXC, and `local-path-provisioner`, then switch to Democratic CSI for dynamic ZFS-backed iSCSI/NFS provisioning and snapshots, with a new Talos database VM hosted on TrueNAS.
+
 ### External Secrets Operator
 
 Manages secret distribution across namespaces.
