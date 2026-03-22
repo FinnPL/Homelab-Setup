@@ -38,6 +38,9 @@ spec:
                   properties:
                     databaseName:
                       type: string
+                      minLength: 1
+                      maxLength: 63
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                     roleName:
                       type: string
                       minLength: 1
@@ -49,9 +52,31 @@ spec:
                     clusterName:
                       type: string
                       default: cnpg-cluster
+                      minLength: 1
+                      maxLength: 63
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                     clusterNamespace:
                       type: string
                       default: cnpg-system
+                      minLength: 1
+                      maxLength: 63
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                    clusterDomain:
+                      type: string
+                      default: cluster.local
+                      pattern: ^[a-z0-9]([-.a-z0-9]*[a-z0-9])?$
+                    providerConfigName:
+                      type: string
+                      default: default
+                      minLength: 1
+                      maxLength: 63
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                    providerConnectionSecretNamespace:
+                      type: string
+                      default: crossplane-system
+                      minLength: 1
+                      maxLength: 63
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                     deletionPolicy:
                       type: string
                       default: Orphan
@@ -64,3 +89,27 @@ spec:
                         type: string
                       default:
                         - ALL
+                    dedicatedPoolerInstances:
+                      type: integer
+                      minimum: 1
+                      default: 1
+                    dedicatedPoolerMaxClientConn:
+                      type: string
+                      pattern: ^[0-9]+$
+                      default: "200"
+                    dedicatedPoolerDefaultPoolSize:
+                      type: string
+                      pattern: ^[0-9]+$
+                      default: "20"
+                    dedicatedPoolerMinPoolSize:
+                      type: string
+                      pattern: ^[0-9]+$
+                      default: "5"
+                    dedicatedPoolerReservePoolSize:
+                      type: string
+                      pattern: ^[0-9]+$
+                      default: "5"
+                    dedicatedPoolerReservePoolTimeout:
+                      type: string
+                      pattern: ^[0-9]+$
+                      default: "5"

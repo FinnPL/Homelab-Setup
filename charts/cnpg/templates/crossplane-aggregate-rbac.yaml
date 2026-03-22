@@ -9,6 +9,19 @@ rules:
       - postgresql.cnpg.io
     resources:
       - clusters
+    verbs:
+      - get
+      - list
+      - watch
+  - apiGroups:
+      - postgresql.cnpg.io
+    resources:
       - poolers
     verbs:
-      - "*"
+      - create
+      - delete
+      - get
+      - list
+      - patch
+      - update
+      - watch
