@@ -1,40 +1,23 @@
-apiVersion: postgresql.sql.crossplane.io/v1alpha1
-kind: Database
+{{- $poolerMode := "shared" -}}
+{{- with .Values.crossplane -}}
+{{- $poolerMode = default "shared" .poolerMode -}}
+{{- end }}
+{{- if and (ne $poolerMode "shared") (ne $poolerMode "dedicated") -}}
+{{- fail "crossplane.poolerMode must be either 'shared' or 'dedicated'" -}}
+{{- end }}
+apiVersion: database.lippok.dev/v1alpha1
+kind: PostgresDatabase
 metadata:
   name: authentik-db
 spec:
-  forProvider:
-    encoding: UTF8
-    owner: authentik-user
-  providerConfigRef:
-    name: default
----
-apiVersion: postgresql.sql.crossplane.io/v1alpha1
-kind: Role
-metadata:
-  name: authentik-user
-spec:
-  forProvider:
-    privileges:
-      login: true
-      createDb: true
+  {{- if eq $poolerMode "dedicated" }}
+  compositionRef:
+    name: postgresdatabase-sql-dedicated
+  {{- end }}
+  parameters:
+    databaseName: authentik-db
+    roleName: authentik-user
+    createDb: true
+    deletionPolicy: Delete
   writeConnectionSecretToRef:
     name: authentik-db-conn
-    namespace: {{ .Release.Namespace }}
-  providerConfigRef:
-    name: default
----
-apiVersion: postgresql.sql.crossplane.io/v1alpha1
-kind: Grant
-metadata:
-  name: authentik-grant
-spec:
-  forProvider:
-    privileges:
-      - ALL
-    roleRef:
-      name: authentik-user
-    databaseRef:
-      name: authentik-db
-  providerConfigRef:
-    name: default

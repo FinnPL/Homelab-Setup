@@ -1,3 +1,6 @@
+crossplane:
+  poolerMode: shared
+
 gatus:
   env:
     DISCORD_WEBHOOK_URL:

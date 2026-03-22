@@ -1,0 +1,120 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: postgresdatabase-sql
+spec:
+  compositeTypeRef:
+    apiVersion: database.lippok.dev/v1alpha1
+    kind: XPostgresDatabase
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+          - name: role
+            base:
+              apiVersion: postgresql.sql.crossplane.io/v1alpha1
+              kind: Role
+              spec:
+                forProvider:
+                  privileges:
+                    login: true
+                    createDb: false
+                providerConfigRef:
+                  name: default
+                writeConnectionSecretToRef:
+                  namespace: crossplane-system
+                  name: role-conn
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.roleName
+                toFieldPath: metadata.name
+              - type: FromCompositeFieldPath
+                fromFieldPath: metadata.name
+                toFieldPath: spec.writeConnectionSecretToRef.name
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.createDb
+                toFieldPath: spec.forProvider.privileges.createDb
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.deletionPolicy
+                toFieldPath: spec.deletionPolicy
+                policy:
+                  fromFieldPath: Optional
+
+            connectionDetails:
+              - type: FromConnectionSecretKey
+                name: username
+                fromConnectionSecretKey: username
+              - type: FromConnectionSecretKey
+                name: password
+                fromConnectionSecretKey: password
+              - type: FromValue
+                name: endpoint
+                value: cnpg-cluster-pooler-rw.{{ .Release.Namespace }}.svc.cluster.local
+              - type: FromValue
+                name: port
+                value: "5432"
+
+          - name: database
+            base:
+              apiVersion: postgresql.sql.crossplane.io/v1alpha1
+              kind: Database
+              spec:
+                forProvider:
+                  encoding: UTF8
+                  owner: placeholder
+                providerConfigRef:
+                  name: default
+                deletionPolicy: Orphan
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.databaseName
+                toFieldPath: metadata.name
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.roleName
+                toFieldPath: spec.forProvider.owner
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.deletionPolicy
+                toFieldPath: spec.deletionPolicy
+                policy:
+                  fromFieldPath: Optional
+
+          - name: grant
+            base:
+              apiVersion: postgresql.sql.crossplane.io/v1alpha1
+              kind: Grant
+              spec:
+                forProvider:
+                  privileges:
+                    - ALL
+                  roleRef:
+                    name: placeholder
+                  databaseRef:
+                    name: placeholder
+                providerConfigRef:
+                  name: default
+                deletionPolicy: Orphan
+            patches:
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.databaseName
+                toFieldPath: metadata.name
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.roleName
+                toFieldPath: spec.forProvider.roleRef.name
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.databaseName
+                toFieldPath: spec.forProvider.databaseRef.name
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.privileges
+                toFieldPath: spec.forProvider.privileges
+                policy:
+                  fromFieldPath: Optional
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.deletionPolicy
+                toFieldPath: spec.deletionPolicy
+                policy:
+                  fromFieldPath: Optional

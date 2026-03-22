@@ -6,6 +6,6 @@ spec:
   credentials:
     source: PostgreSQLConnectionSecret
     connectionSecretRef:
-      namespace: cnpg-system
+      namespace: {{ .Release.Namespace }}
       name: crossplane-pg-credentials
   sslMode: require

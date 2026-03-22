@@ -1,0 +1,57 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xpostgresdatabases.database.lippok.dev
+spec:
+  group: database.lippok.dev
+  names:
+    kind: XPostgresDatabase
+    plural: xpostgresdatabases
+  claimNames:
+    kind: PostgresDatabase
+    plural: postgresdatabases
+  defaultCompositionRef:
+    name: postgresdatabase-sql
+  connectionSecretKeys:
+    - username
+    - password
+    - endpoint
+    - port
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - parameters
+              properties:
+                parameters:
+                  type: object
+                  required:
+                    - databaseName
+                    - roleName
+                  properties:
+                    databaseName:
+                      type: string
+                    roleName:
+                      type: string
+                    createDb:
+                      type: boolean
+                      default: false
+                    deletionPolicy:
+                      type: string
+                      default: Orphan
+                      enum:
+                        - Delete
+                        - Orphan
+                    privileges:
+                      type: array
+                      items:
+                        type: string
+                      default:
+                        - ALL

@@ -1,3 +1,6 @@
+crossplane:
+  poolerMode: shared
+
 kube-prometheus-stack:
   defaultRules:
     rules:
