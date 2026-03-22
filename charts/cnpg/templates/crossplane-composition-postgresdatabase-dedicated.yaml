@@ -8,6 +8,7 @@ spec:
   compositeTypeRef:
     apiVersion: database.lippok.dev/v1alpha1
     kind: XPostgresDatabase
+  writeConnectionSecretsToNamespace: crossplane-system
   mode: Pipeline
   pipeline:
     - step: patch-and-transform
@@ -18,4 +19,4 @@ spec:
         kind: Resources
         resources:
 {{ include "cnpg.crossplane.dedicatedPoolerResource" . | nindent 10 }}
-{{ include "cnpg.crossplane.commonResources" (dict "endpointNameFromFieldPath" "spec.parameters.roleName") | nindent 10 }}
+{{ include "cnpg.crossplane.commonResources" (dict "endpointNameFromFieldPath" "metadata.name") | nindent 10 }}
