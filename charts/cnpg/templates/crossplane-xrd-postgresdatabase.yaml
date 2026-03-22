@@ -40,9 +40,18 @@ spec:
                       type: string
                     roleName:
                       type: string
+                      minLength: 1
+                      maxLength: 53
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                     createDb:
                       type: boolean
                       default: false
+                    clusterName:
+                      type: string
+                      default: cnpg-cluster
+                    clusterNamespace:
+                      type: string
+                      default: cnpg-system
                     deletionPolicy:
                       type: string
                       default: Orphan

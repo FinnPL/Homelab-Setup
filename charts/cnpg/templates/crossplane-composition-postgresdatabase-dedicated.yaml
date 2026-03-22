@@ -2,6 +2,8 @@ apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
   name: postgresdatabase-sql-dedicated
+  labels:
+    database.lippok.dev/pooler-mode: dedicated
 spec:
   compositeTypeRef:
     apiVersion: database.lippok.dev/v1alpha1
@@ -20,7 +22,7 @@ spec:
               apiVersion: postgresql.cnpg.io/v1
               kind: Pooler
               metadata:
-                namespace: {{ .Release.Namespace }}
+                namespace: cnpg-system
                 name: dedicated-pooler
               spec:
                 cluster:
@@ -44,6 +46,16 @@ spec:
                     string:
                       type: Format
                       fmt: "%s-pooler-rw"
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.clusterNamespace
+                toFieldPath: metadata.namespace
+                policy:
+                  fromFieldPath: Optional
+              - type: FromCompositeFieldPath
+                fromFieldPath: spec.parameters.clusterName
+                toFieldPath: spec.cluster.name
+                policy:
+                  fromFieldPath: Optional
 
           - name: role
             base:
@@ -74,14 +86,15 @@ spec:
                 toFieldPath: spec.deletionPolicy
                 policy:
                   fromFieldPath: Optional
-              - type: FromCompositeFieldPath
-                fromFieldPath: spec.parameters.roleName
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.roleName
+                    - fromFieldPath: spec.parameters.clusterNamespace
+                  strategy: string
+                  string:
+                    fmt: "%s-pooler-rw.%s.svc.cluster.local"
                 toFieldPath: metadata.annotations[database.lippok.dev/pooler-endpoint]
-                transforms:
-                  - type: string
-                    string:
-                      type: Format
-                      fmt: "%s-pooler-rw.{{ .Release.Namespace }}.svc.cluster.local"
             connectionDetails:
               - type: FromConnectionSecretKey
                 name: username

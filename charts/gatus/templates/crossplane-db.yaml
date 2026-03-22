@@ -10,13 +10,14 @@ kind: PostgresDatabase
 metadata:
   name: gatus-db
 spec:
-  {{- if eq $poolerMode "dedicated" }}
-  compositionRef:
-    name: postgresdatabase-sql-dedicated
-  {{- end }}
+  compositionSelector:
+    matchLabels:
+      database.lippok.dev/pooler-mode: {{ $poolerMode | quote }}
   parameters:
     databaseName: gatus-db
     roleName: gatus-user
+    clusterName: cnpg-cluster
+    clusterNamespace: cnpg-system
     deletionPolicy: Orphan
   writeConnectionSecretToRef:
     name: gatus-db-credentials

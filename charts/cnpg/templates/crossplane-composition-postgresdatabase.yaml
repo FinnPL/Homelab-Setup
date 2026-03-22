@@ -2,6 +2,8 @@ apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
   name: postgresdatabase-sql
+  labels:
+    database.lippok.dev/pooler-mode: shared
 spec:
   compositeTypeRef:
     apiVersion: database.lippok.dev/v1alpha1
@@ -44,6 +46,15 @@ spec:
                 toFieldPath: spec.deletionPolicy
                 policy:
                   fromFieldPath: Optional
+              - type: CombineFromComposite
+                combine:
+                  variables:
+                    - fromFieldPath: spec.parameters.clusterName
+                    - fromFieldPath: spec.parameters.clusterNamespace
+                  strategy: string
+                  string:
+                    fmt: "%s-pooler-rw.%s.svc.cluster.local"
+                toFieldPath: metadata.annotations[database.lippok.dev/pooler-endpoint]
 
             connectionDetails:
               - type: FromConnectionSecretKey
@@ -52,9 +63,9 @@ spec:
               - type: FromConnectionSecretKey
                 name: password
                 fromConnectionSecretKey: password
-              - type: FromValue
+              - type: FromFieldPath
                 name: endpoint
-                value: cnpg-cluster-pooler-rw.{{ .Release.Namespace }}.svc.cluster.local
+                fromFieldPath: metadata.annotations[database.lippok.dev/pooler-endpoint]
               - type: FromValue
                 name: port
                 value: "5432"
