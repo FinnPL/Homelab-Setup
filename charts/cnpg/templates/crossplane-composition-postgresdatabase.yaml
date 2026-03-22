@@ -1,0 +1,20 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: postgresdatabase-sql
+  labels:
+    database.lippok.dev/pooler-mode: shared
+spec:
+  compositeTypeRef:
+    apiVersion: database.lippok.dev/v1alpha1
+    kind: XPostgresDatabase
+  mode: Pipeline
+  pipeline:
+    - step: patch-and-transform
+      functionRef:
+        name: function-patch-and-transform
+      input:
+        apiVersion: pt.fn.crossplane.io/v1beta1
+        kind: Resources
+        resources:
+{{ include "cnpg.crossplane.commonResources" (dict "endpointNameFromFieldPath" "spec.parameters.clusterName") | nindent 10 }}

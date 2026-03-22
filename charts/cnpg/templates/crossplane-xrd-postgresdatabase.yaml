@@ -1,0 +1,115 @@
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xpostgresdatabases.database.lippok.dev
+spec:
+  group: database.lippok.dev
+  names:
+    kind: XPostgresDatabase
+    plural: xpostgresdatabases
+  claimNames:
+    kind: PostgresDatabase
+    plural: postgresdatabases
+  defaultCompositionRef:
+    name: postgresdatabase-sql
+  connectionSecretKeys:
+    - username
+    - password
+    - endpoint
+    - port
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required:
+                - parameters
+              properties:
+                parameters:
+                  type: object
+                  required:
+                    - databaseName
+                    - roleName
+                  properties:
+                    databaseName:
+                      type: string
+                      minLength: 1
+                      maxLength: 63
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                    roleName:
+                      type: string
+                      minLength: 1
+                      maxLength: 53
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                    createDb:
+                      type: boolean
+                      default: false
+                    clusterName:
+                      type: string
+                      default: cnpg-cluster
+                      minLength: 1
+                      maxLength: 63
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                    clusterNamespace:
+                      type: string
+                      default: cnpg-system
+                      minLength: 1
+                      maxLength: 63
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                    clusterDomain:
+                      type: string
+                      default: cluster.local
+                      pattern: ^[a-z0-9]([-.a-z0-9]*[a-z0-9])?$
+                    providerConfigName:
+                      type: string
+                      default: default
+                      minLength: 1
+                      maxLength: 63
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                    providerConnectionSecretNamespace:
+                      type: string
+                      default: crossplane-system
+                      minLength: 1
+                      maxLength: 63
+                      pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
+                    deletionPolicy:
+                      type: string
+                      default: Orphan
+                      enum:
+                        - Delete
+                        - Orphan
+                    privileges:
+                      type: array
+                      items:
+                        type: string
+                      default:
+                        - ALL
+                    dedicatedPoolerInstances:
+                      type: integer
+                      minimum: 1
+                      default: 1
+                    dedicatedPoolerMaxClientConn:
+                      type: string
+                      pattern: ^[0-9]+$
+                      default: "200"
+                    dedicatedPoolerDefaultPoolSize:
+                      type: string
+                      pattern: ^[0-9]+$
+                      default: "20"
+                    dedicatedPoolerMinPoolSize:
+                      type: string
+                      pattern: ^[0-9]+$
+                      default: "5"
+                    dedicatedPoolerReservePoolSize:
+                      type: string
+                      pattern: ^[0-9]+$
+                      default: "5"
+                    dedicatedPoolerReservePoolTimeout:
+                      type: string
+                      pattern: ^[0-9]+$
+                      default: "5"

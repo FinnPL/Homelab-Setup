@@ -1,40 +1,23 @@
-apiVersion: postgresql.sql.crossplane.io/v1alpha1
-kind: Role
-metadata:
-  name: gatus-user
-spec:
-  forProvider:
-    privileges:
-      login: true
-  writeConnectionSecretToRef:
-    name: gatus-db-credentials
-    namespace: {{ .Release.Namespace }}
-  providerConfigRef:
-    name: default
----
-apiVersion: postgresql.sql.crossplane.io/v1alpha1
-kind: Database
+{{- $poolerMode := "shared" -}}
+{{- with .Values.crossplane -}}
+{{- $poolerMode = default "shared" .poolerMode -}}
+{{- end }}
+{{- if and (ne $poolerMode "shared") (ne $poolerMode "dedicated") -}}
+{{- fail "crossplane.poolerMode must be either 'shared' or 'dedicated'" -}}
+{{- end }}
+apiVersion: database.lippok.dev/v1alpha1
+kind: PostgresDatabase
 metadata:
   name: gatus-db
 spec:
-  forProvider:
-    encoding: UTF8
-    owner: gatus-user
-  providerConfigRef:
-    name: default
-  deletionPolicy: Orphan
----
-apiVersion: postgresql.sql.crossplane.io/v1alpha1
-kind: Grant
-metadata:
-  name: gatus-grant
-spec:
-  forProvider:
-    privileges:
-      - ALL
-    roleRef:
-      name: gatus-user
-    databaseRef:
-      name: gatus-db
-  providerConfigRef:
-    name: default
+  compositionSelector:
+    matchLabels:
+      database.lippok.dev/pooler-mode: {{ $poolerMode | quote }}
+  parameters:
+    databaseName: gatus-db
+    roleName: gatus-user
+    clusterName: cnpg-cluster
+    clusterNamespace: cnpg-system
+    deletionPolicy: Orphan
+  writeConnectionSecretToRef:
+    name: gatus-db-credentials
