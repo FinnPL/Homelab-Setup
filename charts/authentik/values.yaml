@@ -59,6 +59,22 @@ authentik:
           secretKeyRef:
             name: authentik-secrets
             key: grafana-oidc-client-secret
+    resources:
+      requests:
+        cpu: 150m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+    livenessProbe:
+      timeoutSeconds: 5
+      failureThreshold: 6
+    readinessProbe:
+      timeoutSeconds: 5
+      failureThreshold: 6
+    startupProbe:
+      timeoutSeconds: 5
+      failureThreshold: 90
     metrics:
       enabled: true
       serviceMonitor:
