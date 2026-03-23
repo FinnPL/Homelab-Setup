@@ -11,6 +11,7 @@ securityContext:
 
 nginx:
   errorLogLevel: warn
+  accessLog: "off"
 
 service:
   port: 80

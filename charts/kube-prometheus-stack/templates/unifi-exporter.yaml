@@ -11,15 +11,22 @@ spec:
   target:
     name: {{ .Values.unifiExporter.secret.name }}
     creationPolicy: Owner
+    deletionPolicy: Retain
   data:
     - secretKey: username
       remoteRef:
         key: {{ .Values.unifiExporter.secret.remoteKey }}
         property: username
+        conversionStrategy: Default
+        decodingStrategy: None
+        metadataPolicy: None
     - secretKey: password
       remoteRef:
         key: {{ .Values.unifiExporter.secret.remoteKey }}
         property: password
+        conversionStrategy: Default
+        decodingStrategy: None
+        metadataPolicy: None
 ---
 apiVersion: apps/v1
 kind: Deployment
