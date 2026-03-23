@@ -6,6 +6,8 @@ kube-prometheus-stack:
   defaultRules:
     rules:
       kubeProxy: false
+    disabled:
+      InfoInhibitor: true
 
   kubeProxy:
     enabled: false
@@ -205,10 +207,10 @@ proxmoxExporter:
 
   resources:
     requests:
-      cpu: 20m
+      cpu: 50m
       memory: 64Mi
     limits:
-      cpu: 200m
+      cpu: 500m
       memory: 256Mi
 
   secret:
@@ -249,10 +251,10 @@ unifiExporter:
 
   resources:
     requests:
-      cpu: 50m
+      cpu: 100m
       memory: 64Mi
     limits:
-      cpu: 300m
+      cpu: 500m
       memory: 256Mi
 
   secret:
