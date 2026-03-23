@@ -11,19 +11,29 @@ spec:
   target:
     name: {{ .Values.proxmoxExporter.secret.name }}
     creationPolicy: Owner
+    deletionPolicy: Retain
   data:
     - secretKey: pve-user
       remoteRef:
         key: {{ .Values.proxmoxExporter.secret.remoteKey }}
         property: user
+        conversionStrategy: Default
+        decodingStrategy: None
+        metadataPolicy: None
     - secretKey: pve-token-name
       remoteRef:
         key: {{ .Values.proxmoxExporter.secret.remoteKey }}
         property: token-name
+        conversionStrategy: Default
+        decodingStrategy: None
+        metadataPolicy: None
     - secretKey: pve-token-value
       remoteRef:
         key: {{ .Values.proxmoxExporter.secret.remoteKey }}
         property: token-value
+        conversionStrategy: Default
+        decodingStrategy: None
+        metadataPolicy: None
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -120,5 +130,6 @@ spec:
       relabelings:
         - sourceLabels:
             - __param_target
+          action: replace
           targetLabel: instance
 {{- end }}

@@ -4,6 +4,7 @@ crossplane:
 
 gatus:
   env:
+    GATUS_LOG_LEVEL: "WARN"
     DISCORD_WEBHOOK_URL:
       valueFrom:
         secretKeyRef:
