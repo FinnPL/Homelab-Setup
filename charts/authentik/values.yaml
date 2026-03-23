@@ -1,5 +1,6 @@
 crossplane:
   poolerMode: dedicated
+  dedicatedPoolerPoolMode: transaction
   dedicatedPoolerInstances: 2
   dedicatedPoolerMaxClientConn: "500"
 
