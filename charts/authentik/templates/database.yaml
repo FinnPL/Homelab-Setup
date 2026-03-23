@@ -15,7 +15,6 @@ spec:
       database.lippok.dev/pooler-mode: {{ $poolerMode | quote }}
   parameters:
     databaseName: authentik-db
-    roleName: authentik-user
     createDb: true
     clusterName: cnpg-cluster
     clusterNamespace: cnpg-system

@@ -8,6 +8,7 @@ spec:
   compositeTypeRef:
     apiVersion: database.lippok.dev/v1alpha1
     kind: XPostgresDatabase
+  writeConnectionSecretsToNamespace: crossplane-system
   mode: Pipeline
   pipeline:
     - step: patch-and-transform

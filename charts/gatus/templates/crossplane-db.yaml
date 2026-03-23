@@ -15,7 +15,6 @@ spec:
       database.lippok.dev/pooler-mode: {{ $poolerMode | quote }}
   parameters:
     databaseName: gatus-db
-    roleName: gatus-user
     clusterName: cnpg-cluster
     clusterNamespace: cnpg-system
     deletionPolicy: Orphan

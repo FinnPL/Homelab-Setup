@@ -15,7 +15,6 @@ spec:
       database.lippok.dev/pooler-mode: {{ $poolerMode | quote }}
   parameters:
     databaseName: grafana-db
-    roleName: grafana-role
     clusterName: cnpg-cluster
     clusterNamespace: cnpg-system
     deletionPolicy: Orphan

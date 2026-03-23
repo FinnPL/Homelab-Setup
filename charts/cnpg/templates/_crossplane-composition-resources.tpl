@@ -1,5 +1,5 @@
 {{- define "cnpg.crossplane.commonResources" -}}
-- name: role
+- name: role-v2
   base:
     apiVersion: postgresql.sql.crossplane.io/v1alpha1
     kind: Role
@@ -15,7 +15,7 @@
         name: role-conn
   patches:
     - type: FromCompositeFieldPath
-      fromFieldPath: spec.parameters.roleName
+      fromFieldPath: metadata.name
       toFieldPath: metadata.name
     - type: FromCompositeFieldPath
       fromFieldPath: spec.parameters.providerConfigName
@@ -25,6 +25,11 @@
     - type: FromCompositeFieldPath
       fromFieldPath: metadata.name
       toFieldPath: spec.writeConnectionSecretToRef.name
+      transforms:
+        - type: string
+          string:
+            type: Format
+            fmt: "%s-role"
     - type: FromCompositeFieldPath
       fromFieldPath: spec.parameters.providerConnectionSecretNamespace
       toFieldPath: spec.writeConnectionSecretToRef.namespace
@@ -83,7 +88,7 @@
       policy:
         fromFieldPath: Optional
     - type: FromCompositeFieldPath
-      fromFieldPath: spec.parameters.roleName
+      fromFieldPath: metadata.name
       toFieldPath: spec.forProvider.owner
     - type: FromCompositeFieldPath
       fromFieldPath: spec.parameters.deletionPolicy
@@ -116,7 +121,7 @@
       policy:
         fromFieldPath: Optional
     - type: FromCompositeFieldPath
-      fromFieldPath: spec.parameters.roleName
+      fromFieldPath: metadata.name
       toFieldPath: spec.forProvider.roleRef.name
     - type: FromCompositeFieldPath
       fromFieldPath: spec.parameters.databaseName
@@ -147,7 +152,7 @@
       instances: 1
       type: rw
       pgbouncer:
-        poolMode: transaction
+        poolMode: session
         parameters:
           max_client_conn: "200"
           default_pool_size: "20"
@@ -156,7 +161,7 @@
           reserve_pool_timeout: "5"
   patches:
     - type: FromCompositeFieldPath
-      fromFieldPath: spec.parameters.roleName
+      fromFieldPath: metadata.name
       toFieldPath: metadata.name
       transforms:
         - type: string
