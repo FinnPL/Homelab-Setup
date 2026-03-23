@@ -127,13 +127,13 @@ data "talos_machine_configuration" "controlplane" {
         }
         controllerManager = {
           extraArgs = {
-            "bind-address" = local.talos_controlplane_ip
+            "bind-address" = "0.0.0.0"
             "secure-port"  = "10257"
           }
         }
         scheduler = {
           extraArgs = {
-            "bind-address" = local.talos_controlplane_ip
+            "bind-address" = "0.0.0.0"
             "secure-port"  = "10259"
           }
         }
