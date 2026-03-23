@@ -1,6 +1,10 @@
 {{- $poolerMode := "shared" -}}
+{{- $dedicatedPoolerInstances := 1 -}}
+{{- $dedicatedPoolerMaxClientConn := "200" -}}
 {{- with .Values.crossplane -}}
 {{- $poolerMode = default "shared" .poolerMode -}}
+{{- $dedicatedPoolerInstances = default 1 .dedicatedPoolerInstances -}}
+{{- $dedicatedPoolerMaxClientConn = default "200" .dedicatedPoolerMaxClientConn -}}
 {{- end }}
 {{- if and (ne $poolerMode "shared") (ne $poolerMode "dedicated") -}}
 {{- fail "crossplane.poolerMode must be either 'shared' or 'dedicated'" -}}
@@ -20,5 +24,9 @@ spec:
     clusterName: cnpg-cluster
     clusterNamespace: cnpg-system
     deletionPolicy: Orphan
+{{- if eq $poolerMode "dedicated" }}
+    dedicatedPoolerInstances: {{ $dedicatedPoolerInstances }}
+    dedicatedPoolerMaxClientConn: {{ $dedicatedPoolerMaxClientConn | quote }}
+{{- end }}
   writeConnectionSecretToRef:
     name: authentik-db-conn

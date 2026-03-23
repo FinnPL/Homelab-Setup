@@ -1,5 +1,7 @@
 crossplane:
   poolerMode: dedicated
+  dedicatedPoolerInstances: 2
+  dedicatedPoolerMaxClientConn: "500"
 
 authentik:
   nameOverride: authentik
