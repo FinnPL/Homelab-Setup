@@ -20,7 +20,7 @@ resource "proxmox_virtual_environment_user" "metrics_exporter" {
 resource "proxmox_virtual_environment_user_token" "metrics_exporter" {
   user_id               = proxmox_virtual_environment_user.metrics_exporter.user_id
   token_name            = var.proxmox_exporter_token_name
-  privileges_separation = true
+  privileges_separation = false
   comment               = "Managed by Terraform for Prometheus Proxmox exporter"
 }
 
