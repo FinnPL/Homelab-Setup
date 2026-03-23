@@ -152,7 +152,7 @@
       instances: 1
       type: rw
       pgbouncer:
-        poolMode: session
+        poolMode: transaction
         parameters:
           max_client_conn: "200"
           default_pool_size: "20"
@@ -208,4 +208,7 @@
       toFieldPath: spec.pgbouncer.parameters.reserve_pool_timeout
       policy:
         fromFieldPath: Optional
+  readinessChecks:
+    - type: NonEmpty
+      fieldPath: status.instances
 {{- end -}}
