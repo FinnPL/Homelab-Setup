@@ -1,5 +1,5 @@
 crossplane:
-  poolerMode: shared
+  poolerMode: dedicated
 
 authentik:
   nameOverride: authentik
