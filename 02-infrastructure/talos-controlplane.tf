@@ -125,6 +125,18 @@ data "talos_machine_configuration" "controlplane" {
         proxy = {
           disabled = true
         }
+        controllerManager = {
+          extraArgs = {
+            "bind-address" = local.talos_controlplane_ip
+            "secure-port"  = "10257"
+          }
+        }
+        scheduler = {
+          extraArgs = {
+            "bind-address" = local.talos_controlplane_ip
+            "secure-port"  = "10259"
+          }
+        }
       }
     }),
     yamlencode({
