@@ -34,7 +34,6 @@ spec:
                   type: object
                   required:
                     - databaseName
-                    - roleName
                   properties:
                     databaseName:
                       type: string
@@ -42,6 +41,7 @@ spec:
                       maxLength: 63
                       pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?$
                     roleName:
+                      description: Deprecated. Role identity is derived from composite metadata.name.
                       type: string
                       minLength: 1
                       maxLength: 53
