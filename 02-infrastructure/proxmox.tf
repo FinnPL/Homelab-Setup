@@ -15,27 +15,19 @@ resource "proxmox_virtual_environment_user" "metrics_exporter" {
   user_id = var.proxmox_exporter_user_id
   enabled = true
   comment = "Managed by Terraform for Prometheus Proxmox exporter"
+
+  acl {
+    path      = var.proxmox_exporter_acl_path
+    role_id   = var.proxmox_exporter_role_id
+    propagate = true
+  }
 }
 
 resource "proxmox_virtual_environment_user_token" "metrics_exporter" {
   user_id               = proxmox_virtual_environment_user.metrics_exporter.user_id
   token_name            = var.proxmox_exporter_token_name
-  privileges_separation = true
+  privileges_separation = false
   comment               = "Managed by Terraform for Prometheus Proxmox exporter"
-}
-
-resource "proxmox_virtual_environment_acl" "metrics_exporter_user" {
-  path      = var.proxmox_exporter_acl_path
-  role_id   = var.proxmox_exporter_role_id
-  user_id   = proxmox_virtual_environment_user.metrics_exporter.user_id
-  propagate = true
-}
-
-resource "proxmox_virtual_environment_acl" "metrics_exporter_token" {
-  path      = var.proxmox_exporter_acl_path
-  role_id   = var.proxmox_exporter_role_id
-  token_id  = proxmox_virtual_environment_user_token.metrics_exporter.id
-  propagate = true
 }
 
 resource "talos_image_factory_schematic" "this" {

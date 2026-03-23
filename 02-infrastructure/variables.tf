@@ -56,13 +56,13 @@ variable "proxmox_exporter_token_name" {
 }
 
 variable "proxmox_exporter_role_id" {
-  description = "Proxmox role assigned to the exporter token"
+  description = "Proxmox role assigned to the exporter user"
   type        = string
   default     = "PVEAuditor"
 }
 
 variable "proxmox_exporter_acl_path" {
-  description = "ACL path for the exporter token permissions"
+  description = "ACL path for the exporter user permissions"
   type        = string
   default     = "/"
 }
