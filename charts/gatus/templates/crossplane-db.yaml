@@ -5,14 +5,15 @@
 {{- if and (ne $poolerMode "shared") (ne $poolerMode "dedicated") -}}
 {{- fail "crossplane.poolerMode must be either 'shared' or 'dedicated'" -}}
 {{- end }}
+{{- $compositionName := ternary "postgresdatabase-sql-dedicated" "postgresdatabase-sql" (eq $poolerMode "dedicated") -}}
 apiVersion: database.lippok.dev/v1alpha1
 kind: PostgresDatabase
 metadata:
   name: gatus-db
 spec:
-  compositionSelector:
-    matchLabels:
-      database.lippok.dev/pooler-mode: {{ $poolerMode | quote }}
+  compositionRef:
+    name: {{ $compositionName | quote }}
+  compositionUpdatePolicy: Automatic
   parameters:
     databaseName: gatus-db
     clusterName: cnpg-cluster
