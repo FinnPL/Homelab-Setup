@@ -1,9 +1,18 @@
 {{- $poolerMode := "shared" -}}
+{{- $dedicatedPoolerInstances := 1 -}}
+{{- $dedicatedPoolerPoolMode := "transaction" -}}
+{{- $dedicatedPoolerMaxClientConn := "200" -}}
 {{- with .Values.crossplane -}}
 {{- $poolerMode = default "shared" .poolerMode -}}
+{{- $dedicatedPoolerInstances = default 1 .dedicatedPoolerInstances -}}
+{{- $dedicatedPoolerPoolMode = default "transaction" .dedicatedPoolerPoolMode -}}
+{{- $dedicatedPoolerMaxClientConn = default "200" .dedicatedPoolerMaxClientConn -}}
 {{- end }}
 {{- if and (ne $poolerMode "shared") (ne $poolerMode "dedicated") -}}
 {{- fail "crossplane.poolerMode must be either 'shared' or 'dedicated'" -}}
+{{- end }}
+{{- if and (eq $poolerMode "dedicated") (ne $dedicatedPoolerPoolMode "transaction") (ne $dedicatedPoolerPoolMode "session") -}}
+{{- fail "crossplane.dedicatedPoolerPoolMode must be either 'transaction' or 'session'" -}}
 {{- end }}
 {{- $compositionName := ternary "postgresdatabase-sql-dedicated" "postgresdatabase-sql" (eq $poolerMode "dedicated") -}}
 apiVersion: database.lippok.dev/v1alpha1
@@ -20,5 +29,10 @@ spec:
     clusterName: cnpg-cluster
     clusterNamespace: cnpg-system
     deletionPolicy: Orphan
+{{- if eq $poolerMode "dedicated" }}
+    dedicatedPoolerInstances: {{ $dedicatedPoolerInstances }}
+    dedicatedPoolerPoolMode: {{ $dedicatedPoolerPoolMode | quote }}
+    dedicatedPoolerMaxClientConn: {{ $dedicatedPoolerMaxClientConn | quote }}
+{{- end }}
   writeConnectionSecretToRef:
     name: authentik-db-conn

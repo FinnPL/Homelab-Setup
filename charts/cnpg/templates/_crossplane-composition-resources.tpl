@@ -184,6 +184,11 @@
       policy:
         fromFieldPath: Optional
     - type: FromCompositeFieldPath
+      fromFieldPath: spec.parameters.dedicatedPoolerPoolMode
+      toFieldPath: spec.pgbouncer.poolMode
+      policy:
+        fromFieldPath: Optional
+    - type: FromCompositeFieldPath
       fromFieldPath: spec.parameters.dedicatedPoolerMaxClientConn
       toFieldPath: spec.pgbouncer.parameters.max_client_conn
       policy:

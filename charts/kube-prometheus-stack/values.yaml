@@ -1,5 +1,6 @@
 crossplane:
   poolerMode: shared
+  dedicatedPoolerPoolMode: transaction
 
 kube-prometheus-stack:
   defaultRules:

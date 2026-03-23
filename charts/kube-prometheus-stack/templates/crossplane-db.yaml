@@ -1,9 +1,14 @@
 {{- $poolerMode := "shared" -}}
+{{- $dedicatedPoolerPoolMode := "transaction" -}}
 {{- with .Values.crossplane -}}
 {{- $poolerMode = default "shared" .poolerMode -}}
+{{- $dedicatedPoolerPoolMode = default "transaction" .dedicatedPoolerPoolMode -}}
 {{- end }}
 {{- if and (ne $poolerMode "shared") (ne $poolerMode "dedicated") -}}
 {{- fail "crossplane.poolerMode must be either 'shared' or 'dedicated'" -}}
+{{- end }}
+{{- if and (eq $poolerMode "dedicated") (ne $dedicatedPoolerPoolMode "transaction") (ne $dedicatedPoolerPoolMode "session") -}}
+{{- fail "crossplane.dedicatedPoolerPoolMode must be either 'transaction' or 'session'" -}}
 {{- end }}
 {{- $compositionName := ternary "postgresdatabase-sql-dedicated" "postgresdatabase-sql" (eq $poolerMode "dedicated") -}}
 apiVersion: database.lippok.dev/v1alpha1
@@ -19,5 +24,8 @@ spec:
     clusterName: cnpg-cluster
     clusterNamespace: cnpg-system
     deletionPolicy: Orphan
+{{- if eq $poolerMode "dedicated" }}
+    dedicatedPoolerPoolMode: {{ $dedicatedPoolerPoolMode | quote }}
+{{- end }}
   writeConnectionSecretToRef:
     name: grafana-db-credentials

@@ -93,6 +93,12 @@ spec:
                       type: integer
                       minimum: 1
                       default: 1
+                    dedicatedPoolerPoolMode:
+                      type: string
+                      default: transaction
+                      enum:
+                        - session
+                        - transaction
                     dedicatedPoolerMaxClientConn:
                       type: string
                       pattern: ^[0-9]+$
