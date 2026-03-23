@@ -187,7 +187,7 @@ proxmoxExporter:
   image:
     repository: prompve/prometheus-pve-exporter
     # renovate: datasource=docker depName=prompve/prometheus-pve-exporter
-    tag: 3.8.1
+    tag: 3.8.2
     pullPolicy: IfNotPresent
 
   # Proxmox VE host to scrape via /pve?target=<host>
