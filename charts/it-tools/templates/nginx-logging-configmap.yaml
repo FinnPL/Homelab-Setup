@@ -5,7 +5,12 @@ metadata:
   labels:
     app.kubernetes.io/name: it-tools
     app.kubernetes.io/part-of: homelab
+{{- $accessLog := default "off" .Values.nginx.accessLog }}
 data:
   10-error-log.conf: |
     error_log /dev/stderr {{ default "warn" .Values.nginx.errorLogLevel }};
-    access_log /dev/stdout {{ default "off" .Values.nginx.accessLog }};
+{{- if eq (lower (toString $accessLog)) "off" }}
+    access_log off;
+{{- else }}
+    access_log /dev/stdout {{ $accessLog }};
+{{- end }}
