@@ -6,6 +6,9 @@ metadata:
 data:
   unbound.conf: |
     server:
+      chroot: ""
+      username: ""
+
       # Listen on loopback as Blocky is the only client
       interface: 127.0.0.1
       port: 5335
