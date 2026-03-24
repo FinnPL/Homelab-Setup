@@ -35,7 +35,9 @@ data:
       blockType: nxDomain
       loading:
         refreshPeriod: 24h
+        concurrency: 2
         downloads:
+          timeout: 4m
           attempts: 3
           cooldown: 5s
 
