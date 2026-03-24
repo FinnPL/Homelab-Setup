@@ -30,6 +30,25 @@ spec:
                   - key: node-role.kubernetes.io/control-plane
                     operator: DoesNotExist
 
+      securityContext:
+        fsGroup: 1000
+
+      initContainers:
+        - name: generate-root-key
+          image: alpine:3.19
+          command:
+            - sh
+            - -c
+            - |
+              apk add --no-cache unbound
+              unbound-anchor -a /tmp/unbound/root.key || true
+              chown 1000:1000 /tmp/unbound/root.key
+          volumeMounts:
+            - name: unbound-data
+              mountPath: /tmp/unbound
+          securityContext:
+            runAsUser: 0
+
       # Blocky: filtering, caching
       containers:
         - name: blocky
@@ -96,6 +115,8 @@ spec:
           image: madnuttah/unbound:1.24.2-1
           imagePullPolicy: IfNotPresent
 
+          command: ["unbound"]
+          args: ["-d", "-c", "/usr/local/unbound/unbound.conf"]
 
           ports:
             - name: dns-local
@@ -136,7 +157,13 @@ spec:
             periodSeconds: 30
             failureThreshold: 3
 
-
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            capabilities:
+              drop: ["ALL"]
       volumes:
         - name: blocky-config
           configMap:
