@@ -46,6 +46,10 @@ data:
 {{- end }}
 {{- if eq $protocol "https" }}
         proxy_ssl_verify off;
+        proxy_ssl_server_name on;
+{{- if $backend.upstreamHost }}
+        proxy_ssl_name {{ $backend.upstreamHost }};
+{{- end }}
 {{- end }}
       }
     }
