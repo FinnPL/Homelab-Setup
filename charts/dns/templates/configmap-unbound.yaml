@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: unbound-config
+  namespace: dns
+data:
+  unbound.conf: |
+    server:
+      # Listen on loopback as Blocky is the only client
+      interface: 127.0.0.1
+      port: 5335
+
+      do-ip4: yes
+      do-ip6: no
+      do-udp: yes
+      do-tcp: yes
+
+      access-control: 0.0.0.0/0 refuse
+      access-control: 127.0.0.0/8 allow
+
+      # dont reveal software version or identity
+      hide-identity: yes
+      hide-version: yes
+
+      # QNAME minimisation reduces data leaked to upstream and intermediate NS
+      qname-minimisation: yes
+
+      # DNSSEC strict validation
+      auto-trust-anchor-file: "/var/lib/unbound/root.key"
+      val-permissive-mode: no
+
+      prefetch: yes
+      prefetch-key: yes
+      serve-expired: yes
+      serve-expired-ttl: 86400
+
+      use-syslog: no
+      logfile: ""
+      verbosity: 0
+      log-queries: no
+      log-replies: no
+      log-tag-queryreply: no
+      log-servfail: yes
+
+      num-threads: 1
+      msg-cache-size: 32m
+      rrset-cache-size: 64m
+
+    forward-zone:
+      name: "."
+      forward-tls-upstream: yes
+      forward-addr: 1.1.1.1@853#cloudflare-dns.com
+      forward-addr: 1.0.0.1@853#cloudflare-dns.com

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: dns
+description: DNS stack with Blocky (filtering + caching) and Unbound sidecar (DNSSEC validation + DoT forwarding)
+type: application
+version: 1.0.0
