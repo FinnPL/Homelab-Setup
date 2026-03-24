@@ -53,7 +53,7 @@ spec:
       # Blocky: filtering, caching
       containers:
         - name: blocky
-          image: spx01/blocky:v0.26
+          image: ghcr.io/0xerr0r/blocky:v0.29.0
           imagePullPolicy: IfNotPresent
 
           ports:
@@ -169,7 +169,7 @@ spec:
               drop: ["ALL"]
 
         - name: unbound-exporter
-          image: prometheuscommunity/unbound-exporter:v0.4.6
+          image: cyb3rjak3/unbound-exporter:0.4.6
           imagePullPolicy: IfNotPresent
           args:
             - "-unbound.ca="
