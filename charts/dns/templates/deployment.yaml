@@ -33,7 +33,7 @@ spec:
       # Blocky: filtering, caching
       containers:
         - name: blocky
-          image: ghcr.io/0xerr0r/blocky:v0.26
+          image: spx01/blocky:v0.24
           imagePullPolicy: IfNotPresent
 
           ports:
@@ -93,7 +93,7 @@ spec:
         # Unbound: DNSSEC-validating with DoT forwarding
         # Listens on 127.0.0.1:5335, only reachable by Blocky inside this pod
         - name: unbound
-          image: mvance/unbound:1.21.0
+          image: madnuttah/unbound:1.24.2-1
           imagePullPolicy: IfNotPresent
 
           ports:
@@ -103,11 +103,11 @@ spec:
 
           volumeMounts:
             - name: unbound-config
-              mountPath: /opt/unbound/etc/unbound/unbound.conf
+              mountPath: /usr/local/unbound/unbound.conf
               subPath: unbound.conf
               readOnly: true
             - name: unbound-data
-              mountPath: /var/lib/unbound
+              mountPath: /usr/local/unbound
 
           resources:
             requests:

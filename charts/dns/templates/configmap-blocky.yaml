@@ -5,33 +5,27 @@ metadata:
   namespace: dns
 data:
   config.yml: |
-    # Queries go to the Unbound
-    upstream:
-      default:
-        - 127.0.0.1:5335
+    upstreams:
+      groups:
+        default:
+          - 127.0.0.1:5335
 
-    # Logging
     log:
       level: warn
       format: text
       timestamp: true
       privacy: true
 
-    # Blocking
     blocking:
-      blackLists:
+      denylists:
         ads:
-          # Steven Black's consolidated hosts list (ads + malware)
           - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
-          # AdAway — mobile-focused ad domains
           - https://adaway.org/hosts.txt
-          # HaGeZi Multi Pro — high-quality, low false-positive
           - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/hosts/pro.txt
         malware:
-          # HaGeZi Threat Intelligence feeds
           - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/hosts/tif.txt
 
-      whiteLists: {}
+      allowlists: {}
 
       clientGroupsBlock:
         default:
@@ -39,9 +33,11 @@ data:
           - malware
 
       blockType: nxDomain
-      refreshPeriod: 24h
-      downloadAttempts: 3
-      downloadCooldown: 5s
+      loading:
+        refreshPeriod: 24h
+        downloads:
+          attempts: 3
+          cooldown: 5s
 
     caching:
       minTime: 5m
@@ -54,7 +50,6 @@ data:
       enable: true
       path: /metrics
 
-    # Health port for readiness/liveness probes
     ports:
       dns: 53
       http: 4000
