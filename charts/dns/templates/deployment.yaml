@@ -15,8 +15,6 @@ spec:
       labels:
         app: dns
     spec:
-      hostNetwork: true
-      dnsPolicy: ClusterFirstWithHostNet
 
       # Prefer worker nodes but tolerate control-plane as a fallback
       tolerations:
