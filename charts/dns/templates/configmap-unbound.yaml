@@ -26,7 +26,7 @@ data:
       qname-minimisation: yes
 
       # DNSSEC strict validation
-      auto-trust-anchor-file: "/var/lib/unbound/root.key"
+      auto-trust-anchor-file: "/usr/local/unbound/root.key"
       val-permissive-mode: no
 
       prefetch: yes
@@ -54,5 +54,5 @@ data:
 
     remote-control:
       control-enable: yes
-      control-interface: /var/lib/unbound/unbound.ctl
+      control-interface: /usr/local/unbound/unbound.ctl
       control-use-cert: no
