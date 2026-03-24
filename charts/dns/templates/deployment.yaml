@@ -96,6 +96,10 @@ spec:
           image: madnuttah/unbound:1.24.2-1
           imagePullPolicy: IfNotPresent
 
+          # Bypass the Docker entrypoint script to run directly natively
+          command: ["/usr/local/unbound/sbin/unbound"]
+          args: ["-d", "-c", "/usr/local/unbound/unbound.conf"]
+
           ports:
             - name: dns-local
               containerPort: 5335
@@ -107,7 +111,7 @@ spec:
               subPath: unbound.conf
               readOnly: true
             - name: unbound-data
-              mountPath: /usr/local/unbound
+              mountPath: /tmp/unbound
 
           resources:
             requests:
@@ -138,8 +142,9 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
             capabilities:
-              add: ["CHOWN", "SETUID", "SETGID"]
               drop: ["ALL"]
 
       volumes:
