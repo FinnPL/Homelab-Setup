@@ -93,7 +93,7 @@ spec:
         # Unbound: DNSSEC-validating with DoT forwarding
         # Listens on 127.0.0.1:5335, only reachable by Blocky inside this pod
         - name: unbound
-          image: mvance/unbound:1.21.0
+          image: mvance/unbound:1.22.0
           imagePullPolicy: IfNotPresent
 
           ports:
