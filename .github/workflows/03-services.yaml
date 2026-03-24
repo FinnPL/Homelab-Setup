@@ -43,6 +43,7 @@ jobs:
       TF_VAR_alertmanager_discord_webhook_url: ${{ secrets.ALERTMANAGER_DISCORD_WEBHOOK_URL }}
       TF_VAR_unifi_exporter_username: ${{ secrets.UNIFI_EXPORTER_USERNAME }}
       TF_VAR_unifi_exporter_password: ${{ secrets.UNIFI_EXPORTER_PASSWORD }}
+      TF_VAR_argocd_github_pat: ${{ secrets.ARGOCD_GITHUB_PAT }}
 
     steps:
       - name: Checkout Code

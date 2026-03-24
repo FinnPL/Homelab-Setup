@@ -113,6 +113,88 @@ resource "helm_release" "argocd" {
       applicationSet = {
         enabled = true
       }
+
+      notifications = {
+        enabled = true
+
+        secret = {
+          create = false # managed by charts/argocd/notifications-secret.yaml (ExternalSecret)
+        }
+
+        notifiers = {
+          "service.webhook.github"  = <<-YAML
+            url: https://api.github.com
+            headers:
+              - name: Authorization
+                value: "token $github-token"
+              - name: Content-Type
+                value: application/json
+          YAML
+          "service.webhook.discord" = <<-YAML
+            url: $discord-webhook
+          YAML
+        }
+
+        triggers = {
+          "trigger.on-sync-running"    = <<-YAML
+            - when: app.spec.source.repoURL contains 'github.com' && app.status.operationState != nil && app.status.operationState.phase in ['Running']
+              send: [github-commit-status]
+          YAML
+          "trigger.on-sync-succeeded"  = <<-YAML
+            - when: app.spec.source.repoURL contains 'github.com' && app.status.operationState.phase in ['Succeeded'] && app.status.health.status == 'Healthy'
+              send: [github-commit-status]
+          YAML
+          "trigger.on-sync-failed"     = <<-YAML
+            - when: app.spec.source.repoURL contains 'github.com' && app.status.operationState.phase in ['Error', 'Failed']
+              send: [github-commit-status]
+          YAML
+          "trigger.on-health-degraded" = <<-YAML
+            - when: app.spec.source.repoURL contains 'github.com' && app.status.health.status == 'Degraded'
+              send: [github-commit-status]
+          YAML
+          "trigger.on-app-failed"      = <<-YAML
+            - when: app.status.operationState.phase in ['Error', 'Failed'] || app.status.health.status == 'Degraded'
+              send: [discord-alert]
+          YAML
+        }
+
+        templates = {
+          "template.github-commit-status" = <<-YAML
+            webhook:
+              github:
+                method: POST
+                path: /repos/{{call .repo.FullNameByRepoURL .app.spec.source.repoURL}}/statuses/{{.app.status.operationState.operation.sync.revision}}
+                body: |
+                  {
+                    "state": "{{if eq .app.status.operationState.phase "Running"}}pending{{else if and (eq .app.status.operationState.phase "Succeeded") (eq .app.status.health.status "Healthy")}}success{{else}}failure{{end}}",
+                    "description": "{{if eq .app.status.operationState.phase "Running"}}Syncing…{{else if and (eq .app.status.operationState.phase "Succeeded") (eq .app.status.health.status "Healthy")}}Healthy{{else if eq .app.status.health.status "Degraded"}}Health degraded{{else}}Sync failed{{end}}",
+                    "target_url": "https://argocd.lippok.dev/applications/{{.app.metadata.name}}",
+                    "context": "argocd/{{.app.metadata.name}}"
+                  }
+          YAML
+          "template.discord-alert"        = <<-YAML
+            webhook:
+              discord:
+                method: POST
+                path: /
+                body: |
+                  {
+                    "content": "**ArgoCD** `{{.app.metadata.name}}` — {{if eq .app.status.operationState.phase "Error"}}Sync error: {{.app.status.operationState.message}}{{else if eq .app.status.operationState.phase "Failed"}}Sync failed: {{.app.status.operationState.message}}{{else}}Health degraded ({{.app.status.health.status}}){{end}}\n<https://argocd.lippok.dev/applications/{{.app.metadata.name}}>"
+                  }
+          YAML
+        }
+
+        subscriptions = [
+          {
+            recipients = ["github"]
+            triggers   = ["on-sync-running", "on-sync-succeeded", "on-sync-failed", "on-health-degraded"]
+          },
+          {
+            recipients = ["discord"]
+            triggers   = ["on-app-failed"]
+          }
+        ]
+      }
     })
   ]
 

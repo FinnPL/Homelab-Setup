@@ -78,3 +78,9 @@ variable "unifi_exporter_password" {
   type        = string
   sensitive   = true
 }
+
+variable "argocd_github_pat" {
+  description = "GitHub PAT (repo:status scope) for ArgoCD Notifications commit status updates"
+  type        = string
+  sensitive   = true
+}
