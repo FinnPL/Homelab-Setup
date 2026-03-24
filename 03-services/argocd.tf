@@ -167,15 +167,12 @@ resource "helm_release" "argocd" {
           YAML
         }
 
-        subscriptions = <<-YAML
-          - recipients:
-              - github
-            triggers:
-              - on-sync-running
-              - on-sync-succeeded
-              - on-sync-failed
-              - on-health-degraded
-        YAML
+        subscriptions = [
+          {
+            recipients = ["github"]
+            triggers   = ["on-sync-running", "on-sync-succeeded", "on-sync-failed", "on-health-degraded"]
+          }
+        ]
       }
     })
   ]
