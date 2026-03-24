@@ -292,3 +292,17 @@ resource "kubernetes_secret_v1" "seed_unifi_exporter" {
     "password" = var.unifi_exporter_password
   }
 }
+
+resource "kubernetes_secret_v1" "seed_argocd_github_notifications" {
+  metadata {
+    name      = "argocd-github-notifications"
+    namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+    labels = {
+      "app.kubernetes.io/managed-by" = "terraform"
+    }
+  }
+
+  data = {
+    "token" = var.argocd_github_pat
+  }
+}
