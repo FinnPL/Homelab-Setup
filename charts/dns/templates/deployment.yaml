@@ -167,6 +167,38 @@ spec:
             runAsGroup: 1000
             capabilities:
               drop: ["ALL"]
+
+        - name: unbound-exporter
+          image: prometheuscommunity/unbound-exporter:v0.4.6
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-unbound.ca="
+            - "-unbound.cert="
+            - "-unbound.key="
+            - "-unbound.host=unix:///tmp/unbound/unbound.ctl"
+          ports:
+            - name: metrics
+              containerPort: 9167
+              protocol: TCP
+          volumeMounts:
+            - name: unbound-data
+              mountPath: /tmp/unbound
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 50m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            runAsNonRoot: true
+            capabilities:
+              drop: ["ALL"]
+
       volumes:
         - name: blocky-config
           configMap:

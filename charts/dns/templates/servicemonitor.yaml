@@ -8,7 +8,9 @@ metadata:
     release: kube-prometheus-stack
 spec:
   endpoints:
-    - port: http
+    - port: blocky-metrics
+      path: /metrics
+    - port: unbound-metrics
       path: /metrics
   namespaceSelector:
     matchNames:

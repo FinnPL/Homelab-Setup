@@ -36,7 +36,11 @@ spec:
   selector:
     app: dns
   ports:
-    - name: http
+    - name: blocky-metrics
       protocol: TCP
       port: 4000
       targetPort: 4000
+    - name: unbound-metrics
+      protocol: TCP
+      port: 9167
+      targetPort: 9167
