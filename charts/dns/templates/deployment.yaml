@@ -52,7 +52,7 @@ spec:
       # Blocky: filtering, caching
       containers:
         - name: blocky
-          image: spx01/blocky:v0.24
+          image: spx01/blocky:v0.26
           imagePullPolicy: IfNotPresent
 
           ports:
