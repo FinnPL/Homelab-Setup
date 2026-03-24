@@ -122,7 +122,7 @@ resource "helm_release" "argocd" {
         }
 
         notifiers = {
-          "service.webhook.github" = <<-YAML
+          "service.webhook.github"  = <<-YAML
             url: https://api.github.com
             headers:
               - name: Authorization
@@ -152,7 +152,7 @@ resource "helm_release" "argocd" {
             - when: app.spec.source.repoURL contains 'github.com' && app.status.health.status == 'Degraded'
               send: [github-commit-status]
           YAML
-          "trigger.on-app-failed" = <<-YAML
+          "trigger.on-app-failed"      = <<-YAML
             - when: app.status.operationState.phase in ['Error', 'Failed'] || app.status.health.status == 'Degraded'
               send: [discord-alert]
           YAML
@@ -172,7 +172,7 @@ resource "helm_release" "argocd" {
                     "context": "argocd/{{.app.metadata.name}}"
                   }
           YAML
-          "template.discord-alert" = <<-YAML
+          "template.discord-alert"        = <<-YAML
             webhook:
               discord:
                 method: POST
