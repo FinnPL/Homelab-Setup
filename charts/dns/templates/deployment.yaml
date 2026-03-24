@@ -97,7 +97,7 @@ spec:
           imagePullPolicy: IfNotPresent
 
           # Bypass the Docker entrypoint script to run directly natively
-          command: ["/usr/local/unbound/sbin/unbound"]
+          command: ["unbound"]
           args: ["-d", "-c", "/usr/local/unbound/unbound.conf"]
 
           ports:
