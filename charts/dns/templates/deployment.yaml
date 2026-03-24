@@ -96,9 +96,6 @@ spec:
           image: madnuttah/unbound:1.24.2-1
           imagePullPolicy: IfNotPresent
 
-          # Bypass the Docker entrypoint script to run directly natively
-          command: ["unbound"]
-          args: ["-d", "-c", "/usr/local/unbound/unbound.conf"]
 
           ports:
             - name: dns-local
@@ -139,13 +136,6 @@ spec:
             periodSeconds: 30
             failureThreshold: 3
 
-          securityContext:
-            allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
-            runAsUser: 1000
-            runAsGroup: 1000
-            capabilities:
-              drop: ["ALL"]
 
       volumes:
         - name: blocky-config
