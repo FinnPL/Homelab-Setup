@@ -27,17 +27,26 @@ data:
 {{- end }}
 
       location / {
+{{- $protocol := default "http" $backend.upstreamProtocol }}
 {{- if $backend.endpoints }}
-        proxy_pass http://{{ $upstreamName }};
+        proxy_pass {{ $protocol }}://{{ $upstreamName }};
 {{- else }}
         set $upstream "{{ $backend.upstreamHost }}:{{ $backend.upstreamPort }}";
-        proxy_pass http://$upstream;
+        proxy_pass {{ $protocol }}://$upstream;
 {{- end }}
         proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+{{- if $backend.enableWebsockets }}
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+{{- else }}
         proxy_set_header Connection "";
+{{- end }}
+{{- if eq $protocol "https" }}
+        proxy_ssl_verify off;
+{{- end }}
       }
     }
 ---
