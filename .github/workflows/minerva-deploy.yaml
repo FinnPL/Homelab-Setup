@@ -1,11 +1,11 @@
-name: Pi3 - Deploy Docker Compose
+name: Minerva - Deploy Docker Compose
 on:
     push:
         branches:
             - main
         paths:
-            - "src/Pi3/**"
-            - ".github/workflows/pi3-deploy.yml"
+            - "minerva/**"
+            - ".github/workflows/minerva-deploy.yaml"
 
 jobs:
     deploy:
@@ -18,17 +18,17 @@ jobs:
               uses: actions/checkout@v6
 
             - name: Clear Env File
-              run: echo "" > src/Pi3/.env
+              run: echo "" > minerva/.env
 
             - name: Set up Env File
               run: |
-                  echo 'TAILSCALE_AUTHKEY=${{ secrets.TAILSCALE_AUTHKEY }}' >> src/Pi3/.env
+                  echo 'TAILSCALE_AUTHKEY=${{ secrets.TAILSCALE_AUTHKEY }}' >> minerva/.env
 
             - name: Pull latest images
-              run: docker compose -f src/Pi3/docker-compose.yml pull
+              run: docker compose -f minerva/docker-compose.yml pull
 
             - name: Stop existing containers
-              run: docker compose -f src/Pi3/docker-compose.yml down || true
+              run: docker compose -f minerva/docker-compose.yml down || true
 
             - name: Start containers
-              run: docker compose -f src/Pi3/docker-compose.yml up -d
+              run: docker compose -f minerva/docker-compose.yml up -d

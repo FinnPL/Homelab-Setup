@@ -1,0 +1,20 @@
+services:
+  tailscale:
+    image: tailscale/tailscale:v1.90.9
+    container_name: tailscale-pi3
+    hostname: pi3
+    environment:
+      - TS_AUTHKEY=${TAILSCALE_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false
+      - TS_EXTRA_ARGS=--advertise-exit-node --advertise-routes=10.0.1.0/24
+    volumes:
+      - tailscale_data:/var/lib/tailscale
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    restart: always
+
+volumes:
+  tailscale_data:

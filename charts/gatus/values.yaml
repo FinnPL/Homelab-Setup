@@ -199,7 +199,7 @@ gatus:
             success-threshold: 2
 
       # Servers
-      - name: "Pi3 Athena"
+      - name: "Minerva Pi3"
         group: "Servers"
         url: "icmp://pi3.athena"
         interval: 60s
