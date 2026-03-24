@@ -25,8 +25,11 @@ data:
       # QNAME minimisation reduces data leaked to upstream and intermediate NS
       qname-minimisation: yes
 
+      # Run completely from memory, no need for pidfiles
+      pidfile: ""
+
       # DNSSEC strict validation
-      auto-trust-anchor-file: "/usr/local/unbound/root.key"
+      auto-trust-anchor-file: "/tmp/unbound/root.key"
       val-permissive-mode: no
 
       prefetch: yes
@@ -54,5 +57,5 @@ data:
 
     remote-control:
       control-enable: yes
-      control-interface: /usr/local/unbound/unbound.ctl
+      control-interface: /tmp/unbound/unbound.ctl
       control-use-cert: no
