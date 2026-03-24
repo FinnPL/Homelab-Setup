@@ -28,3 +28,11 @@ backends:
     servicePort: 80
     endpoints:
       - 192.168.178.1
+
+  - name: proxmox
+    hostname: pve.lippok.dev
+    servicePort: 80
+    upstreamHost: nuc.athena
+    upstreamPort: 8006
+    upstreamProtocol: https
+    enableWebsockets: true
