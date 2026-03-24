@@ -130,24 +130,31 @@ resource "helm_release" "argocd" {
               - name: Content-Type
                 value: application/json
           YAML
+          "service.webhook.discord" = <<-YAML
+            url: $discord-webhook
+          YAML
         }
 
         triggers = {
           "trigger.on-sync-running"    = <<-YAML
-            - when: app.status.operationState != nil && app.status.operationState.phase in ['Running']
+            - when: app.spec.source.repoURL contains 'github.com' && app.status.operationState != nil && app.status.operationState.phase in ['Running']
               send: [github-commit-status]
           YAML
           "trigger.on-sync-succeeded"  = <<-YAML
-            - when: app.status.operationState.phase in ['Succeeded'] && app.status.health.status == 'Healthy'
+            - when: app.spec.source.repoURL contains 'github.com' && app.status.operationState.phase in ['Succeeded'] && app.status.health.status == 'Healthy'
               send: [github-commit-status]
           YAML
           "trigger.on-sync-failed"     = <<-YAML
-            - when: app.status.operationState.phase in ['Error', 'Failed']
+            - when: app.spec.source.repoURL contains 'github.com' && app.status.operationState.phase in ['Error', 'Failed']
               send: [github-commit-status]
           YAML
           "trigger.on-health-degraded" = <<-YAML
-            - when: app.status.health.status == 'Degraded'
+            - when: app.spec.source.repoURL contains 'github.com' && app.status.health.status == 'Degraded'
               send: [github-commit-status]
+          YAML
+          "trigger.on-app-failed" = <<-YAML
+            - when: app.status.operationState.phase in ['Error', 'Failed'] || app.status.health.status == 'Degraded'
+              send: [discord-alert]
           YAML
         }
 
@@ -165,12 +172,26 @@ resource "helm_release" "argocd" {
                     "context": "argocd/{{.app.metadata.name}}"
                   }
           YAML
+          "template.discord-alert" = <<-YAML
+            webhook:
+              discord:
+                method: POST
+                path: /
+                body: |
+                  {
+                    "content": "**ArgoCD** `{{.app.metadata.name}}` — {{if eq .app.status.operationState.phase "Error"}}Sync error: {{.app.status.operationState.message}}{{else if eq .app.status.operationState.phase "Failed"}}Sync failed: {{.app.status.operationState.message}}{{else}}Health degraded ({{.app.status.health.status}}){{end}}\n<https://argocd.lippok.dev/applications/{{.app.metadata.name}}>"
+                  }
+          YAML
         }
 
         subscriptions = [
           {
             recipients = ["github"]
             triggers   = ["on-sync-running", "on-sync-succeeded", "on-sync-failed", "on-health-degraded"]
+          },
+          {
+            recipients = ["discord"]
+            triggers   = ["on-app-failed"]
           }
         ]
       }
