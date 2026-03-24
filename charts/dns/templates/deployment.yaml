@@ -58,6 +58,8 @@ spec:
               mountPath: /app/config.yml
               subPath: config.yml
               readOnly: true
+            - name: blocky-tmp
+              mountPath: /tmp
 
           resources:
             requests:
@@ -145,6 +147,11 @@ spec:
         - name: blocky-config
           configMap:
             name: blocky-config
+
+        - name: blocky-tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 64Mi
 
         - name: unbound-config
           configMap:
