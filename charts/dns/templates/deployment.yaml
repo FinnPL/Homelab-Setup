@@ -139,6 +139,7 @@ spec:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
+              add: ["CHOWN", "SETUID", "SETGID"]
               drop: ["ALL"]
 
       volumes:
