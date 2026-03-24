@@ -8,7 +8,7 @@ data:
     server:
       chroot: ""
       username: ""
-      tls-cert-bundle: "/etc/ssl/certs/ca-certificates.crt"
+      tls-cert-bundle: "/tmp/unbound/ca-certificates.crt"
 
       # Listen on loopback as Blocky is the only client
       interface: 127.0.0.1
