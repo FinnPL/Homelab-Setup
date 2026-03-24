@@ -120,7 +120,7 @@ resource "helm_release" "argocd" {
         secret = {
           create = false # managed by charts/argocd/notifications-secret.yaml (ExternalSecret)
         }
-        
+
         notifiers = {
           "service.webhook.github" = <<-YAML
             url: https://api.github.com
@@ -133,15 +133,15 @@ resource "helm_release" "argocd" {
         }
 
         triggers = {
-          "trigger.on-sync-running" = <<-YAML
+          "trigger.on-sync-running"    = <<-YAML
             - when: app.status.operationState != nil && app.status.operationState.phase in ['Running']
               send: [github-commit-status]
           YAML
-          "trigger.on-sync-succeeded" = <<-YAML
+          "trigger.on-sync-succeeded"  = <<-YAML
             - when: app.status.operationState.phase in ['Succeeded'] && app.status.health.status == 'Healthy'
               send: [github-commit-status]
           YAML
-          "trigger.on-sync-failed" = <<-YAML
+          "trigger.on-sync-failed"     = <<-YAML
             - when: app.status.operationState.phase in ['Error', 'Failed']
               send: [github-commit-status]
           YAML
