@@ -26,7 +26,17 @@ data:
           - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/hosts/tif.txt
 
       allowlists:
-        connectivity:
+        ads:
+          - |
+            connectivitycheck.gstatic.com
+            clients3.google.com
+            msftconnecttest.com
+            msftncsi.com
+            ping.ui.com
+            connectivity.ubnt.com
+            www.msftconnecttest.com
+            ipv6.msftconnecttest.com
+        malware:
           - |
             connectivitycheck.gstatic.com
             clients3.google.com
@@ -41,10 +51,6 @@ data:
         default:
           - ads
           - malware
-
-      clientGroupsAllow:
-        default:
-          - connectivity
 
       blockType: nxDomain
       loading:
