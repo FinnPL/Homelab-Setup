@@ -65,6 +65,10 @@ spec:
               value: {{ ternary "true" "false" .Values.unifiExporter.verifySsl | quote }}
             - name: UP_UNIFI_DEFAULT_SAVE_SITES
               value: {{ ternary "true" "false" .Values.unifiExporter.defaults.saveSites | quote }}
+            - name: UP_INFLUXDB_DISABLE
+              value: "true"
+            - name: UP_POLLER_QUIET
+              value: "true"
 {{- range $controllerIdx, $controller := .Values.unifiExporter.controllers }}
             - name: {{ printf "UP_UNIFI_CONTROLLER_%d_ROLE" $controllerIdx }}
               value: {{ default (printf "controller-%d" $controllerIdx) $controller.role | quote }}

@@ -179,7 +179,7 @@ kube-prometheus-stack:
         role_attribute_path: contains(groups, 'authentik Admins') && 'GrafanaAdmin' || 'Viewer'
       log:
         mode: console
-        level: info
+        level: warn
         filters: tsdb.loki:warn
 
 proxmoxExporter:
