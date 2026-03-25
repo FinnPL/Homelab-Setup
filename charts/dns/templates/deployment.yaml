@@ -185,10 +185,10 @@ spec:
               mountPath: /tmp/unbound
           resources:
             requests:
-              cpu: 10m
+              cpu: 25m
               memory: 32Mi
             limits:
-              cpu: 200m
+              cpu: 50m
               memory: 64Mi
           securityContext:
             allowPrivilegeEscalation: false
