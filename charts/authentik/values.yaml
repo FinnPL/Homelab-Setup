@@ -10,7 +10,7 @@ authentik:
   authentik:
     log_level: warning
     error_reporting:
-      enabled: true
+      enabled: false
 
   blueprints:
     configMaps:

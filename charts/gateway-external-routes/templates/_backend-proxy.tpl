@@ -22,6 +22,8 @@ data:
 {{- end }}
     server {
       listen {{ $proxy.containerPort }};
+      error_log /dev/stderr warn;
+      access_log off;
 {{- if $backend.upstreamHost }}
       resolver {{ $proxy.resolver }} valid=10s ipv6=off;
 {{- end }}
