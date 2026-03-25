@@ -27,23 +27,25 @@ data:
 
       allowlists:
         ads:
-          - connectivitycheck.gstatic.com
-          - clients3.google.com
-          - msftconnecttest.com
-          - msftncsi.com
-          - ping.ui.com
-          - connectivity.ubnt.com
-          - www.msftconnecttest.com
-          - ipv6.msftconnecttest.com
+          - |
+            connectivitycheck.gstatic.com
+            clients3.google.com
+            msftconnecttest.com
+            msftncsi.com
+            ping.ui.com
+            connectivity.ubnt.com
+            www.msftconnecttest.com
+            ipv6.msftconnecttest.com
         malware:
-          - connectivitycheck.gstatic.com
-          - clients3.google.com
-          - msftconnecttest.com
-          - msftncsi.com
-          - ping.ui.com
-          - connectivity.ubnt.com
-          - www.msftconnecttest.com
-          - ipv6.msftconnecttest.com
+          - |
+            connectivitycheck.gstatic.com
+            clients3.google.com
+            msftconnecttest.com
+            msftncsi.com
+            ping.ui.com
+            connectivity.ubnt.com
+            www.msftconnecttest.com
+            ipv6.msftconnecttest.com
 
       clientGroupsBlock:
         default:
