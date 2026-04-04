@@ -169,7 +169,7 @@ spec:
               drop: ["ALL"]
 
         - name: unbound-exporter
-          image: cyb3rjak3/unbound-exporter:0.4.6
+          image: cyb3rjak3/unbound-exporter:0.5.0
           imagePullPolicy: IfNotPresent
           args:
             - "-unbound.ca="
