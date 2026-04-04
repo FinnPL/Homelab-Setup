@@ -5,10 +5,10 @@ type: application
 version: 1.0.0
 dependencies:
   - name: alloy
-    version: 1.6.2
+    version: 1.7.0
     repository: https://grafana.github.io/helm-charts
     alias: alloy-agent
   - name: alloy
-    version: 1.6.2
+    version: 1.7.0
     repository: https://grafana.github.io/helm-charts
     alias: alloy-receiver
