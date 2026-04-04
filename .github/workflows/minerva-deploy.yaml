@@ -25,10 +25,10 @@ jobs:
                   echo 'TAILSCALE_AUTHKEY=${{ secrets.TAILSCALE_AUTHKEY }}' >> minerva/.env
 
             - name: Pull latest images
-              run: docker compose -f minerva/docker-compose.yml pull
+              run: docker compose --env-file minerva/.env -f minerva/docker-compose.yml pull
 
             - name: Stop existing containers
-              run: docker compose -f minerva/docker-compose.yml down || true
+              run: docker compose --env-file minerva/.env -f minerva/docker-compose.yml down || true
 
             - name: Start containers
-              run: docker compose -f minerva/docker-compose.yml up -d
+              run: docker compose --env-file minerva/.env -f minerva/docker-compose.yml up -d
