@@ -46,6 +46,23 @@ variable "instance_shape" {
   default     = "VM.Standard.A1.Flex"
 }
 
+variable "instance_availability_domain" {
+  description = "Optional OCI availability domain name override for the edge instance (empty = use index-based selection)"
+  type        = string
+  default     = ""
+}
+
+variable "instance_availability_domain_index" {
+  description = "Zero-based OCI availability domain index used when no explicit availability domain override is set"
+  type        = number
+  default     = 0
+
+  validation {
+    condition     = var.instance_availability_domain_index >= 0
+    error_message = "instance_availability_domain_index must be greater than or equal to 0."
+  }
+}
+
 variable "instance_ocpus" {
   description = "Number of OCPUs to allocate (Always Free max total: 4)"
   type        = number

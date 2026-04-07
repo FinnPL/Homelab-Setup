@@ -32,6 +32,105 @@ get_instance_ip_value() {
   printf '%s\n' "$ip"
 }
 
+get_availability_domains() {
+  local plan_ads
+  plan_ads=$(terraform show -json .planfile 2>/dev/null | jq -r '
+    .. | objects
+    | select(.address? == "data.oci_identity_availability_domains.ads")
+    | .values.availability_domains[]?.name
+  ' 2>/dev/null || true)
+
+  if [ -n "$plan_ads" ]; then
+    printf '%s\n' "$plan_ads"
+    return 0
+  fi
+
+  warn "Could not read availability domains from .planfile. Querying provider directly."
+
+  terraform init -input=false -lock=false > /dev/null
+
+  local ads_json
+  ads_json=$(terraform console -no-color << 'EOF' | tail -n 1
+jsonencode(data.oci_identity_availability_domains.ads.availability_domains[*].name)
+EOF
+)
+
+  if [ -z "$ads_json" ]; then
+    error "Could not determine OCI availability domains for apply fallback"
+  fi
+
+  printf '%s\n' "$ads_json" | jq -r 'fromjson[]'
+}
+
+terraform_apply_with_ad_fallback() {
+  local configured_ad
+  configured_ad="$(printf '%s' "${TF_VAR_instance_availability_domain:-}" | tr -d '\r' | xargs)"
+
+  local -a ad_candidates=()
+  if [ -n "$configured_ad" ]; then
+    ad_candidates+=("$configured_ad")
+  fi
+
+  local ad
+  local existing
+  local duplicate
+  while IFS= read -r ad; do
+    [ -z "$ad" ] && continue
+
+    duplicate="false"
+    for existing in "${ad_candidates[@]}"; do
+      if [ "$existing" = "$ad" ]; then
+        duplicate="true"
+        break
+      fi
+    done
+
+    if [ "$duplicate" = "false" ]; then
+      ad_candidates+=("$ad")
+    fi
+  done < <(get_availability_domains)
+
+  if [ "${#ad_candidates[@]}" -eq 0 ]; then
+    error "No OCI availability domains found for fallback apply"
+  fi
+
+  local attempt=0
+  local total="${#ad_candidates[@]}"
+  local log_file
+  local apply_exit
+
+  for ad in "${ad_candidates[@]}"; do
+    attempt=$((attempt + 1))
+    log_file="$(mktemp)"
+
+    echo "Terraform apply attempt ${attempt}/${total} in availability domain: $ad"
+
+    set +e
+    terraform apply -lock-timeout=10m -auto-approve -input=false -var "instance_availability_domain=$ad" 2>&1 | tee "$log_file"
+    apply_exit=${PIPESTATUS[0]}
+    set -e
+
+    if [ "$apply_exit" -eq 0 ]; then
+      echo "Terraform apply succeeded in availability domain: $ad"
+      rm -f "$log_file"
+      return 0
+    fi
+
+    if grep -qi "Out of host capacity" "$log_file"; then
+      warn "OCI reported host capacity shortage in $ad. Trying next availability domain."
+      rm -f "$log_file"
+      continue
+    fi
+
+    echo "Terraform apply failed in availability domain: $ad"
+    cat "$log_file"
+    rm -f "$log_file"
+    error "Terraform apply failed with a non-capacity error; stopping fallback attempts"
+  done
+
+  error "Terraform apply failed in all candidate availability domains due to host capacity shortage"
+}
+
 detect_instance_action() {
   local action
   action=$(terraform show -json .planfile | jq -r '
@@ -175,6 +274,7 @@ usage() {
 Usage: cloud-edge-workflow.sh <command>
 Commands:
   detect-instance-action
+  terraform-apply-with-ad-fallback
   prepare-edge-host
   setup-ssh
   detect-nixos-state
@@ -191,6 +291,9 @@ main() {
   case "$1" in
     detect-instance-action)
       detect_instance_action
+      ;;
+    terraform-apply-with-ad-fallback)
+      terraform_apply_with_ad_fallback
       ;;
     prepare-edge-host)
       prepare_edge_host

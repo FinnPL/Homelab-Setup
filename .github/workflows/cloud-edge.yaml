@@ -24,6 +24,10 @@ on:
         description: "Force nixos-anywhere install (manual, bypasses fresh-VM proof)"
         type: boolean
         default: false
+      instance_availability_domain:
+        description: "Optional OCI availability domain override (example: kIdk:EU-FRANKFURT-1-AD-2)"
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -80,6 +84,7 @@ jobs:
       TF_VAR_oci_compartment_ocid: ${{ secrets.OCI_COMPARTMENT_OCID }}
       TF_VAR_ssh_public_key: ${{ vars.OCI_SSH_PUBLIC_KEY }}
       TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_instance_availability_domain: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_availability_domain || '' }}
 
     steps:
       - uses: actions/checkout@v6
@@ -130,7 +135,14 @@ jobs:
         if: |
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           (github.event_name == 'workflow_dispatch' && inputs.apply == true)
-        run: terraform apply -lock-timeout=10m -auto-approve -input=false
+        env:
+          EDGE_INSTANCE_NEW: ${{ steps.edge_plan.outputs.instance_new }}
+        run: |
+          if [ "${EDGE_INSTANCE_NEW:-false}" = "true" ]; then
+            bash ./scripts/gha/cloud-edge-workflow.sh terraform-apply-with-ad-fallback
+          else
+            terraform apply -lock-timeout=10m -auto-approve -input=false
+          fi
 
   validate-nixos:
     needs: changes

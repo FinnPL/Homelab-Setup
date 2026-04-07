@@ -11,10 +11,14 @@ data "oci_identity_availability_domains" "ads" {
   compartment_id = local.oci_tenancy_ocid
 }
 
+locals {
+  instance_availability_domain = trimspace(var.instance_availability_domain) != "" ? trimspace(var.instance_availability_domain) : data.oci_identity_availability_domains.ads.availability_domains[var.instance_availability_domain_index].name
+}
+
 # Compute Instance (Always Free ARM)
 resource "oci_core_instance" "edge" {
   compartment_id      = local.oci_compartment_ocid
-  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  availability_domain = local.instance_availability_domain
   display_name        = var.instance_name
   shape               = var.instance_shape
 
@@ -56,6 +60,7 @@ resource "oci_core_instance" "edge" {
   # Prevent replacement after nixos-anywhere has installed NixOS
   lifecycle {
     ignore_changes = [
+      availability_domain,
       source_details[0].source_id,
       metadata,
     ]
