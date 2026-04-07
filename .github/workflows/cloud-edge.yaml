@@ -41,6 +41,7 @@ jobs:
       terraform: ${{ steps.filter.outputs.terraform }}
       nixos: ${{ steps.filter.outputs.nixos }}
       workflow_logic: ${{ steps.filter.outputs.workflow_logic }}
+      k3s_services: ${{ steps.filter.outputs.k3s_services }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
@@ -50,11 +51,14 @@ jobs:
             terraform:
               - 'cloud-edge/**/*.tf'
               - 'cloud-edge/.terraform.lock.hcl'
+              - '!cloud-edge/k3s-services/**'
             nixos:
               - 'cloud-edge/nixos/**'
             workflow_logic:
               - '.github/workflows/cloud-edge.yaml'
               - 'cloud-edge/scripts/gha/**'
+            k3s_services:
+              - 'cloud-edge/k3s-services/**'
 
   terraform:
     needs: changes
@@ -353,3 +357,159 @@ jobs:
             --build-host root@$IP \
             --target-host root@$IP \
             --fast
+
+      # Post-deploy: Bootstrap Tailscale + K3s
+      - name: Deploy Tailscale credentials
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+          TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+          OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh deploy-tailscale-credentials
+
+      - name: Wait for Tailscale to connect
+        id: tailscale
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+          OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh wait-for-tailscale
+
+      - name: Wait for K3s API
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+          OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh wait-for-k3s
+
+  # K3s Services: deploys Cilium and platform services onto the cloud K3s cluster
+  k3s-services:
+    needs: [changes, deploy-nixos]
+    if: |
+      always() &&
+      (needs['deploy-nixos'].result == 'success' || needs['deploy-nixos'].result == 'skipped') &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+          (needs.changes.outputs.k3s_services == 'true' || needs['deploy-nixos'].result == 'success')
+        ) ||
+        (github.event_name == 'workflow_dispatch' && (inputs.apply || inputs.deploy_nixos))
+      )
+    name: "K3s Services"
+    runs-on: ubuntu-latest
+    environment: Terraform
+    concurrency:
+      group: k3s-services-cloud-edge
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: ./cloud-edge/k3s-services
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_acme_email: ${{ vars.ACME_EMAIL }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - uses: hashicorp/setup-terraform@v4
+        with:
+          terraform_version: "1.10.0"
+          terraform_wrapper: false
+
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Prepare edge host context
+        id: edge
+        working-directory: ./cloud-edge
+        env:
+          TF_IN_AUTOMATION: "true"
+          TF_INPUT: "false"
+          EXPECTED_FP: ${{ secrets.OCI_EDGE_SSH_HOSTKEY_SHA256 }}
+          OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+        run: bash ./scripts/gha/cloud-edge-workflow.sh prepare-edge-host
+
+      - name: Fetch K3s kubeconfig
+        working-directory: ./cloud-edge
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+          OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+        run: bash ./scripts/gha/cloud-edge-workflow.sh fetch-kubeconfig
+
+      - name: Establish SSH tunnel to K3s API
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+          OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh setup-k3s-tunnel
+
+      - name: Terraform Init
+        run: terraform init -upgrade
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -lock-timeout=10m -out .planfile -input=false
+
+      - name: Terraform Apply
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          (github.event_name == 'workflow_dispatch')
+        run: terraform apply -lock-timeout=10m -auto-approve -input=false
+
+      # Cluster Mesh bootstrap: connect the two Cilium clusters (idempotent)
+      - name: Install Cilium CLI
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          (github.event_name == 'workflow_dispatch')
+        run: |
+          CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+          curl -L --fail --remote-name-all \
+            "https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-amd64.tar.gz{,.sha256sum}"
+          sha256sum --check cilium-linux-amd64.tar.gz.sha256sum
+          sudo tar xzvfC cilium-linux-amd64.tar.gz /usr/local/bin
+          rm cilium-linux-amd64.tar.gz{,.sha256sum}
+
+      - name: Extract homelab kubeconfig
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          (github.event_name == 'workflow_dispatch')
+        working-directory: ./02-infrastructure
+        run: |
+          terraform init -upgrade
+          terraform output -raw kubeconfig > /tmp/homelab-kubeconfig.yaml
+          chmod 600 /tmp/homelab-kubeconfig.yaml
+
+      - name: Bootstrap Cluster Mesh
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          (github.event_name == 'workflow_dispatch')
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+        run: |
+          export KUBECONFIG_CLOUD="./cloud-edge/k3s-services/kubeconfig.yaml"
+          export KUBECONFIG_HOMELAB="/tmp/homelab-kubeconfig.yaml"
+
+          # Get the NodePort assigned to the clustermesh-apiserver on the cloud cluster
+          MESH_PORT=$(KUBECONFIG=$KUBECONFIG_CLOUD kubectl get svc -n kube-system clustermesh-apiserver \
+            -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "")
+
+          if [ -z "$MESH_PORT" ]; then
+            echo "Clustermesh-apiserver not yet available, skipping bootstrap."
+            exit 0
+          fi
+
+          echo "Connecting clusters via Cluster Mesh (cloud endpoint: $IP:$MESH_PORT)..."
+          cilium clustermesh connect \
+            --context-name homelab-k8s --kubeconfig "$KUBECONFIG_HOMELAB" \
+            --destination-context cloud-edge --destination-kubeconfig "$KUBECONFIG_CLOUD" \
+            --destination-endpoint "$IP:$MESH_PORT" || true
+
+          echo "Cluster Mesh bootstrap complete."
+
