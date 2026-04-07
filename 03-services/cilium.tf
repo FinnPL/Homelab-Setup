@@ -14,6 +14,22 @@ resource "helm_release" "cilium" {
       ipam = {
         mode = "kubernetes"
       }
+
+      # Cluster identity for Cluster Mesh (cloud-edge is id=2)
+      cluster = {
+        name = "homelab-k8s"
+        id   = 1
+      }
+
+      # Cluster Mesh: enable apiserver for cross-cluster connectivity
+      clustermesh = {
+        useAPIServer = true
+        apiserver = {
+          service = {
+            type = "LoadBalancer"
+          }
+        }
+      }
       l2announcements = {
         enabled = true
       }
