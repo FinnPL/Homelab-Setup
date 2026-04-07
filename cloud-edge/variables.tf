@@ -55,13 +55,13 @@ variable "instance_ocpus" {
 variable "instance_memory_gb" {
   description = "Memory in GB to allocate (Always Free max total: 24)"
   type        = number
-  default     = 6
+  default     = 12
 }
 
 variable "instance_boot_volume_gb" {
-  description = "Boot volume size in GB (Always Free max: 200 total, up to 50 per volume)"
+  description = "Boot volume size in GB (Always Free max total block storage: 200)"
   type        = number
-  default     = 50
+  default     = 100
 }
 
 # SSH Access
