@@ -9,6 +9,7 @@
 ![Helm](https://img.shields.io/badge/Helm-0F1628?style=flat&logo=helm&logoColor=white)
 <br />
 ![Talos](https://img.shields.io/badge/Talos_Linux-364EBD?style=flat&logo=linux&logoColor=white)
+![NixOS](https://img.shields.io/badge/NixOS-5277C3?style=flat&logo=nixos&logoColor=white)
 ![Proxmox](https://img.shields.io/badge/Proxmox-E57024?style=flat&logo=proxmox&logoColor=white)
 ![Cilium](https://img.shields.io/badge/Cilium-20B2AA?style=flat&logo=cilium&logoColor=white)
 ![UniFi](https://img.shields.io/badge/Ubiquiti_UniFi-0559C9?style=flat&logo=ubiquiti&logoColor=white)
@@ -20,7 +21,9 @@ A GitOps-driven multi-site homelab managed by ArgoCD, bootstrapped via Terraform
 
 ## IaC Overview
 
-Four Terraform layers, deployed sequentially via GitHub Actions. Each layer has its own S3-backed state and feeds outputs into the next.
+Terraform layers with S3-backed state, deployed via GitHub Actions.
+
+### Vieta Site <sub><sup>via `main-deploy.yaml`</sup></sub>
 
 | Layer | Scope | What it configures |
 |:------|:------|:-------------------|
@@ -29,6 +32,17 @@ Four Terraform layers, deployed sequentially via GitHub Actions. Each layer has 
 | `02-infrastructure` | VMs, Kubernetes bootstrap, storage | Proxmox VMs/LXCs, Talos Linux cluster |
 | `03-services` | Cluster platform bootstrapping (CNI, certs, ingress, secrets) | Helm releases, K8s resources, Cloudflare DNS |
 | **ArgoCD** | Application workloads via GitOps | App of Apps pattern from this repo |
+
+### Minerva Site <sub><sup>via `minerva-deploy.yaml`</sup></sub>
+
+Docker Compose files for the Minerva site.
+
+### Cloud Edge <sub><sup>via `cloud-edge.yaml`</sup></sub>
+
+| Layer | Scope | What it configures |
+|:------|:------|:-------------------|
+| `cloud-edge/*.tf` | OCI instance, VCN, security list | Oracle Always Free ARM instance, edge subnet/firewall, Cloudflare `*.cloud` and `*.relay` records |
+| `cloud-edge/nixos/` | NixOS flake, deployed via nixos-anywhere | NixOS configuration for the edge node |
 
 ### CI/CD Pipeline
 
@@ -59,7 +73,13 @@ Inter-VLAN traffic is blocked by default (network isolation). Only SSH, HTTPS, a
 
 ### DNS
 
-Cloudflare manages the `lippok.dev` zone. A wildcard and root A record are created in `03-services` pointing to the Kubernetes Gateway LoadBalancer IP.
+Cloudflare manages the `lippok.dev` zone. A wildcard and root A record are created in `03-services` pointing to the Kubernetes Gateway LoadBalancer IP. Both Oracle records are managed under `cloud-edge`.
+
+| Subdomain | DNS | TLS terminated at | Use case |
+|:----------|:------|:-------------------|:---------|
+| `*.lippok.dev` | Local LB IP | Local Gateway | Local-only services |
+| `*.cloud.lippok.dev` | Oracle IP | Cloud Gateway | Cloud-hosted services |
+| `*.relay.lippok.dev` | Oracle IP | Local Gateway (TLSRoute passthrough) | Proxied services (DoH) |
 
 ---
 
