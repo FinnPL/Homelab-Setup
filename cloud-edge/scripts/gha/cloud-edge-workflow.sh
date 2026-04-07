@@ -127,25 +127,35 @@ detect_nixos_state() {
     -o UserKnownHostsFile=~/.ssh/known_hosts
     -o StrictHostKeyChecking=yes
   )
+  local attempts="${NIXOS_STATE_CHECK_ATTEMPTS:-8}"
+  local delay_seconds="${NIXOS_STATE_CHECK_DELAY_SECONDS:-5}"
 
   local state
-  if state=$(ssh "${ssh_opts[@]}" "root@$IP" 'if test -x /run/current-system/sw/bin/nixos-version; then echo installed; else echo absent; fi' 2>/dev/null); then
-    if [ "$state" = "installed" ]; then
-      echo "nixos_state=installed" >> "$GITHUB_OUTPUT"
-      echo "nixos_installed=true" >> "$GITHUB_OUTPUT"
-      echo "Detected existing NixOS installation."
+  local i
+  for ((i = 1; i <= attempts; i++)); do
+    if state=$(ssh "${ssh_opts[@]}" "root@$IP" 'if test -x /run/current-system/sw/bin/nixos-version; then echo installed; else echo absent; fi' 2>/dev/null); then
+      if [ "$state" = "installed" ]; then
+        echo "nixos_state=installed" >> "$GITHUB_OUTPUT"
+        echo "nixos_installed=true" >> "$GITHUB_OUTPUT"
+        echo "Detected existing NixOS installation."
+        return 0
+      fi
+
+      echo "nixos_state=absent" >> "$GITHUB_OUTPUT"
+      echo "nixos_installed=false" >> "$GITHUB_OUTPUT"
+      echo "No NixOS marker detected."
       return 0
     fi
 
-    echo "nixos_state=absent" >> "$GITHUB_OUTPUT"
-    echo "nixos_installed=false" >> "$GITHUB_OUTPUT"
-    echo "No NixOS marker detected."
-    return 0
-  fi
+    if [ "$i" -lt "$attempts" ]; then
+      echo "Could not verify NixOS marker yet (attempt $i/$attempts). Retrying in ${delay_seconds}s..."
+      sleep "$delay_seconds"
+    fi
+  done
 
   echo "nixos_state=unknown" >> "$GITHUB_OUTPUT"
   echo "nixos_installed=false" >> "$GITHUB_OUTPUT"
-  echo "Could not verify NixOS marker via SSH (state unknown)."
+  echo "Could not verify NixOS marker via SSH after $attempts attempts (state unknown)."
 }
 
 write_ssh_keys_nix() {
