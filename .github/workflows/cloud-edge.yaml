@@ -16,12 +16,12 @@ on:
         description: "Run terraform apply"
         type: boolean
         default: false
-      install_nixos:
-        description: "Run nixos-anywhere (first-time install, DESTRUCTIVE)"
-        type: boolean
-        default: false
       deploy_nixos:
         description: "Run nixos-rebuild (config update)"
+        type: boolean
+        default: false
+      force_install_nixos:
+        description: "Force nixos-anywhere install (manual, bypasses fresh-VM proof)"
         type: boolean
         default: false
 
@@ -56,6 +56,9 @@ jobs:
     name: "Terraform"
     runs-on: ubuntu-latest
     environment: Terraform
+    outputs:
+      instance_action: ${{ steps.edge_plan.outputs.instance_action }}
+      instance_new: ${{ steps.edge_plan.outputs.instance_new }}
     concurrency:
       group: terraform-cloud-edge
       cancel-in-progress: false
@@ -101,6 +104,11 @@ jobs:
         run: terraform plan -lock-timeout=10m -out .planfile -input=false
         continue-on-error: true
 
+      - name: Detect edge instance lifecycle action
+        id: edge_plan
+        if: steps.plan.outcome == 'success'
+        run: bash ./scripts/gha/cloud-edge-workflow.sh detect-instance-action
+
       - name: Comment Terraform Plan
         if: github.event_name == 'pull_request'
         uses: borchero/terraform-plan-comment@v2
@@ -124,7 +132,8 @@ jobs:
     needs: changes
     if: |
       needs.changes.outputs.nixos == 'true' ||
-      (github.event_name == 'workflow_dispatch' && (inputs.install_nixos || inputs.deploy_nixos))
+      needs.changes.outputs.terraform == 'true' ||
+      (github.event_name == 'workflow_dispatch' && (inputs.apply || inputs.deploy_nixos || inputs.force_install_nixos))
     name: "Validate NixOS"
     runs-on: ubuntu-latest
 
@@ -155,8 +164,22 @@ jobs:
       (needs.terraform.result == 'success' || needs.terraform.result == 'skipped') &&
       (needs['validate-nixos'].result == 'success' || needs['validate-nixos'].result == 'skipped') &&
       (
-        (github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.changes.outputs.nixos == 'true') ||
-        (github.event_name == 'workflow_dispatch' && (inputs.install_nixos || inputs.deploy_nixos))
+        (
+          github.event_name == 'push' &&
+          github.ref == 'refs/heads/main' &&
+          (
+            needs.changes.outputs.nixos == 'true' ||
+            needs.terraform.outputs.instance_new == 'true'
+          )
+        ) ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          (
+            inputs.deploy_nixos ||
+            (inputs.apply && needs.terraform.outputs.instance_new == 'true') ||
+            inputs.force_install_nixos
+          )
+        )
       )
     name: "NixOS Deploy"
     runs-on: ubuntu-latest
@@ -188,125 +211,109 @@ jobs:
       - name: Validate dispatch mode
         if: github.event_name == 'workflow_dispatch'
         run: |
-          if [ "${{ inputs.install_nixos }}" = "true" ] && [ "${{ inputs.deploy_nixos }}" = "true" ]; then
-            echo "::error::Choose only one mode: install_nixos or deploy_nixos"
+          if [ "${{ inputs.apply }}" = "true" ] && [ "${{ inputs.deploy_nixos }}" = "true" ]; then
+            echo "::error::Choose only one mode for manual runs: apply or deploy_nixos"
             exit 1
           fi
 
-      - name: Get Instance IP
-        id: ip
+          if [ "${{ inputs.deploy_nixos }}" = "true" ] && [ "${{ inputs.force_install_nixos }}" = "true" ]; then
+            echo "::error::Choose only one NixOS mode: deploy_nixos or force_install_nixos"
+            exit 1
+          fi
+
+      - name: Prepare edge host context
+        id: edge
         working-directory: ./cloud-edge
         env:
           TF_IN_AUTOMATION: "true"
           TF_INPUT: "false"
-        run: |
-          terraform init -input=false -lock=false > /dev/null
-          IP=$(terraform output -raw instance_public_ip)
-          if [ -z "$IP" ]; then
-            echo "::error::Could not read instance_public_ip from Terraform outputs"
-            exit 1
-          fi
-          echo "ip=$IP" >> "$GITHUB_OUTPUT"
-          echo "Edge node IP: $IP"
-
-      - name: Setup SSH
-        env:
-          IP: ${{ steps.ip.outputs.ip }}
           EXPECTED_FP: ${{ secrets.OCI_EDGE_SSH_HOSTKEY_SHA256 }}
-        run: |
-          set -euo pipefail
-          mkdir -p ~/.ssh
-          echo "${{ secrets.OCI_SSH_PRIVATE_KEY }}" > ~/.ssh/edge_key
-          chmod 600 ~/.ssh/edge_key
-
-          ssh-keyscan -t ed25519 -H "$IP" > /tmp/edge_known_host 2>/dev/null
-          if [ ! -s /tmp/edge_known_host ]; then
-            echo "::error::Could not fetch SSH host key from $IP"
-            exit 1
-          fi
-
-          if [ -n "$EXPECTED_FP" ]; then
-            ACTUAL_FP=$(ssh-keygen -lf /tmp/edge_known_host -E sha256 | awk 'NR==1 {print $2}')
-            if [ "$ACTUAL_FP" != "$EXPECTED_FP" ]; then
-              echo "::error::SSH host key fingerprint mismatch."
-              echo "Expected: $EXPECTED_FP"
-              echo "Actual:   $ACTUAL_FP"
-              exit 1
-            fi
-          else
-            echo "::warning::OCI_EDGE_SSH_HOSTKEY_SHA256 is not set; using TOFU host key trust."
-          fi
-
-          cat /tmp/edge_known_host >> ~/.ssh/known_hosts
-
-      - name: Detect existing NixOS install
-        id: detect
-        env:
-          IP: ${{ steps.ip.outputs.ip }}
-        run: |
-          if ssh -i ~/.ssh/edge_key \
-            -o BatchMode=yes \
-            -o ConnectTimeout=10 \
-            -o UserKnownHostsFile=~/.ssh/known_hosts \
-            -o StrictHostKeyChecking=yes \
-            root@$IP 'test -x /run/current-system/sw/bin/nixos-version' >/dev/null 2>&1; then
-            echo "nixos_installed=true" >> "$GITHUB_OUTPUT"
-            echo "Detected existing NixOS installation."
-          else
-            echo "nixos_installed=false" >> "$GITHUB_OUTPUT"
-            echo "No NixOS marker detected (fresh machine or no root SSH yet)."
-          fi
+          OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+        run: bash ./scripts/gha/cloud-edge-workflow.sh prepare-edge-host
 
       - name: Write SSH keys for NixOS
         env:
           OCI_SSH_PUBLIC_KEY: ${{ vars.OCI_SSH_PUBLIC_KEY }}
-        run: |
-          if [ -z "$OCI_SSH_PUBLIC_KEY" ]; then
-            echo "::error::Missing required repo/environment variable OCI_SSH_PUBLIC_KEY"
-            exit 1
-          fi
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh write-ssh-keys-nix
 
-          cat > cloud-edge/nixos/hosts/oracle-edge/ssh-keys.nix << EOF
-          {
-            users.users.root.openssh.authorizedKeys.keys = [
-              "$OCI_SSH_PUBLIC_KEY"
-            ];
-          }
-          EOF
-
-      # First-time install (nixos-anywhere)
-      - name: Guard against reinstall with install_nixos
-        if: github.event_name == 'workflow_dispatch' && inputs.install_nixos && steps.detect.outputs.nixos_installed == 'true'
+      # First-time install (nixos-anywhere) when Terraform proved a new VM
+      - name: Guard install when target already has NixOS
+        if: |
+          (
+            (
+              (
+                (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+                (github.event_name == 'workflow_dispatch' && inputs.apply)
+              ) &&
+              needs.terraform.outputs.instance_new == 'true'
+            ) ||
+            (github.event_name == 'workflow_dispatch' && inputs.force_install_nixos)
+          ) &&
+          steps.edge.outputs.nixos_state == 'installed'
         run: |
-          echo "::error::install_nixos requested, but NixOS already detected on target. Use deploy_nixos instead."
+          echo "::error::Terraform reported a new VM, but target already reports NixOS installed."
+          echo "::error::Aborting to avoid acting on the wrong host."
           exit 1
 
-      - name: "Install NixOS (nixos-anywhere)"
-        if: github.event_name == 'workflow_dispatch' && inputs.install_nixos && steps.detect.outputs.nixos_installed != 'true'
+      - name: Guard install when target state is unknown
+        if: |
+          (
+            (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+            (github.event_name == 'workflow_dispatch' && inputs.apply)
+          ) &&
+          needs.terraform.outputs.instance_new == 'true' &&
+          steps.edge.outputs.nixos_state == 'unknown'
         run: |
-          echo "Running nixos-anywhere on ${{ steps.ip.outputs.ip }}..."
+          echo "::error::Terraform reported a new VM, but SSH state verification is unknown."
+          echo "::error::Fix SSH/host reachability and rerun."
+          exit 1
+
+      - name: "Install NixOS On New VM"
+        if: |
+          (
+            (
+              (
+                (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+                (github.event_name == 'workflow_dispatch' && inputs.apply)
+              ) &&
+              needs.terraform.outputs.instance_new == 'true' &&
+              steps.edge.outputs.nixos_state == 'absent'
+            ) ||
+            (
+              github.event_name == 'workflow_dispatch' &&
+              inputs.force_install_nixos &&
+              steps.edge.outputs.nixos_state != 'installed'
+            )
+          )
+        run: |
+          echo "Running nixos-anywhere on ${{ steps.edge.outputs.ip }}..."
           nix run github:nix-community/nixos-anywhere -- \
             --flake ./cloud-edge/nixos#oracle-edge \
             --build-on-remote \
             -i ~/.ssh/edge_key \
-            root@${{ steps.ip.outputs.ip }}
+            root@${{ steps.edge.outputs.ip }}
 
       - name: Guard deploy when NixOS is missing
         if: |
-          ((needs.changes.outputs.nixos == 'true' && github.ref == 'refs/heads/main') ||
+          ((needs.changes.outputs.nixos == 'true' && github.ref == 'refs/heads/main' && needs.terraform.outputs.instance_new != 'true') ||
           (github.event_name == 'workflow_dispatch' && inputs.deploy_nixos)) &&
-          steps.detect.outputs.nixos_installed != 'true'
+          steps.edge.outputs.nixos_state != 'installed'
         run: |
-          echo "::error::deploy_nixos path selected, but NixOS was not detected on target. Run install_nixos first."
+          if [ "${{ steps.edge.outputs.nixos_state }}" = "unknown" ]; then
+            echo "::error::deploy_nixos path selected, but target state is unknown (SSH verification failed)."
+            echo "::error::Fix SSH/host reachability first, then rerun deploy_nixos."
+          else
+            echo "::error::deploy_nixos path selected, but NixOS was not detected on target."
+          fi
           exit 1
 
       # Config update (nixos-rebuild)
       - name: "Update NixOS (nixos-rebuild)"
         if: |
-          (needs.changes.outputs.nixos == 'true' && github.ref == 'refs/heads/main') ||
+          (needs.changes.outputs.nixos == 'true' && github.ref == 'refs/heads/main' && needs.terraform.outputs.instance_new != 'true') ||
           (github.event_name == 'workflow_dispatch' && inputs.deploy_nixos)
         env:
-          IP: ${{ steps.ip.outputs.ip }}
+          IP: ${{ steps.edge.outputs.ip }}
         run: |
           echo "Deploying NixOS config to $IP via nixos-rebuild remote mode..."
 
