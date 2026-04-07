@@ -1,19 +1,19 @@
 resource "oci_core_vcn" "edge" {
-  compartment_id = var.oci_compartment_ocid
+  compartment_id = local.oci_compartment_ocid
   display_name   = "edge-vcn"
   cidr_blocks    = [var.vcn_cidr]
   dns_label      = "edgevcn"
 }
 
 resource "oci_core_internet_gateway" "edge" {
-  compartment_id = var.oci_compartment_ocid
+  compartment_id = local.oci_compartment_ocid
   vcn_id         = oci_core_vcn.edge.id
   display_name   = "edge-igw"
   enabled        = true
 }
 
 resource "oci_core_route_table" "public" {
-  compartment_id = var.oci_compartment_ocid
+  compartment_id = local.oci_compartment_ocid
   vcn_id         = oci_core_vcn.edge.id
   display_name   = "edge-public-rt"
 
@@ -25,7 +25,7 @@ resource "oci_core_route_table" "public" {
 }
 
 resource "oci_core_security_list" "edge" {
-  compartment_id = var.oci_compartment_ocid
+  compartment_id = local.oci_compartment_ocid
   vcn_id         = oci_core_vcn.edge.id
   display_name   = "edge-security-list"
 
@@ -108,7 +108,7 @@ resource "oci_core_security_list" "edge" {
 }
 
 resource "oci_core_subnet" "public" {
-  compartment_id             = var.oci_compartment_ocid
+  compartment_id             = local.oci_compartment_ocid
   vcn_id                     = oci_core_vcn.edge.id
   display_name               = "edge-public-subnet"
   cidr_block                 = var.public_subnet_cidr

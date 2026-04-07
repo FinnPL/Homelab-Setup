@@ -1,5 +1,5 @@
 data "oci_core_images" "ubuntu" {
-  compartment_id           = var.oci_compartment_ocid
+  compartment_id           = local.oci_compartment_ocid
   operating_system         = "Canonical Ubuntu"
   operating_system_version = "22.04"
   shape                    = var.instance_shape
@@ -8,12 +8,12 @@ data "oci_core_images" "ubuntu" {
 }
 
 data "oci_identity_availability_domains" "ads" {
-  compartment_id = var.oci_tenancy_ocid
+  compartment_id = local.oci_tenancy_ocid
 }
 
 # Compute Instance (Always Free ARM)
 resource "oci_core_instance" "edge" {
-  compartment_id      = var.oci_compartment_ocid
+  compartment_id      = local.oci_compartment_ocid
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   display_name        = var.instance_name
   shape               = var.instance_shape
