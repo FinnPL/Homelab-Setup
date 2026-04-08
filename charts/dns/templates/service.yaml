@@ -9,7 +9,6 @@ metadata:
   annotations:
     io.cilium/lb-ipam-ips: "10.10.1.201"
     io.cilium/global-service: "true"
-    io.cilium/shared-service: "false"
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Cluster
