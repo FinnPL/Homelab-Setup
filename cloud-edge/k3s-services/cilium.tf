@@ -24,6 +24,9 @@ resource "helm_release" "cilium" {
       # Cluster Mesh: enable apiserver for cross-cluster connectivity
       clustermesh = {
         useAPIServer = true
+        config = {
+          enabled = true
+        }
         apiserver = {
           service = {
             type = "NodePort"
