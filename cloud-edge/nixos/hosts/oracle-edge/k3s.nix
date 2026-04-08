@@ -9,6 +9,7 @@
       "--disable-network-policy"         # Cilium handles network policies
       "--disable=traefik"                # Gateway API replaces Traefik
       "--disable=servicelb"              # Cilium handles LoadBalancer
+      "--disable-kube-proxy"             # Cilium handles kube-proxy replacement
       "--disable=local-storage"          # Not needed on edge node
       "--cluster-cidr=10.42.0.0/16"      # Non-overlapping with homelab (10.244.0.0/16)
       "--service-cidr=10.43.0.0/16"      # Non-overlapping with homelab (10.96.0.0/12)
