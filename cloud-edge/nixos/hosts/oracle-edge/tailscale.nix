@@ -7,7 +7,7 @@
     authKeyFile = "/etc/tailscale/authkey";
     extraUpFlags = [
       "--accept-routes"
-      "--advertise-tags=tag:cloud-k8s"
+      "--advertise-tags=tag:k8s"
     ];
   };
 
