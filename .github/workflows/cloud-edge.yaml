@@ -384,7 +384,7 @@ jobs:
     needs: [changes, deploy-nixos]
     if: |
       always() &&
-      (needs['deploy-nixos'].result == 'success' || needs['deploy-nixos'].result == 'skipped') &&
+      needs['deploy-nixos'].result != 'failure' && needs['deploy-nixos'].result != 'cancelled' &&
       (
         (github.event_name == 'push' && github.ref == 'refs/heads/main' &&
           (needs.changes.outputs.k3s_services == 'true' || needs['deploy-nixos'].result == 'success')
@@ -493,7 +493,7 @@ jobs:
         env:
           IP: ${{ steps.edge.outputs.ip }}
         run: |
-          export KUBECONFIG_CLOUD="./cloud-edge/k3s-services/kubeconfig.yaml"
+          export KUBECONFIG_CLOUD="kubeconfig.yaml"
           export KUBECONFIG_HOMELAB="/tmp/homelab-kubeconfig.yaml"
 
           # Get the NodePort assigned to the clustermesh-apiserver on the cloud cluster

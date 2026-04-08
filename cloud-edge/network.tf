@@ -91,8 +91,8 @@ resource "oci_core_security_list" "edge" {
     stateless = false
 
     tcp_options {
-      min = 2379
-      max = 2379
+      min = 32379
+      max = 32379
     }
   }
 

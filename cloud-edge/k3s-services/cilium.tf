@@ -29,7 +29,9 @@ resource "helm_release" "cilium" {
         }
         apiserver = {
           service = {
+            # NodePort so it's reachable via the OCI public IP from homelab Cilium agents
             type = "NodePort"
+            nodePort = 32379
           }
         }
       }
