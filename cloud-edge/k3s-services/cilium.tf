@@ -5,6 +5,8 @@ resource "helm_release" "cilium" {
   version    = var.cilium_version
   namespace  = "kube-system"
   timeout    = 600
+  replace         = true
+  cleanup_on_fail = true
 
   values = [
     yamlencode({

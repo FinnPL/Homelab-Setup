@@ -9,6 +9,8 @@ resource "helm_release" "cert_manager" {
   namespace        = "cert-manager"
   create_namespace = true
   timeout          = 300
+  replace          = true
+  cleanup_on_fail  = true
 
   values = [
     yamlencode({
