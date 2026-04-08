@@ -14,14 +14,14 @@ variable "gateway_api_version" {
 variable "cilium_version" {
   description = "Cilium Helm chart version"
   type        = string
-  # renovate: datasource=helm depName=cilium repository-url=https://helm.cilium.io/
+  # renovate: datasource=helm depName=cilium registryUrl=https://helm.cilium.io/
   default = "1.19.2"
 }
 
 variable "cert_manager_version" {
   description = "cert-manager Helm chart version"
   type        = string
-  # renovate: datasource=helm depName=cert-manager repository-url=https://charts.jetstack.io
+  # renovate: datasource=helm depName=cert-manager registryUrl=https://charts.jetstack.io
   default = "v1.17.2"
 }
 

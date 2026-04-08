@@ -32,8 +32,8 @@
         "/\\.ya?ml$/"
       ],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?:\\s+versioning=(?<versioning>.*?))?(?:\\s+extractVersion=(?<extractVersion>.*?))?\\s+(?:default\\s*=\\s*\"|package:\\s*.*:)(?<currentValue>[^\"\\n]+)\"?",
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)(?:\\s+versioning=(?<versioning>.*?))?(?:\\s+extractVersion=(?<extractVersion>.*?))?\\s+tag\\s*:\\s*\"?(?<currentValue>[^\"\\n]+)\"?"
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>\\S+)(?:\\s+(?:repository-url|registryUrl)=(?<registryUrl>\\S+))?(?:\\s+versioning=(?<versioning>.*?))?(?:\\s+extractVersion=(?<extractVersion>.*?))?\\s+(?:default\\s*=\\s*\"|package:\\s*.*:)(?<currentValue>[^\"\\n]+)\"?",
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>\\S+)(?:\\s+(?:repository-url|registryUrl)=(?<registryUrl>\\S+))?(?:\\s+versioning=(?<versioning>.*?))?(?:\\s+extractVersion=(?<extractVersion>.*?))?\\s+tag\\s*:\\s*\"?(?<currentValue>[^\"\\n]+)\"?"
       ]
     },
     {
