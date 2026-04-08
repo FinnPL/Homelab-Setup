@@ -445,11 +445,12 @@ jobs:
         run: bash ./scripts/gha/cloud-edge-workflow.sh fetch-kubeconfig
 
       - name: Establish SSH tunnel to K3s API
+        working-directory: ./cloud-edge
         env:
           IP: ${{ steps.edge.outputs.ip }}
           OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
-        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh setup-k3s-tunnel
-
+        run: bash ./scripts/gha/cloud-edge-workflow.sh setup-k3s-tunnel 
+        
       - name: Terraform Init
         run: terraform init -upgrade
 
