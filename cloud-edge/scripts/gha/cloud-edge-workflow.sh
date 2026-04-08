@@ -351,7 +351,7 @@ wait_for_k3s() {
 
   local i
   for ((i = 1; i <= attempts; i++)); do
-    if ssh "${ssh_opts[@]}" "root@$IP" 'kubectl get nodes --no-headers 2>/dev/null' 2>/dev/null; then
+    if ssh "${ssh_opts[@]}" "root@$IP" 'kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml get nodes --no-headers 2>/dev/null' 2>/dev/null; then
       echo "K3s API is ready."
       return 0
     fi
