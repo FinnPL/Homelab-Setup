@@ -16,7 +16,9 @@
 
   networking = {
     hostName = "oracle-edge";
-    useDHCP = true;
+    useDHCP = false;
+    useNetworkd = true;
+    dhcpcd.enable = false;
     firewall = {
       enable = true;
       allowedTCPPorts = [
@@ -31,6 +33,14 @@
       ];
       # Tailscale interface is trusted, allow all traffic through the mesh
       trustedInterfaces = [ "tailscale0" ];
+    };
+  };
+
+  systemd.network = {
+    enable = true;
+    networks."10-uplink" = {
+      matchConfig.Name = "e*";
+      networkConfig.DHCP = "yes";
     };
   };
 
