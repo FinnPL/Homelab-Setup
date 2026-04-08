@@ -66,6 +66,9 @@ spec:
             - name: http
               containerPort: 4000
               protocol: TCP
+            - name: https
+              containerPort: 443
+              protocol: TCP
 
           env:
             - name: TZ
@@ -78,6 +81,9 @@ spec:
               readOnly: true
             - name: blocky-tmp
               mountPath: /tmp
+            - name: tls-cert
+              mountPath: /tls
+              readOnly: true
 
           resources:
             requests:
@@ -217,3 +223,7 @@ spec:
           emptyDir:
             medium: Memory
             sizeLimit: 16Mi
+
+        - name: tls-cert
+          secret:
+            secretName: dns-relay-tls

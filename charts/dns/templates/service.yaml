@@ -7,7 +7,8 @@ metadata:
   labels:
     app: dns
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.1.201" # Hardcoded to match Unifi DNS settings
+    io.cilium/lb-ipam-ips: "10.10.1.201"
+    io.cilium/global-service: "true"
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Cluster
@@ -22,6 +23,10 @@ spec:
       protocol: TCP
       port: 53
       targetPort: 53
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: 443
 
 ---
 apiVersion: v1
