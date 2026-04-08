@@ -271,7 +271,7 @@ EOF
 
 deploy_tailscale_credentials() {
   require_var IP
-  require_var TS_OAUTH_SECRET
+  require_var TAILSCALE_OAUTH_SECRET
 
   local ssh_opts=(
     -i ~/.ssh/edge_key
@@ -285,7 +285,7 @@ deploy_tailscale_credentials() {
     mkdir -p /etc/tailscale
     cat > /etc/tailscale/authkey
     chmod 600 /etc/tailscale/authkey
-  ' <<< "$TS_OAUTH_SECRET"
+  ' <<< "$TAILSCALE_OAUTH_SECRET"
 
   echo "Tailscale credentials deployed."
 }
