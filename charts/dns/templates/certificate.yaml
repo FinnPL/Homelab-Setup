@@ -11,5 +11,5 @@ spec:
     name: letsencrypt-prod
     kind: ClusterIssuer
   dnsNames:
-    - "dns.relay.lippok.dev"
+    - "relay.lippok.dev"
     - "*.relay.lippok.dev"
