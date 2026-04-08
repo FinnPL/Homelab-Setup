@@ -19,6 +19,7 @@
     useDHCP = false;
     useNetworkd = true;
     dhcpcd.enable = false;
+    nftables.enable = true;
     firewall = {
       enable = true;
       allowedTCPPorts = [
@@ -30,9 +31,19 @@
       ];
       allowedUDPPorts = [
         41641 # Tailscale WireGuard
+        8472  # Cilium VXLAN overlay
       ];
-      # Tailscale interface is trusted, allow all traffic through the mesh
-      trustedInterfaces = [ "tailscale0" ];
+      # Tailscale and Cilium-managed interfaces are trusted.
+      trustedInterfaces = [
+        "tailscale0"
+        "cilium_host"
+        "cilium_net"
+        "cilium_vxlan"
+      ];
+      extraInputRules = ''
+        iifname "lxc*" accept
+      '';
+      checkReversePath = "loose";
     };
   };
 

@@ -17,6 +17,8 @@ resource "helm_release" "cert_manager" {
       }
     })
   ]
+
+  depends_on = [helm_release.cilium]
 }
 
 resource "kubectl_manifest" "cloud_issuer_secret" {
