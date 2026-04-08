@@ -496,12 +496,17 @@ jobs:
           export KUBECONFIG_CLOUD="kubeconfig.yaml"
           export KUBECONFIG_HOMELAB="/tmp/homelab-kubeconfig.yaml"
 
-          # Get the NodePort assigned to the clustermesh-apiserver on the cloud cluster
-          MESH_PORT=$(KUBECONFIG=$KUBECONFIG_CLOUD kubectl get svc -n kube-system clustermesh-apiserver \
-            -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "")
+          # Get the NodePort assigned to the clustermesh-apiserver on the cloud cluster (with retries for operator delay)
+          for i in {1..12}; do
+            MESH_PORT=$(KUBECONFIG=$KUBECONFIG_CLOUD kubectl get svc -n kube-system clustermesh-apiserver \
+              -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "")
+            if [ -n "$MESH_PORT" ]; then break; fi
+            echo "Waiting for clustermesh-apiserver service..."
+            sleep 5
+          done
 
           if [ -z "$MESH_PORT" ]; then
-            echo "Clustermesh-apiserver not yet available, skipping bootstrap."
+            echo "Clustermesh-apiserver not yet available after wait, skipping bootstrap."
             exit 0
           fi
 
