@@ -38,6 +38,7 @@
 
   systemd.network = {
     enable = true;
+    wait-online.enable = false;
     networks."10-uplink" = {
       matchConfig.Name = "eth0";
       networkConfig.DHCP = "yes";

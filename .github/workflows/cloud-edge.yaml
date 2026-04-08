@@ -341,7 +341,7 @@ jobs:
       - name: Deploy Tailscale credentials
         env:
           IP: ${{ steps.edge.outputs.ip }}
-          TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+          TAILSCALE_OAUTH_SECRET: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
           OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
         run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh deploy-tailscale-credentials
 
