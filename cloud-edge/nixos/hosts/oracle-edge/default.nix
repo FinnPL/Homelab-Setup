@@ -39,7 +39,7 @@
   systemd.network = {
     enable = true;
     networks."10-uplink" = {
-      matchConfig.Name = "e*";
+      matchConfig.Name = "eth0";
       networkConfig.DHCP = "yes";
     };
   };

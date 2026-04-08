@@ -337,6 +337,14 @@ jobs:
           fi
           exit 1
 
+      # Tailscale auth key
+      - name: Deploy Tailscale credentials
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+          TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
+          OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh deploy-tailscale-credentials
+
       # Config update (nixos-rebuild)
       - name: "Update NixOS (nixos-rebuild)"
         if: |
@@ -357,14 +365,6 @@ jobs:
             --build-host root@$IP \
             --target-host root@$IP \
             --fast
-
-      # Post-deploy: Bootstrap Tailscale + K3s
-      - name: Deploy Tailscale credentials
-        env:
-          IP: ${{ steps.edge.outputs.ip }}
-          TS_OAUTH_SECRET: ${{ secrets.TS_OAUTH_SECRET }}
-          OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
-        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh deploy-tailscale-credentials
 
       - name: Wait for Tailscale to connect
         id: tailscale
