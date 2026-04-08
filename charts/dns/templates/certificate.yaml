@@ -4,7 +4,7 @@ metadata:
   name: dns-relay-tls
   namespace: dns
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   secretName: dns-relay-tls
   issuerRef:
