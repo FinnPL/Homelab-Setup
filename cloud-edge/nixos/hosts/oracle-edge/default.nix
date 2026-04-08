@@ -5,6 +5,8 @@
     ./disk-config.nix
     ./hardware.nix
     ./ssh-keys.nix
+    ./tailscale.nix
+    ./k3s.nix
   ];
 
   boot.loader = {
@@ -18,13 +20,17 @@
     firewall = {
       enable = true;
       allowedTCPPorts = [
-        22   # SSH
-        80   # HTTP (ACME challenges)
-        443  # HTTPS
+        22    # SSH
+        80    # HTTP (ACME challenges)
+        443   # HTTPS
+        32379 # Cilium Cluster Mesh (etcd) NodePort
+        4240  # Cilium health checks
       ];
       allowedUDPPorts = [
         41641 # Tailscale WireGuard
       ];
+      # Tailscale interface is trusted, allow all traffic through the mesh
+      trustedInterfaces = [ "tailscale0" ];
     };
   };
 
@@ -50,17 +56,4 @@
     htop
     git
   ];
-
-  # services.tailscale.enable = true;
-
-  # services.k3s = {
-  #   enable = true;
-  #   role = "server";
-  #   extraFlags = [
-  #     "--flannel-backend=none"       # Cilium replaces Flannel
-  #     "--disable-network-policy"     # Cilium handles policies
-  #     "--disable=traefik"            # Gateway API replaces Traefik
-  #     "--disable=servicelb"          # Cilium handles LB
-  #   ];
-  # };
 }

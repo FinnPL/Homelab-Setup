@@ -269,6 +269,144 @@ write_ssh_keys_nix() {
 EOF
 }
 
+deploy_tailscale_credentials() {
+  require_var IP
+  require_var TS_OAUTH_SECRET
+
+  local ssh_opts=(
+    -i ~/.ssh/edge_key
+    -o BatchMode=yes
+    -o ConnectTimeout=10
+    -o UserKnownHostsFile=~/.ssh/known_hosts
+    -o StrictHostKeyChecking=yes
+  )
+  echo "Deploying Tailscale OAuth credentials to edge node..."
+  ssh "${ssh_opts[@]}" "root@$IP" '
+    mkdir -p /etc/tailscale
+    cat > /etc/tailscale/authkey
+    chmod 600 /etc/tailscale/authkey
+  ' <<< "$TS_OAUTH_SECRET"
+
+  echo "Tailscale credentials deployed."
+}
+
+wait_for_tailscale() {
+  require_var IP
+
+  local ssh_opts=(
+    -i ~/.ssh/edge_key
+    -o BatchMode=yes
+    -o ConnectTimeout=10
+    -o UserKnownHostsFile=~/.ssh/known_hosts
+    -o StrictHostKeyChecking=yes
+  )
+  local attempts="${TAILSCALE_WAIT_ATTEMPTS:-30}"
+  local delay_seconds="${TAILSCALE_WAIT_DELAY_SECONDS:-10}"
+
+  echo "Waiting for Tailscale to connect..."
+
+  local i
+  for ((i = 1; i <= attempts; i++)); do
+    local ts_status
+    if ts_status=$(ssh "${ssh_opts[@]}" "root@$IP" 'tailscale status --json 2>/dev/null' 2>/dev/null); then
+      local backend_state
+      backend_state=$(printf '%s' "$ts_status" | jq -r '.BackendState // empty')
+
+      if [ "$backend_state" = "Running" ]; then
+        local ts_ip
+        ts_ip=$(printf '%s' "$ts_status" | jq -r '.TailscaleIPs[0] // empty')
+
+        echo "tailscale_ip=$ts_ip" >> "$GITHUB_OUTPUT"
+        echo "Tailscale connected. Tailscale IP: $ts_ip"
+        return 0
+      fi
+
+      echo "Tailscale state: $backend_state (attempt $i/$attempts)"
+    else
+      echo "Could not query Tailscale status (attempt $i/$attempts)"
+    fi
+
+    if [ "$i" -lt "$attempts" ]; then
+      sleep "$delay_seconds"
+    fi
+  done
+
+  error "Tailscale did not connect after $attempts attempts"
+}
+
+wait_for_k3s() {
+  require_var IP
+
+  local ssh_opts=(
+    -i ~/.ssh/edge_key
+    -o BatchMode=yes
+    -o ConnectTimeout=10
+    -o UserKnownHostsFile=~/.ssh/known_hosts
+    -o StrictHostKeyChecking=yes
+  )
+  local attempts="${K3S_WAIT_ATTEMPTS:-30}"
+  local delay_seconds="${K3S_WAIT_DELAY_SECONDS:-10}"
+
+  echo "Waiting for K3s API to become available..."
+
+  local i
+  for ((i = 1; i <= attempts; i++)); do
+    if ssh "${ssh_opts[@]}" "root@$IP" 'kubectl get nodes --no-headers 2>/dev/null' 2>/dev/null; then
+      echo "K3s API is ready."
+      return 0
+    fi
+
+    if [ "$i" -lt "$attempts" ]; then
+      echo "K3s not ready yet (attempt $i/$attempts). Retrying in ${delay_seconds}s..."
+      sleep "$delay_seconds"
+    fi
+  done
+
+  error "K3s API did not become available after $attempts attempts"
+}
+
+fetch_kubeconfig() {
+  require_var IP
+
+  local ssh_opts=(
+    -i ~/.ssh/edge_key
+    -o BatchMode=yes
+    -o ConnectTimeout=10
+    -o UserKnownHostsFile=~/.ssh/known_hosts
+    -o StrictHostKeyChecking=yes
+  )
+  local output_path="${KUBECONFIG_OUTPUT:-$CLOUD_EDGE_DIR/k3s-services/kubeconfig.yaml}"
+
+  echo "Fetching K3s kubeconfig from edge node..."
+
+  mkdir -p "$(dirname "$output_path")"
+  scp "${ssh_opts[@]}" "root@$IP:/etc/rancher/k3s/k3s.yaml" "$output_path"
+  chmod 600 "$output_path"
+
+  echo "kubeconfig_path=$output_path" >> "$GITHUB_OUTPUT"
+  echo "K3s kubeconfig saved to $output_path"
+}
+
+setup_k3s_tunnel() {
+  require_var IP
+
+  local ssh_opts=(
+    -i ~/.ssh/edge_key
+    -o BatchMode=yes
+    -o ConnectTimeout=10
+    -o UserKnownHostsFile=~/.ssh/known_hosts
+    -o StrictHostKeyChecking=yes
+    -o ExitOnForwardFailure=yes
+  )
+
+  echo "Establishing SSH tunnel to K3s API (localhost:6443 -> $IP:6443)..."
+
+  # Forward local port 6443 to the edge node's K3s API.
+  ssh "${ssh_opts[@]}" -fN -L 6443:127.0.0.1:6443 "root@$IP"
+
+  echo "SSH tunnel established. K3s API accessible at https://127.0.0.1:6443"
+}
+
 usage() {
   cat << 'EOF'
 Usage: cloud-edge-workflow.sh <command>
@@ -279,6 +417,11 @@ Commands:
   setup-ssh
   detect-nixos-state
   write-ssh-keys-nix
+  deploy-tailscale-credentials
+  wait-for-tailscale
+  wait-for-k3s
+  fetch-kubeconfig
+  setup-k3s-tunnel
 EOF
 }
 
@@ -306,6 +449,21 @@ main() {
       ;;
     write-ssh-keys-nix)
       write_ssh_keys_nix
+      ;;
+    deploy-tailscale-credentials)
+      deploy_tailscale_credentials
+      ;;
+    wait-for-tailscale)
+      wait_for_tailscale
+      ;;
+    wait-for-k3s)
+      wait_for_k3s
+      ;;
+    fetch-kubeconfig)
+      fetch_kubeconfig
+      ;;
+    setup-k3s-tunnel)
+      setup_k3s_tunnel
       ;;
     *)
       usage
