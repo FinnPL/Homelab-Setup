@@ -28,6 +28,10 @@ on:
         description: "Optional OCI availability domain override (example: kIdk:EU-FRANKFURT-1-AD-2)"
         type: string
         default: ""
+      replace_target:
+        description: "Optional Terraform resource address to force-replace on apply. Only honored when apply=true."
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -89,6 +93,7 @@ jobs:
       TF_VAR_ssh_public_key: ${{ vars.OCI_SSH_PUBLIC_KEY }}
       TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       TF_VAR_instance_availability_domain: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_availability_domain || '' }}
+      REPLACE_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.replace_target || '' }}
 
     steps:
       - uses: actions/checkout@v6
@@ -114,7 +119,13 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        run: terraform plan -lock-timeout=10m -out .planfile -input=false
+        run: |
+          extra_args=()
+          if [ -n "${REPLACE_TARGET:-}" ]; then
+            echo "::notice::Planning with -replace=${REPLACE_TARGET}"
+            extra_args+=(-replace="${REPLACE_TARGET}")
+          fi
+          terraform plan -lock-timeout=10m -out .planfile -input=false "${extra_args[@]}"
         continue-on-error: true
 
       - name: Detect edge instance lifecycle action
