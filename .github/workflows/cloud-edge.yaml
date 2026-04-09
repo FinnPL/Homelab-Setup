@@ -494,15 +494,39 @@ jobs:
         env:
           IP: ${{ steps.edge.outputs.ip }}
         run: |
-          export KUBECONFIG_CLOUD="kubeconfig.yaml"
-          export KUBECONFIG_HOMELAB="/tmp/homelab-kubeconfig.yaml"
-
           set -euo pipefail
+
+          KUBECONFIG_CLOUD="kubeconfig.yaml"
+          KUBECONFIG_HOMELAB="/tmp/homelab-kubeconfig.yaml"
+
+          # Cilium-cli no longer accepts source/destination kubeconfig flags 
+          rewrite_kc() {
+            local file="$1" name="$2"
+            yq -i "
+              .clusters[0].name = \"$name\" |
+              .users[0].name = \"$name\" |
+              .contexts[0].name = \"$name\" |
+              .contexts[0].context.cluster = \"$name\" |
+              .contexts[0].context.user = \"$name\" |
+              .\"current-context\" = \"$name\"
+            " "$file"
+          }
+
+          cp "$KUBECONFIG_HOMELAB" /tmp/kc-homelab.yaml
+          cp "$KUBECONFIG_CLOUD"   /tmp/kc-cloud.yaml
+          chmod 600 /tmp/kc-homelab.yaml /tmp/kc-cloud.yaml
+          rewrite_kc /tmp/kc-homelab.yaml homelab-k8s
+          rewrite_kc /tmp/kc-cloud.yaml   cloud-edge
+
+          KUBECONFIG=/tmp/kc-homelab.yaml:/tmp/kc-cloud.yaml \
+            kubectl config view --flatten > /tmp/kc-merged.yaml
+          chmod 600 /tmp/kc-merged.yaml
+          export KUBECONFIG=/tmp/kc-merged.yaml
 
           # Get the NodePort assigned to the clustermesh-apiserver on the cloud cluster (with retries for operator delay)
           MESH_PORT=""
           for i in {1..24}; do
-            MESH_PORT=$(KUBECONFIG=$KUBECONFIG_CLOUD kubectl get svc -n kube-system clustermesh-apiserver \
+            MESH_PORT=$(kubectl --context cloud-edge -n kube-system get svc clustermesh-apiserver \
               -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "")
             if [ -n "$MESH_PORT" ]; then break; fi
             echo "Waiting for clustermesh-apiserver service... ($i/24)"
@@ -518,9 +542,9 @@ jobs:
           # If both sides already report ready, skip the connect call entirely
           # so reruns are clean no-ops instead of churning the secret.
           ALREADY_CONNECTED=0
-          if KUBECONFIG=$KUBECONFIG_HOMELAB cilium clustermesh status --wait=false 2>/dev/null \
+          if cilium clustermesh status --context homelab-k8s --wait=false 2>/dev/null \
                | grep -q "1/1 remote clusters ready" \
-             && KUBECONFIG=$KUBECONFIG_CLOUD cilium clustermesh status --wait=false 2>/dev/null \
+             && cilium clustermesh status --context cloud-edge --wait=false 2>/dev/null \
                | grep -q "1/1 remote clusters ready"; then
             ALREADY_CONNECTED=1
           fi
@@ -529,19 +553,19 @@ jobs:
             echo "Cluster Mesh already connected (both sides report 1/1 remote clusters ready). Skipping connect."
           else
             echo "Connecting clusters via Cluster Mesh (cloud endpoint: $IP:$MESH_PORT)..."
-            # --allow-mismatching-ca: each cluster's Cilium generates its own CA;
-            # the connect helper has to bridge them on first install. Without this
-            # flag the very first bootstrap fails.
+            # --allow-mismatching-ca: each cluster's Cilium generates its own
+            # CA, so the connect helper has to bridge them on first install.
+            # Without this flag the very first bootstrap fails.
             cilium clustermesh connect \
-              --context-name homelab-k8s --kubeconfig "$KUBECONFIG_HOMELAB" \
-              --destination-context cloud-edge --destination-kubeconfig "$KUBECONFIG_CLOUD" \
+              --context homelab-k8s \
+              --destination-context cloud-edge \
               --destination-endpoint "$IP:$MESH_PORT" \
               --allow-mismatching-ca
           fi
 
           echo "Waiting for both sides to report ready..."
-          KUBECONFIG=$KUBECONFIG_HOMELAB cilium clustermesh status --wait --wait-duration 5m
-          KUBECONFIG=$KUBECONFIG_CLOUD cilium clustermesh status --wait --wait-duration 5m
+          cilium clustermesh status --context homelab-k8s --wait --wait-duration 5m
+          cilium clustermesh status --context cloud-edge --wait --wait-duration 5m
 
           echo "Cluster Mesh bootstrap complete."
 
