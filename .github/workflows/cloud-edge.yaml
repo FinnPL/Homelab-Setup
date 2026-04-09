@@ -518,9 +518,9 @@ jobs:
           # If both sides already report ready, skip the connect call entirely
           # so reruns are clean no-ops instead of churning the secret.
           ALREADY_CONNECTED=0
-          if KUBECONFIG=$KUBECONFIG_HOMELAB cilium clustermesh status --wait=false 2>/dev/null \
+          if KUBECONFIG="$KUBECONFIG_HOMELAB" cilium clustermesh status --wait=false 2>/dev/null \
                | grep -q "1/1 remote clusters ready" \
-             && KUBECONFIG=$KUBECONFIG_CLOUD cilium clustermesh status --wait=false 2>/dev/null \
+             && KUBECONFIG="$KUBECONFIG_CLOUD" cilium clustermesh status --wait=false 2>/dev/null \
                | grep -q "1/1 remote clusters ready"; then
             ALREADY_CONNECTED=1
           fi
@@ -529,19 +529,18 @@ jobs:
             echo "Cluster Mesh already connected (both sides report 1/1 remote clusters ready). Skipping connect."
           else
             echo "Connecting clusters via Cluster Mesh (cloud endpoint: $IP:$MESH_PORT)..."
-            # --allow-mismatching-ca: each cluster's Cilium generates its own CA;
-            # the connect helper has to bridge them on first install. Without this
-            # flag the very first bootstrap fails.
-            cilium clustermesh connect \
-              --context-name homelab-k8s --kubeconfig "$KUBECONFIG_HOMELAB" \
-              --destination-context cloud-edge --destination-kubeconfig "$KUBECONFIG_CLOUD" \
+            # --allow-mismatching-ca: each cluster's Cilium generates its own
+            # CA, so the connect helper has to bridge them on first install.
+            # Without this flag the very first bootstrap fails.
+            KUBECONFIG="$KUBECONFIG_HOMELAB" cilium clustermesh connect \
+              --destination-kubeconfig "$KUBECONFIG_CLOUD" \
               --destination-endpoint "$IP:$MESH_PORT" \
               --allow-mismatching-ca
           fi
 
           echo "Waiting for both sides to report ready..."
-          KUBECONFIG=$KUBECONFIG_HOMELAB cilium clustermesh status --wait --wait-duration 5m
-          KUBECONFIG=$KUBECONFIG_CLOUD cilium clustermesh status --wait --wait-duration 5m
+          KUBECONFIG="$KUBECONFIG_HOMELAB" cilium clustermesh status --wait --wait-duration 5m
+          KUBECONFIG="$KUBECONFIG_CLOUD" cilium clustermesh status --wait --wait-duration 5m
 
           echo "Cluster Mesh bootstrap complete."
 
