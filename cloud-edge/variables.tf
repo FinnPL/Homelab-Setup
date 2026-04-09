@@ -93,7 +93,7 @@ variable "ssh_public_key" {
 variable "vcn_cidr" {
   description = "CIDR block for the VCN"
   type        = string
-  default = "10.99.0.0/24"
+  default     = "10.99.0.0/24"
 }
 
 variable "public_subnet_cidr" {
