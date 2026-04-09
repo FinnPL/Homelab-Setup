@@ -497,25 +497,51 @@ jobs:
           export KUBECONFIG_CLOUD="kubeconfig.yaml"
           export KUBECONFIG_HOMELAB="/tmp/homelab-kubeconfig.yaml"
 
+          set -euo pipefail
+
           # Get the NodePort assigned to the clustermesh-apiserver on the cloud cluster (with retries for operator delay)
-          for i in {1..12}; do
+          MESH_PORT=""
+          for i in {1..24}; do
             MESH_PORT=$(KUBECONFIG=$KUBECONFIG_CLOUD kubectl get svc -n kube-system clustermesh-apiserver \
               -o jsonpath='{.spec.ports[0].nodePort}' 2>/dev/null || echo "")
             if [ -n "$MESH_PORT" ]; then break; fi
-            echo "Waiting for clustermesh-apiserver service..."
+            echo "Waiting for clustermesh-apiserver service... ($i/24)"
             sleep 5
           done
 
           if [ -z "$MESH_PORT" ]; then
-            echo "Clustermesh-apiserver not yet available after wait, skipping bootstrap."
-            exit 0
+            echo "::error::clustermesh-apiserver Service never appeared on the cloud cluster."
+            echo "::error::Check that helm_release.cilium applied with clustermesh.useAPIServer=true."
+            exit 1
           fi
 
-          echo "Connecting clusters via Cluster Mesh (cloud endpoint: $IP:$MESH_PORT)..."
-          cilium clustermesh connect \
-            --context-name homelab-k8s --kubeconfig "$KUBECONFIG_HOMELAB" \
-            --destination-context cloud-edge --destination-kubeconfig "$KUBECONFIG_CLOUD" \
-            --destination-endpoint "$IP:$MESH_PORT" || true
+          # If both sides already report ready, skip the connect call entirely
+          # so reruns are clean no-ops instead of churning the secret.
+          ALREADY_CONNECTED=0
+          if KUBECONFIG=$KUBECONFIG_HOMELAB cilium clustermesh status --wait=false 2>/dev/null \
+               | grep -q "1/1 remote clusters ready" \
+             && KUBECONFIG=$KUBECONFIG_CLOUD cilium clustermesh status --wait=false 2>/dev/null \
+               | grep -q "1/1 remote clusters ready"; then
+            ALREADY_CONNECTED=1
+          fi
+
+          if [ "$ALREADY_CONNECTED" = "1" ]; then
+            echo "Cluster Mesh already connected (both sides report 1/1 remote clusters ready). Skipping connect."
+          else
+            echo "Connecting clusters via Cluster Mesh (cloud endpoint: $IP:$MESH_PORT)..."
+            # --allow-mismatching-ca: each cluster's Cilium generates its own CA;
+            # the connect helper has to bridge them on first install. Without this
+            # flag the very first bootstrap fails.
+            cilium clustermesh connect \
+              --context-name homelab-k8s --kubeconfig "$KUBECONFIG_HOMELAB" \
+              --destination-context cloud-edge --destination-kubeconfig "$KUBECONFIG_CLOUD" \
+              --destination-endpoint "$IP:$MESH_PORT" \
+              --allow-mismatching-ca
+          fi
+
+          echo "Waiting for both sides to report ready..."
+          KUBECONFIG=$KUBECONFIG_HOMELAB cilium clustermesh status --wait --wait-duration 5m
+          KUBECONFIG=$KUBECONFIG_CLOUD cilium clustermesh status --wait --wait-duration 5m
 
           echo "Cluster Mesh bootstrap complete."
 

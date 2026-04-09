@@ -8,7 +8,6 @@ metadata:
     app: dns
   annotations:
     io.cilium/lb-ipam-ips: "10.10.1.201"
-    io.cilium/global-service: "true"
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Cluster
@@ -28,6 +27,15 @@ spec:
       port: 443
       targetPort: 443
 
+---
+# Makes dns reachable from peer clusters in the mesh. Replaces global-service annotation.
+apiVersion: multicluster.x-k8s.io/v1alpha1
+kind: ServiceExport
+metadata:
+  name: dns
+  namespace: dns
+  labels:
+    app: dns
 ---
 apiVersion: v1
 kind: Service

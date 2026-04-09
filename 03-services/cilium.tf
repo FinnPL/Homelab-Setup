@@ -32,6 +32,9 @@ resource "helm_release" "cilium" {
             type = "LoadBalancer"
           }
         }
+        mcsapi = {
+          enabled = true
+        }
       }
       l2announcements = {
         enabled = true

@@ -1,10 +1,10 @@
 resource "helm_release" "cilium" {
-  name       = "cilium"
-  repository = "https://helm.cilium.io/"
-  chart      = "cilium"
-  version    = var.cilium_version
-  namespace  = "kube-system"
-  timeout    = 600
+  name            = "cilium"
+  repository      = "https://helm.cilium.io/"
+  chart           = "cilium"
+  version         = var.cilium_version
+  namespace       = "kube-system"
+  timeout         = 600
   replace         = true
   cleanup_on_fail = true
 
@@ -32,14 +32,20 @@ resource "helm_release" "cilium" {
         apiserver = {
           service = {
             # NodePort so it's reachable via the OCI public IP from homelab Cilium agents
-            type = "NodePort"
+            type     = "NodePort"
             nodePort = 32379
           }
+        }
+        mcsapi = {
+          enabled = true
         }
       }
 
       gatewayAPI = {
         enabled = true
+        hostNetwork = { # Replace with Cloud LB if needed in future
+          enabled = true
+        }
       }
 
       l2announcements = {
