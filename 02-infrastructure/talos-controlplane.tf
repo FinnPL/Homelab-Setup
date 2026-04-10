@@ -156,9 +156,9 @@ data "talos_machine_configuration" "controlplane" {
               dhcp      = true
               routes = [
                 {
-                  # Route to OCI cloud-edge VCN via Pi subnet router.
+                  # Route to OCI cloud-edge VCN via mesh-router LXC.
                   network = "10.70.1.0/24"
-                  gateway = "10.10.1.75"
+                  gateway = "10.10.1.90"
                 }
               ]
             }
