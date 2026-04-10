@@ -70,7 +70,6 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
   agent {
     enabled = true
     type    = "virtio"
-    timeout = "10s"
   }
 
   operating_system {
