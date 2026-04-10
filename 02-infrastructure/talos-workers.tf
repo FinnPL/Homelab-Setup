@@ -43,7 +43,7 @@ data "talos_machine_configuration" "worker" {
         network = {
           interfaces = [
             {
-              interface = "ens18"
+              interface = "end0"
               dhcp      = true
               routes = [
                 {
