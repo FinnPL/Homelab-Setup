@@ -92,6 +92,8 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      - name: temp fix 
+        run: terraform import proxmox_virtual_environment_vm.windows_server 100
       - name: Terraform Plan
         id: plan
         run: terraform plan -lock-timeout=10m -out .planfile -input=false
