@@ -7,8 +7,10 @@ data "kubectl_file_documents" "gateway_api_crds" {
 }
 
 resource "kubectl_manifest" "gateway_api_crds" {
-  for_each  = data.kubectl_file_documents.gateway_api_crds.manifests
-  yaml_body = each.value
+  for_each           = data.kubectl_file_documents.gateway_api_crds.manifests
+  yaml_body          = each.value
+  server_side_apply  = true
+  wait               = true
 }
 
 # Cloud gateway for services hosted on or relayed through the edge node
