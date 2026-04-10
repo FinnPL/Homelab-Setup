@@ -153,10 +153,15 @@ jobs:
         env:
           EDGE_INSTANCE_NEW: ${{ steps.edge_plan.outputs.instance_new }}
         run: |
+          extra_args=()
+          if [ -n "${REPLACE_TARGET:-}" ]; then
+            echo "::notice::Applying with -replace=${REPLACE_TARGET}"
+            extra_args+=(-replace="${REPLACE_TARGET}")
+          fi
           if [ "${EDGE_INSTANCE_NEW:-false}" = "true" ]; then
             bash ./scripts/gha/cloud-edge-workflow.sh terraform-apply-with-ad-fallback
           else
-            terraform apply -lock-timeout=10m -auto-approve -input=false
+            terraform apply -lock-timeout=10m -auto-approve -input=false "${extra_args[@]}"
           fi
 
   validate-nixos:

@@ -66,6 +66,12 @@ terraform_apply_with_ad_fallback() {
   local configured_ad
   configured_ad="$(printf '%s' "${TF_VAR_instance_availability_domain:-}" | tr -d '\r' | xargs)"
 
+  local -a replace_args=()
+  if [ -n "${REPLACE_TARGET:-}" ]; then
+    echo "AD-fallback apply will use -replace=${REPLACE_TARGET}"
+    replace_args+=(-replace="${REPLACE_TARGET}")
+  fi
+
   local -a ad_candidates=()
   if [ -n "$configured_ad" ]; then
     ad_candidates+=("$configured_ad")
@@ -106,7 +112,7 @@ terraform_apply_with_ad_fallback() {
     echo "Terraform apply attempt ${attempt}/${total} in availability domain: $ad"
 
     set +e
-    terraform apply -lock-timeout=10m -auto-approve -input=false -var "instance_availability_domain=$ad" 2>&1 | tee "$log_file"
+    terraform apply -lock-timeout=10m -auto-approve -input=false -var "instance_availability_domain=$ad" "${replace_args[@]}" 2>&1 | tee "$log_file"
     apply_exit=${PIPESTATUS[0]}
     set -e
 
