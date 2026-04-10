@@ -544,7 +544,7 @@ jobs:
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           (github.event_name == 'workflow_dispatch')
         env:
-          IP: ${{ steps.edge.outputs.ip }}
+          IP: ${{ steps.edge.outputs.private_ip }}
         run: |
           set -euo pipefail
 

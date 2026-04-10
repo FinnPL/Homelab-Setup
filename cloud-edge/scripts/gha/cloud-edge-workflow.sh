@@ -166,11 +166,14 @@ detect_instance_action() {
 }
 
 prepare_edge_host() {
-  local ip
+  local ip private_ip
   ip=$(get_instance_ip_value)
 
+  private_ip=$(terraform output -raw instance_private_ip 2>/dev/null || echo "")
+
   echo "ip=$ip" >> "$GITHUB_OUTPUT"
-  echo "Edge node IP: $ip"
+  echo "private_ip=$private_ip" >> "$GITHUB_OUTPUT"
+  echo "Edge node public IP: $ip, private IP: $private_ip"
 
   IP="$ip" setup_ssh
   IP="$ip" detect_nixos_state
@@ -338,7 +341,9 @@ deploy_wireguard_keys() {
     chmod 644 /etc/wireguard/peer-pubkey
   ' <<< "$WG_PEER_PUBKEY"
 
-  echo "WireGuard keys deployed."
+  ssh "${ssh_opts[@]}" "root@$IP" 'systemctl restart clustermesh-wg || true'
+
+  echo "WireGuard keys deployed and service triggered."
 }
 
 wait_for_wireguard() {

@@ -27,7 +27,6 @@
         22    # SSH
         80    # HTTP (ACME challenges)
         443   # HTTPS
-        32379 # Cilium Cluster Mesh (etcd) NodePort
         4240  # Cilium health checks
       ];
       allowedUDPPorts = [

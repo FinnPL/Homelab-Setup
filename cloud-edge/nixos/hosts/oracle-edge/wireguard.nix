@@ -5,37 +5,28 @@
 
   # CI writes WG private key to /etc/wireguard/private.key
   # CI writes LXC peer pubkey to /etc/wireguard/peer-pubkey
+  # CI then runs: systemctl restart clustermesh-wg
   systemd.services.clustermesh-wg = {
     description = "WireGuard tunnel for clustermesh";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
-    wantedBy = [ "multi-user.target" ];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStop = "${pkgs.iproute2}/bin/ip link del wg0";
     };
     path = [ pkgs.wireguard-tools pkgs.iproute2 pkgs.gnugrep ];
+    unitConfig = {
+      ConditionPathExists = [ "/etc/wireguard/private.key" "/etc/wireguard/peer-pubkey" ];
+    };
     script = ''
       set -e
 
-      # Wait for key files from CI
-      for i in $(seq 1 30); do
-        if [ -f /etc/wireguard/private.key ] && [ -f /etc/wireguard/peer-pubkey ]; then
-          break
-        fi
-        sleep 2
-      done
-
-      if [ ! -f /etc/wireguard/private.key ] || [ ! -f /etc/wireguard/peer-pubkey ]; then
-        echo "WireGuard key files not found, skipping"
-        exit 0
-      fi
-
       PEER_PUBKEY=$(cat /etc/wireguard/peer-pubkey | tr -d '[:space:]')
 
-      # Create WG interface
-      ip link add wg0 type wireguard || true
+      # Create WG interface (idempotent)
+      ip link del wg0 2>/dev/null || true
+      ip link add wg0 type wireguard
       wg set wg0 \
         listen-port 51820 \
         private-key /etc/wireguard/private.key \
@@ -58,6 +49,16 @@
 
       echo "Clustermesh WG tunnel up: 10.10.1.0/24 via wg0 src $VCN_IP"
     '';
+  };
+
+  # On boot, start the WG service if key files already exist (persisted from prior CI deploy).
+  systemd.paths.clustermesh-wg = {
+    description = "Start clustermesh WG tunnel when key files exist";
+    wantedBy = [ "multi-user.target" ];
+    pathConfig = {
+      # Triggers when the file exists at boot or appears later.
+      PathExists = "/etc/wireguard/private.key";
+    };
   };
 
   # WireGuard listen port

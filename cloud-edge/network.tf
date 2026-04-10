@@ -96,18 +96,6 @@ resource "oci_core_security_list" "edge" {
     }
   }
 
-  # Ingress: Cilium Cluster Mesh apiserver
-  ingress_security_rules {
-    protocol  = "6" # TCP
-    source    = "0.0.0.0/0"
-    stateless = false
-
-    tcp_options {
-      min = 32379
-      max = 32379
-    }
-  }
-
   # Ingress: ICMP (for path MTU discovery)
   ingress_security_rules {
     protocol  = "1" # ICMP
