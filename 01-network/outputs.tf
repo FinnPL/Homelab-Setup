@@ -29,6 +29,7 @@ output "host_ips" {
     talos_worker_4     = unifi_user.tf_talos_worker_4.fixed_ip
     talos_worker_5     = unifi_user.tf_talos_worker_5.fixed_ip
     talos_worker_6     = unifi_user.tf_talos_worker_6.fixed_ip
+    mesh_router        = unifi_user.tf_mesh_router.fixed_ip
   }
 }
 

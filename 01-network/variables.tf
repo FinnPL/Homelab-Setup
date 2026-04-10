@@ -32,5 +32,6 @@ variable "host_vm_macs" {
     github_runner      = "bc:24:11:00:00:70"
     nfs_server         = "bc:24:11:00:00:80"
     postgres_server    = "bc:24:11:00:00:85"
+    mesh_router        = "bc:24:11:00:00:90"
   }
 }
