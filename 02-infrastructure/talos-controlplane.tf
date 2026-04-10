@@ -150,11 +150,17 @@ data "talos_machine_configuration" "controlplane" {
           ]
         }
         network = {
-          routes = [
+          interfaces = [
             {
-              # Route to OCI cloud-edge VCN via Pi subnet router.
-              network = "10.70.1.0/24"
-              gateway = "10.10.1.75"
+              interface = "ens18"
+              dhcp      = true
+              routes = [
+                {
+                  # Route to OCI cloud-edge VCN via Pi subnet router.
+                  network = "10.70.1.0/24"
+                  gateway = "10.10.1.75"
+                }
+              ]
             }
           ]
         }
