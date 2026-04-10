@@ -275,6 +275,44 @@ write_ssh_keys_nix() {
 EOF
 }
 
+refresh_ssh_after_install() {
+  require_var IP
+
+  local attempts="${POST_INSTALL_SSH_ATTEMPTS:-30}"
+  local delay_seconds="${POST_INSTALL_SSH_DELAY_SECONDS:-10}"
+  local host_file="/tmp/edge_known_host"
+
+  echo "Waiting for SSH to come back after NixOS install (host key will have changed)..."
+
+  # Clear old known_hosts entries for this IP — NixOS generated new host keys
+  ssh-keygen -R "$IP" -f ~/.ssh/known_hosts 2>/dev/null || true
+
+  : > "$host_file"
+  local i
+  for ((i = 1; i <= attempts; i++)); do
+    if ssh-keyscan -T 5 -t ed25519 -H "$IP" > "$host_file" 2>/dev/null && [ -s "$host_file" ]; then
+      echo "SSH is back up (attempt $i/$attempts)."
+      break
+    fi
+
+    if [ "$i" -lt "$attempts" ]; then
+      echo "SSH not available yet (attempt $i/$attempts). Retrying in ${delay_seconds}s..."
+      sleep "$delay_seconds"
+    fi
+  done
+
+  if [ ! -s "$host_file" ]; then
+    error "SSH did not come back on $IP after $attempts attempts"
+  fi
+
+  local new_fp
+  new_fp=$(ssh-keygen -lf "$host_file" -E sha256 | awk 'NR==1 {print $2}')
+  echo "New NixOS host key fingerprint: $new_fp"
+
+  cat "$host_file" >> ~/.ssh/known_hosts
+  echo "Known hosts updated with new NixOS host key."
+}
+
 deploy_tailscale_credentials() {
   require_var IP
   require_var TAILSCALE_OAUTH_SECRET
@@ -423,6 +461,7 @@ Commands:
   setup-ssh
   detect-nixos-state
   write-ssh-keys-nix
+  refresh-ssh-after-install
   deploy-tailscale-credentials
   wait-for-tailscale
   wait-for-k3s
@@ -455,6 +494,9 @@ main() {
       ;;
     write-ssh-keys-nix)
       write_ssh_keys_nix
+      ;;
+    refresh-ssh-after-install)
+      refresh_ssh_after_install
       ;;
     deploy-tailscale-credentials)
       deploy_tailscale_credentials
