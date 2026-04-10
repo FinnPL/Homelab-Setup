@@ -40,7 +40,7 @@
         listen-port 51820 \
         private-key /etc/wireguard/private.key \
         peer "$PEER_PUBKEY" allowed-ips 10.10.1.0/24
-      ip link set wg0 up
+      ip link set wg0 mtu 1420 up
 
       # Get this node's VCN IP (the address Cilium uses as InternalIP)
       VCN_IP=$(ip -4 addr show eth0 | grep -oP 'inet \K[0-9.]+')
