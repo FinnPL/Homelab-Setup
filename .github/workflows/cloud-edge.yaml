@@ -353,6 +353,27 @@ jobs:
           fi
           exit 1
 
+      - name: Refresh SSH after NixOS install
+        if: |
+          (
+            (
+              (
+                (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+                (github.event_name == 'workflow_dispatch' && inputs.apply)
+              ) &&
+              needs.terraform.outputs.instance_new == 'true' &&
+              steps.edge.outputs.nixos_state == 'absent'
+            ) ||
+            (
+              github.event_name == 'workflow_dispatch' &&
+              inputs.force_install_nixos &&
+              steps.edge.outputs.nixos_state != 'installed'
+            )
+          )
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh refresh-ssh-after-install
+
       # Tailscale auth key
       - name: Deploy Tailscale credentials
         env:
