@@ -69,25 +69,6 @@ resource "unifi_firewall_zone_policy" "athena_to_external" {
   site = "default"
 }
 
-# Allow Athena -> OCI cloud-edge VCN (10.70.1.0/24) via Pi subnet router.
-resource "unifi_firewall_zone_policy" "athena_to_cloud_edge" {
-  name                      = "tf-allow-athena-to-cloud-edge"
-  action                    = "ALLOW"
-  protocol                  = "all"
-  auto_allow_return_traffic = true
-
-  source = {
-    zone_id = unifi_firewall_zone.athena.id
-  }
-
-  destination = {
-    zone_id = data.unifi_firewall_zone.external.id
-    ips     = ["10.70.1.0/24"]
-  }
-
-  site = "default"
-}
-
 # Block all other zones from reaching External/AthenaLink VPN gateway
 resource "unifi_firewall_zone_policy" "block_internal_to_athenalink" {
   name     = "tf-block-internal-to-athenalink"
