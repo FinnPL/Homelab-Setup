@@ -313,6 +313,65 @@ refresh_ssh_after_install() {
   echo "Known hosts updated with new NixOS host key."
 }
 
+deploy_wireguard_keys() {
+  require_var IP
+  require_var WG_PRIVATE_KEY
+  require_var WG_PEER_PUBKEY
+
+  local ssh_opts=(
+    -i ~/.ssh/edge_key
+    -o BatchMode=yes
+    -o ConnectTimeout=10
+    -o UserKnownHostsFile=~/.ssh/known_hosts
+    -o StrictHostKeyChecking=yes
+  )
+  echo "Deploying WireGuard keys to edge node..."
+  ssh "${ssh_opts[@]}" "root@$IP" '
+    mkdir -p /etc/wireguard
+    cat > /etc/wireguard/private.key
+    chmod 600 /etc/wireguard/private.key
+  ' <<< "$WG_PRIVATE_KEY"
+
+  ssh "${ssh_opts[@]}" "root@$IP" '
+    mkdir -p /etc/wireguard
+    cat > /etc/wireguard/peer-pubkey
+    chmod 644 /etc/wireguard/peer-pubkey
+  ' <<< "$WG_PEER_PUBKEY"
+
+  echo "WireGuard keys deployed."
+}
+
+wait_for_wireguard() {
+  require_var IP
+
+  local ssh_opts=(
+    -i ~/.ssh/edge_key
+    -o BatchMode=yes
+    -o ConnectTimeout=10
+    -o UserKnownHostsFile=~/.ssh/known_hosts
+    -o StrictHostKeyChecking=yes
+  )
+  local attempts=15
+  local delay_seconds=5
+
+  echo "Waiting for WireGuard tunnel to come up..."
+
+  local i
+  for ((i = 1; i <= attempts; i++)); do
+    if ssh "${ssh_opts[@]}" "root@$IP" 'ip link show wg0 2>/dev/null' >/dev/null 2>&1; then
+      echo "WireGuard tunnel is up."
+      return 0
+    fi
+
+    echo "WireGuard not ready yet (attempt $i/$attempts)"
+    if [ "$i" -lt "$attempts" ]; then
+      sleep "$delay_seconds"
+    fi
+  done
+
+  error "WireGuard tunnel did not come up after $attempts attempts"
+}
+
 deploy_tailscale_credentials() {
   require_var IP
   require_var TAILSCALE_OAUTH_SECRET
@@ -511,8 +570,14 @@ main() {
     deploy-tailscale-credentials)
       deploy_tailscale_credentials
       ;;
+    deploy-wireguard-keys)
+      deploy_wireguard_keys
+      ;;
     wait-for-tailscale)
       wait_for_tailscale
+      ;;
+    wait-for-wireguard)
+      wait_for_wireguard
       ;;
     wait-for-k3s)
       wait_for_k3s

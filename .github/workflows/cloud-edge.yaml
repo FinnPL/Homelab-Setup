@@ -382,6 +382,15 @@ jobs:
           OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
         run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh deploy-tailscale-credentials
 
+      # WireGuard keys for clustermesh tunnel
+      - name: Deploy WireGuard keys
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+          WG_PRIVATE_KEY: ${{ secrets.CLOUD_WG_PRIVATE_KEY }}
+          WG_PEER_PUBKEY: ${{ secrets.MESH_ROUTER_WG_PUBKEY }}
+          OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh deploy-wireguard-keys
+
       # Config update (nixos-rebuild)
       - name: "Update NixOS (nixos-rebuild)"
         if: |
@@ -409,6 +418,12 @@ jobs:
           IP: ${{ steps.edge.outputs.ip }}
           OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
         run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh wait-for-tailscale
+
+      - name: Wait for WireGuard tunnel
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+          OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh wait-for-wireguard
 
       - name: Wait for K3s API
         env:

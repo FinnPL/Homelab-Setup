@@ -72,6 +72,18 @@ resource "oci_core_security_list" "edge" {
     }
   }
 
+  # Ingress: WireGuard (UDP 51820) for clustermesh tunnel
+  ingress_security_rules {
+    protocol  = "17" # UDP
+    source    = "0.0.0.0/0"
+    stateless = false
+
+    udp_options {
+      min = 51820
+      max = 51820
+    }
+  }
+
   # Ingress: SSH (22)
   ingress_security_rules {
     protocol  = "6" # TCP

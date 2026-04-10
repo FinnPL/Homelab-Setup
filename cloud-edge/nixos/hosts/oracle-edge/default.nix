@@ -6,6 +6,7 @@
     ./hardware.nix
     ./ssh-keys.nix
     ./tailscale.nix
+    ./wireguard.nix
     ./k3s.nix
   ];
 
@@ -33,7 +34,7 @@
         41641 # Tailscale WireGuard
         8472  # Cilium VXLAN overlay
       ];
-      # Tailscale and Cilium-managed interfaces are trusted.
+      # Tailscale and Cilium interfaces trusted.
       trustedInterfaces = [
         "tailscale0"
         "cilium_host"
