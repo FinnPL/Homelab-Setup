@@ -18,6 +18,11 @@ output "subnet_id" {
   value       = oci_core_subnet.public.id
 }
 
+output "public_subnet_cidr" {
+  description = "CIDR block of the public subnet (used by Tailscale route advertisement)"
+  value       = var.public_subnet_cidr
+}
+
 output "cloud_subdomain" {
   description = "Cloud-hosted services subdomain"
   value       = "*.cloud.lippok.dev"

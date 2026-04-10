@@ -331,7 +331,17 @@ deploy_tailscale_credentials() {
     chmod 600 /etc/tailscale/authkey
   ' <<< "$TAILSCALE_OAUTH_SECRET"
 
-  echo "Tailscale credentials deployed."
+  # Deploy the subnet CIDR for Tailscale route advertisement
+  local subnet_cidr
+  subnet_cidr=$(cd "$CLOUD_EDGE_DIR" && terraform output -raw public_subnet_cidr)
+  echo "Deploying Tailscale subnet CIDR ($subnet_cidr) to edge node..."
+  ssh "${ssh_opts[@]}" "root@$IP" '
+    mkdir -p /etc/tailscale
+    cat > /etc/tailscale/subnet-cidr
+    chmod 644 /etc/tailscale/subnet-cidr
+  ' <<< "$subnet_cidr"
+
+  echo "Tailscale credentials and subnet CIDR deployed."
 }
 
 wait_for_tailscale() {
