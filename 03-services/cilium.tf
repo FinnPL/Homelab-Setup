@@ -11,7 +11,7 @@ resource "helm_release" "cilium" {
       kubeProxyReplacement = "true"
       k8sServiceHost       = "127.0.0.1"
       k8sServicePort       = 7445
-      MTU                  = 1200
+      MTU                  = 1280
       ipam = {
         mode = "kubernetes"
       }
