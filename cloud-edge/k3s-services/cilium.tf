@@ -50,15 +50,6 @@ resource "helm_release" "cilium" {
         }
       }
 
-      envoy = {
-        securityContext = {
-          capabilities = {
-            keepCapNetBindService = true
-            envoy                 = ["NET_BIND_SERVICE"]
-          }
-        }
-      }
-
       l2announcements = {
         enabled = false
       }
