@@ -30,57 +30,67 @@ resource "kubectl_manifest" "cloud_gateway" {
       name      = "cloud-gateway"
       namespace = kubernetes_namespace_v1.gateway.metadata[0].name
     }
-    spec = {
-      gatewayClassName = "cilium"
-      listeners = [
-        # HTTP listener for ACME challenges and redirects
-        {
-          name     = "http"
-          protocol = "HTTP"
-          port     = 80
-          allowedRoutes = {
-            namespaces = {
-              from = "All"
-            }
-          }
-        },
-        # TLS passthrough for relay services
-        {
-          name     = "relay-passthrough"
-          protocol = "TLS"
-          port     = 443
-          hostname = "*.relay.lippok.dev"
-          tls = {
-            mode = "Passthrough"
-          }
-          allowedRoutes = {
-            namespaces = {
-              from = "All"
-            }
-          }
-        },
-        # HTTPS termination for cloud-hosted services
-        {
-          name     = "cloud-https"
-          protocol = "HTTPS"
-          port     = 443
-          hostname = "*.cloud.lippok.dev"
-          tls = {
-            mode = "Terminate"
-            certificateRefs = [
-              {
-                name = "wildcard-cloud-lippok-dev-tls"
+    spec = merge(
+      {
+        gatewayClassName = "cilium"
+        listeners = [
+          # HTTP listener for ACME challenges and redirects
+          {
+            name     = "http"
+            protocol = "HTTP"
+            port     = 80
+            allowedRoutes = {
+              namespaces = {
+                from = "All"
               }
-            ]
-          }
-          allowedRoutes = {
-            namespaces = {
-              from = "All"
+            }
+          },
+          # TLS passthrough for relay services
+          {
+            name     = "relay-passthrough"
+            protocol = "TLS"
+            port     = 443
+            hostname = "*.relay.lippok.dev"
+            tls = {
+              mode = "Passthrough"
+            }
+            allowedRoutes = {
+              namespaces = {
+                from = "All"
+              }
+            }
+          },
+          # HTTPS termination for cloud-hosted services
+          {
+            name     = "cloud-https"
+            protocol = "HTTPS"
+            port     = 443
+            hostname = "*.cloud.lippok.dev"
+            tls = {
+              mode = "Terminate"
+              certificateRefs = [
+                {
+                  name = "wildcard-cloud-lippok-dev-tls"
+                }
+              ]
+            }
+            allowedRoutes = {
+              namespaces = {
+                from = "All"
+              }
             }
           }
-        }
-      ]
-    }
+        ]
+      },
+      var.gateway_private_ip != "" ? {
+        addresses = [
+          {
+            type  = "IPAddress"
+            value = var.gateway_private_ip
+          }
+        ]
+      } : {}
+    )
   })
 
   depends_on = [

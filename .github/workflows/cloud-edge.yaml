@@ -508,12 +508,16 @@ jobs:
 
       - name: Terraform Plan
         id: plan
+        env:
+          TF_VAR_gateway_private_ip: ${{ steps.edge.outputs.private_ip }}
         run: terraform plan -lock-timeout=10m -out .planfile -input=false
 
       - name: Terraform Apply
         if: |
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           (github.event_name == 'workflow_dispatch')
+        env:
+          TF_VAR_gateway_private_ip: ${{ steps.edge.outputs.private_ip }}
         run: terraform apply -lock-timeout=10m -auto-approve -input=false
 
       # Cluster Mesh bootstrap: connect the two Cilium clusters (idempotent)

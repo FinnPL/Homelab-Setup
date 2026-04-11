@@ -37,3 +37,9 @@ variable "acme_email" {
   type        = string
   default     = ""
 }
+
+variable "gateway_private_ip" {
+  description = "Optional private node IP to set in Gateway spec.addresses (workaround for Cilium hostNetwork AddressNotAssigned status)"
+  type        = string
+  default     = ""
+}
