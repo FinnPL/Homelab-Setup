@@ -98,6 +98,9 @@ jobs:
           sudo "$IPTABLES_BIN" -t nat -C OUTPUT -p tcp -d "${KUBE_API_HOST}" --dport 6443 -j DNAT --to-destination 127.0.0.1:16443 2>/dev/null || \
             sudo "$IPTABLES_BIN" -t nat -A OUTPUT -p tcp -d "${KUBE_API_HOST}" --dport 6443 -j DNAT --to-destination 127.0.0.1:16443
 
+          echo "Active NAT rule:"
+          sudo "$IPTABLES_BIN" -t nat -S OUTPUT | grep "${KUBE_API_HOST}.*6443" || true
+
           echo "SSH tunnel and NAT redirection configured"
 
       - name: Setup Node.js
