@@ -115,6 +115,12 @@ jobs:
       - name: Kubernetes API Preflight
         run: |
           set -euo pipefail
+          KUBECONFIG_PATH="${GITHUB_WORKSPACE}/03-services/kubeconfig.yaml"
+          if [ ! -f "$KUBECONFIG_PATH" ]; then
+            echo "::error::Missing kubeconfig at $KUBECONFIG_PATH"
+            exit 1
+          fi
+
           echo "Route to Kubernetes API:"
           ip route get 10.10.1.60 || true
 
@@ -128,7 +134,7 @@ jobs:
 
           echo "Checking repeated API reads"
           for i in $(seq 1 20); do
-            kubectl --kubeconfig kubeconfig.yaml get --raw=/version >/dev/null
+            kubectl --kubeconfig "$KUBECONFIG_PATH" get --raw=/version >/dev/null
           done
 
       - name: Terraform Plan
