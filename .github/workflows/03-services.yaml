@@ -85,9 +85,21 @@ jobs:
       - name: Terraform Validate
         run: terraform validate
 
+      - name: Kubernetes API Preflight
+        run: |
+          set -euo pipefail
+          echo "Route to Kubernetes API:"
+          ip route get 10.10.1.60 || true
+
+          echo "Checking TCP connectivity to 10.10.1.60:6443"
+          timeout 10 bash -lc 'cat < /dev/null > /dev/tcp/10.10.1.60/6443'
+
+          echo "Checking TLS handshake with Kubernetes API"
+          timeout 12 openssl s_client -connect 10.10.1.60:6443 -brief < /dev/null > /dev/null 2>&1
+
       - name: Terraform Plan
         id: plan
-        run: terraform plan -lock-timeout=10m -out .planfile -input=false
+        run: terraform plan -parallelism=1 -lock-timeout=10m -out .planfile -input=false
         continue-on-error: true
 
       - name: Comment Terraform Plan
@@ -107,4 +119,4 @@ jobs:
         if: |
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           (github.event_name == 'workflow_dispatch' && inputs.apply == true)
-        run: terraform apply -lock-timeout=10m -auto-approve -input=false
+        run: terraform apply -parallelism=1 -lock-timeout=10m -auto-approve -input=false
