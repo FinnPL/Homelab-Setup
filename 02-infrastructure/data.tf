@@ -37,6 +37,10 @@ locals {
     try(local.host_ips.talos_worker_6, null),
   ] : v if v != null]
 
+  # Mesh router
+  mesh_router_ip  = lookup(local.host_ips, "mesh_router", "10.10.1.90")
+  mesh_router_mac = try(local.host_vm_macs.mesh_router, null)
+
   # Resolve MACs from 01-network outputs
   talos_controlplane_mac = try(local.host_vm_macs.talos_controlplane, null)
   windows_server_mac     = try(local.host_vm_macs.windows_server, null)

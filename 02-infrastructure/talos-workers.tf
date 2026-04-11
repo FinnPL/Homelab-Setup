@@ -40,6 +40,21 @@ data "talos_machine_configuration" "worker" {
             }
           ]
         }
+        network = {
+          interfaces = [
+            {
+              interface = "end0"
+              dhcp      = true
+              routes = [
+                {
+                  # Route to OCI cloud-edge VCN via mesh-router LXC.
+                  network = "10.70.1.0/24"
+                  gateway = "10.10.1.90"
+                }
+              ]
+            }
+          ]
+        }
       }
     })
   ]

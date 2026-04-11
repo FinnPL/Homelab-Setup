@@ -114,3 +114,12 @@ resource "unifi_user" "tf_postgres_server" {
   network_id       = unifi_network.tf_vlan_athena.id
   note             = "Managed by Terraform"
 }
+
+resource "unifi_user" "tf_mesh_router" {
+  mac              = var.host_vm_macs["mesh_router"]
+  name             = "tf-Mesh-Router"
+  fixed_ip         = "10.10.1.90"
+  local_dns_record = "mesh-router.athena"
+  network_id       = unifi_network.tf_vlan_athena.id
+  note             = "Managed by Terraform - Tailscale subnet router for clustermesh"
+}

@@ -6,6 +6,7 @@
     ./hardware.nix
     ./ssh-keys.nix
     ./tailscale.nix
+    ./wireguard.nix
     ./k3s.nix
   ];
 
@@ -26,14 +27,13 @@
         22    # SSH
         80    # HTTP (ACME challenges)
         443   # HTTPS
-        32379 # Cilium Cluster Mesh (etcd) NodePort
         4240  # Cilium health checks
       ];
       allowedUDPPorts = [
         41641 # Tailscale WireGuard
         8472  # Cilium VXLAN overlay
       ];
-      # Tailscale and Cilium-managed interfaces are trusted.
+      # Tailscale and Cilium interfaces trusted.
       trustedInterfaces = [
         "tailscale0"
         "cilium_host"

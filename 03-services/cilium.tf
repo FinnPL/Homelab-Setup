@@ -11,6 +11,7 @@ resource "helm_release" "cilium" {
       kubeProxyReplacement = "true"
       k8sServiceHost       = "127.0.0.1"
       k8sServicePort       = 7445
+      MTU                  = 1370
       ipam = {
         mode = "kubernetes"
       }
@@ -210,8 +211,8 @@ data "kubectl_file_documents" "gateway_api_crds" {
 }
 
 resource "kubectl_manifest" "gateway_api_crds" {
-  for_each           = data.kubectl_file_documents.gateway_api_crds.manifests
-  yaml_body          = each.value
-  server_side_apply  = true
-  wait               = true
+  for_each          = data.kubectl_file_documents.gateway_api_crds.manifests
+  yaml_body         = each.value
+  server_side_apply = true
+  wait              = true
 }

@@ -3,6 +3,11 @@ output "instance_public_ip" {
   value       = oci_core_instance.edge.public_ip
 }
 
+output "instance_private_ip" {
+  description = "Private (VCN) IP address of the Oracle edge node"
+  value       = oci_core_instance.edge.private_ip
+}
+
 output "instance_id" {
   description = "OCID of the Oracle edge node compute instance"
   value       = oci_core_instance.edge.id

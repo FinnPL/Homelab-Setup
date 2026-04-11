@@ -238,6 +238,56 @@ variable "postgres_server_config" {
   }
 }
 
+# =============================================================================
+# Mesh Router Configuration (Tailscale subnet router for clustermesh)
+# =============================================================================
+
+variable "mesh_router_config" {
+  description = "Mesh router LXC container configuration"
+  type = object({
+    vmid      = number
+    name      = string
+    cores     = number
+    memory    = number
+    disk_size = number
+  })
+  default = {
+    vmid      = 420
+    name      = "mesh-router"
+    cores     = 1
+    memory    = 256
+    disk_size = 4
+  }
+}
+
+variable "mesh_router_root_password" {
+  description = "Root password for the mesh router LXC container"
+  type        = string
+  sensitive   = true
+}
+
+variable "mesh_wg_private_key" {
+  description = "WireGuard private key for the mesh router LXC"
+  type        = string
+  sensitive   = true
+}
+
+variable "mesh_wg_peer_pubkey" {
+  description = "WireGuard public key of the cloud-edge node (OCI)"
+  type        = string
+}
+
+variable "mesh_wg_peer_endpoint" {
+  description = "WireGuard endpoint of the cloud-edge node (IP:port)"
+  type        = string
+}
+
+variable "cloud_vcn_cidr" {
+  description = "CIDR of the OCI cloud-edge VCN (routed through WG tunnel)"
+  type        = string
+  default     = "10.70.1.0/24"
+}
+
 variable "postgres_root_password" {
   description = "Root password for the Postgres LXC OS"
   type        = string
