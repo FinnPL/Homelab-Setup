@@ -56,6 +56,33 @@ jobs:
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:ci
 
+      - name: Stabilize Kube API TCP MSS
+        run: |
+          set -euo pipefail
+          KUBE_API_HOST="10.10.1.60"
+          MSS_VALUE="1200"
+
+          # Enable kernel MTU probing to recover from PMTU blackholes on routed paths.
+          sudo sysctl -w net.ipv4.tcp_mtu_probing=1 >/dev/null || true
+
+          IPTABLES_BIN="$(command -v iptables || true)"
+          if [ -z "$IPTABLES_BIN" ]; then
+            echo "::error::iptables is required on the runner"
+            exit 1
+          fi
+
+          sudo "$IPTABLES_BIN" -t mangle -C OUTPUT \
+            -p tcp -d "${KUBE_API_HOST}" --dport 6443 \
+            --tcp-flags SYN,RST SYN \
+            -j TCPMSS --set-mss "${MSS_VALUE}" 2>/dev/null || \
+          sudo "$IPTABLES_BIN" -t mangle -A OUTPUT \
+            -p tcp -d "${KUBE_API_HOST}" --dport 6443 \
+            --tcp-flags SYN,RST SYN \
+            -j TCPMSS --set-mss "${MSS_VALUE}"
+
+          echo "Active MSS rule:"
+          sudo "$IPTABLES_BIN" -t mangle -S OUTPUT | grep "${KUBE_API_HOST}.*6443.*TCPMSS" || true
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -99,6 +126,11 @@ jobs:
             timeout 12 openssl s_client -connect 10.10.1.60:6443 -brief < /dev/null > /dev/null 2>&1
           done
 
+          echo "Checking repeated API reads"
+          for i in $(seq 1 20); do
+            kubectl --kubeconfig kubeconfig.yaml get --raw=/version >/dev/null
+          done
+
       - name: Terraform Plan
         id: plan
         run: terraform plan -parallelism=1 -lock-timeout=10m -out .planfile -input=false
@@ -122,3 +154,16 @@ jobs:
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           (github.event_name == 'workflow_dispatch' && inputs.apply == true)
         run: terraform apply -parallelism=1 -lock-timeout=10m -auto-approve -input=false
+
+      - name: Cleanup Kube API MSS Rule
+        if: always()
+        run: |
+          set +e
+          KUBE_API_HOST="10.10.1.60"
+          IPTABLES_BIN="$(command -v iptables || true)"
+          if [ -n "$IPTABLES_BIN" ]; then
+            sudo "$IPTABLES_BIN" -t mangle -D OUTPUT \
+              -p tcp -d "${KUBE_API_HOST}" --dport 6443 \
+              --tcp-flags SYN,RST SYN \
+              -j TCPMSS --set-mss 1200 2>/dev/null || true
+          fi
