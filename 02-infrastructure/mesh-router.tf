@@ -94,7 +94,7 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
 
       # Enable IP forwarding
       "echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-mesh-router.conf",
-      "sysctl --system",
+      "sysctl -w net.ipv4.ip_forward=1",
 
       # Install WireGuard
       "apt-get update",
