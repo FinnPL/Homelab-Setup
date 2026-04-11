@@ -56,53 +56,6 @@ jobs:
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:ci
 
-      - name: Route Kubernetes API Through Edge Tunnel
-        env:
-          OCI_EDGE_HOST: "152.70.41.15"
-          KUBE_API_HOST: "10.10.1.60"
-          OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
-        run: |
-          set -euo pipefail
-          if [ -z "${OCI_SSH_PRIVATE_KEY:-}" ]; then
-            echo "::error::Missing required secret OCI_SSH_PRIVATE_KEY"
-            exit 1
-          fi
-
-          install -d -m 700 "${HOME}/.ssh"
-          printf '%s\n' "$OCI_SSH_PRIVATE_KEY" > "${HOME}/.ssh/oci_edge_ci"
-          chmod 600 "${HOME}/.ssh/oci_edge_ci"
-
-          SOCK="/tmp/oci-edge-kubeapi.sock"
-          echo "KUBE_TUNNEL_SOCK=${SOCK}" >> "$GITHUB_ENV"
-          echo "KUBE_API_HOST=${KUBE_API_HOST}" >> "$GITHUB_ENV"
-
-          ssh-keyscan -H "$OCI_EDGE_HOST" >> "${HOME}/.ssh/known_hosts" 2>/dev/null || true
-
-          ssh \
-            -i "${HOME}/.ssh/oci_edge_ci" \
-            -o IdentitiesOnly=yes \
-            -o StrictHostKeyChecking=accept-new \
-            -o ExitOnForwardFailure=yes \
-            -o ServerAliveInterval=30 \
-            -o ServerAliveCountMax=3 \
-            -M -S "$SOCK" -fN \
-            -L 127.0.0.1:16443:${KUBE_API_HOST}:6443 \
-            root@"$OCI_EDGE_HOST"
-
-          IPTABLES_BIN="$(command -v iptables || true)"
-          if [ -z "$IPTABLES_BIN" ]; then
-            echo "::error::iptables is required on the runner"
-            exit 1
-          fi
-
-          sudo "$IPTABLES_BIN" -t nat -C OUTPUT -p tcp -d "${KUBE_API_HOST}" --dport 6443 -j DNAT --to-destination 127.0.0.1:16443 2>/dev/null || \
-            sudo "$IPTABLES_BIN" -t nat -A OUTPUT -p tcp -d "${KUBE_API_HOST}" --dport 6443 -j DNAT --to-destination 127.0.0.1:16443
-
-          echo "Active NAT rule:"
-          sudo "$IPTABLES_BIN" -t nat -S OUTPUT | grep "${KUBE_API_HOST}.*6443" || true
-
-          echo "SSH tunnel and NAT redirection configured"
-
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
@@ -169,18 +122,3 @@ jobs:
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           (github.event_name == 'workflow_dispatch' && inputs.apply == true)
         run: terraform apply -parallelism=1 -lock-timeout=10m -auto-approve -input=false
-
-      - name: Cleanup Kubernetes API Tunnel
-        if: always()
-        run: |
-          set +e
-          KUBE_API_HOST="${KUBE_API_HOST:-10.10.1.60}"
-
-          IPTABLES_BIN="$(command -v iptables || true)"
-          if [ -n "$IPTABLES_BIN" ]; then
-            sudo "$IPTABLES_BIN" -t nat -D OUTPUT -p tcp -d "${KUBE_API_HOST}" --dport 6443 -j DNAT --to-destination 127.0.0.1:16443 2>/dev/null || true
-          fi
-
-          if [ -n "${KUBE_TUNNEL_SOCK:-}" ] && [ -S "${KUBE_TUNNEL_SOCK}" ]; then
-            ssh -S "${KUBE_TUNNEL_SOCK}" -O exit root@152.70.41.15 2>/dev/null || true
-          fi
