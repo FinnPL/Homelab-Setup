@@ -15,10 +15,6 @@
     systemd-boot.enable = true;
   };
 
-  boot.kernel.sysctl = {
-    "net.ipv4.ip_unprivileged_port_start" = 80;
-  };
-
   networking = {
     hostName = "oracle-edge";
     useDHCP = false;
