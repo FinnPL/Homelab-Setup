@@ -552,6 +552,24 @@ jobs:
         run: |
           set -euo pipefail
 
+          retry() {
+            local max_attempts="$1"
+            local delay_seconds="$2"
+            shift 2
+
+            local attempt=1
+            until "$@"; do
+              local rc=$?
+              if [ "$attempt" -ge "$max_attempts" ]; then
+                echo "::error::Command failed after ${attempt}/${max_attempts} attempts: $*"
+                return "$rc"
+              fi
+              echo "Attempt ${attempt}/${max_attempts} failed. Retrying in ${delay_seconds}s: $*"
+              sleep "$delay_seconds"
+              attempt=$((attempt + 1))
+            done
+          }
+
           KUBECONFIG_CLOUD="kubeconfig.yaml"
           KUBECONFIG_HOMELAB="/tmp/homelab-kubeconfig.yaml"
 
@@ -578,6 +596,10 @@ jobs:
             kubectl config view --flatten > /tmp/kc-merged.yaml
           chmod 600 /tmp/kc-merged.yaml
           export KUBECONFIG=/tmp/kc-merged.yaml
+
+          # API servers may flap briefly during Cilium rollout; wait until both are reachable.
+          retry 12 10 kubectl --context homelab-k8s get --raw=/readyz
+          retry 12 10 kubectl --context cloud-edge get --raw=/readyz
 
           # Get the NodePort assigned to the clustermesh-apiserver on the cloud cluster (with retries for operator delay)
           MESH_PORT=""
@@ -612,7 +634,7 @@ jobs:
             # --allow-mismatching-ca: each cluster's Cilium generates its own
             # CA, so the connect helper has to bridge them on first install.
             # Without this flag the very first bootstrap fails.
-            cilium clustermesh connect \
+            retry 5 20 cilium clustermesh connect \
               --context homelab-k8s \
               --destination-context cloud-edge \
               --destination-endpoint "$IP:$MESH_PORT" \
@@ -620,8 +642,8 @@ jobs:
           fi
 
           echo "Waiting for both sides to report ready..."
-          cilium clustermesh status --context homelab-k8s --wait --wait-duration 5m
-          cilium clustermesh status --context cloud-edge --wait --wait-duration 5m
+          retry 6 20 cilium clustermesh status --context homelab-k8s --wait --wait-duration 2m
+          retry 6 20 cilium clustermesh status --context cloud-edge --wait --wait-duration 2m
 
           echo "Cluster Mesh bootstrap complete."
 

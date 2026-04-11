@@ -107,4 +107,19 @@ jobs:
         if: |
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
           (github.event_name == 'workflow_dispatch' && inputs.apply == true)
-        run: terraform apply -lock-timeout=10m -auto-approve -input=false
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3; do
+            echo "Terraform apply attempt ${attempt}/3"
+            if terraform apply -lock-timeout=10m -auto-approve -input=false; then
+              exit 0
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Terraform apply failed after 3 attempts."
+              exit 1
+            fi
+
+            echo "Apply failed (likely transient API outage during Cilium rollout). Retrying in 45s..."
+            sleep 45
+          done
