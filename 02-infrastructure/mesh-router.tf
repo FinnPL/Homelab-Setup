@@ -70,6 +70,24 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
 
   tags = sort(["terraform", "wireguard", "clustermesh"])
 
+  connection {
+    type        = "ssh"
+    user        = "root"
+    private_key = var.proxmox_ssh_private_key
+    host        = local.mesh_router_ip
+    timeout     = "5m"
+  }
+
+  provisioner "file" {
+    content = templatefile("${path.module}/templates/mesh-wg0.conf", {
+      private_key    = var.mesh_wg_private_key
+      peer_pubkey    = var.mesh_wg_peer_pubkey
+      peer_endpoint  = var.mesh_wg_peer_endpoint
+      cloud_vcn_cidr = var.cloud_vcn_cidr
+    })
+    destination = "/tmp/wg0.conf"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "set -e",
@@ -84,24 +102,11 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
 
       # Write WireGuard config
       "mkdir -p /etc/wireguard",
-      "cat > /etc/wireguard/wg0.conf << 'WGEOF'\n${templatefile("${path.module}/templates/mesh-wg0.conf", {
-        private_key    = var.mesh_wg_private_key
-        peer_pubkey    = var.mesh_wg_peer_pubkey
-        peer_endpoint  = var.mesh_wg_peer_endpoint
-        cloud_vcn_cidr = var.cloud_vcn_cidr
-      })}\nWGEOF",
+      "mv /tmp/wg0.conf /etc/wireguard/wg0.conf",
       "chmod 600 /etc/wireguard/wg0.conf",
 
       # Enable and start WireGuard
       "systemctl enable --now wg-quick@wg0",
     ]
-
-    connection {
-      type        = "ssh"
-      user        = "root"
-      private_key = var.proxmox_ssh_private_key
-      host        = local.mesh_router_ip
-      timeout     = "5m"
-    }
   }
 }
