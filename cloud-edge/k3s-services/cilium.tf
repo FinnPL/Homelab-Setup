@@ -14,7 +14,7 @@ resource "helm_release" "cilium" {
       k8sServiceHost       = "127.0.0.1"
       k8sServicePort       = 6443
       MTU                  = 1370
-      devices = "eth+ wg+"
+      devices              = "eth+ wg+"
       ipam = {
         mode = "kubernetes"
       }
@@ -47,6 +47,15 @@ resource "helm_release" "cilium" {
         enabled = true
         hostNetwork = { # Replace with Cloud LB if needed in future
           enabled = true
+        }
+      }
+
+      envoy = {
+        securityContext = {
+          capabilities = {
+            keepCapNetBindService = true
+            envoy                 = ["NET_BIND_SERVICE"]
+          }
         }
       }
 
