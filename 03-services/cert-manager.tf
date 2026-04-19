@@ -66,11 +66,11 @@ resource "kubectl_manifest" "internal_ca_certificate" {
       namespace = kubernetes_namespace_v1.cert_manager.metadata[0].name
     }
     spec = {
-      isCA       = true
-      commonName = "homelab-internal-ca"
-      secretName = "internal-ca"
-      duration   = "87600h" # 10y
-      renewBefore = "2160h" # 90d
+      isCA        = true
+      commonName  = "homelab-internal-ca"
+      secretName  = "internal-ca"
+      duration    = "87600h" # 10y
+      renewBefore = "2160h"  # 90d
       privateKey = {
         algorithm = "ECDSA"
         size      = 256
