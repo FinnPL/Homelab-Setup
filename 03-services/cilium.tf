@@ -62,6 +62,18 @@ resource "helm_release" "cilium" {
 
       hubble = {
         enabled = true
+        tls = {
+          auto = {
+            enabled              = true
+            method               = "certmanager"
+            certValidityDuration = 90
+            certManagerIssuerRef = {
+              group = "cert-manager.io"
+              kind  = "ClusterIssuer"
+              name  = "internal-ca-issuer"
+            }
+          }
+        }
         relay = {
           enabled = true
           prometheus = {
