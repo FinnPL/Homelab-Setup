@@ -21,6 +21,15 @@ terraform {
   }
 }
 
+data "terraform_remote_state" "cloud_edge" {
+  backend = "s3"
+  config = {
+    bucket = "finnpl-homelab-tfstate-1766068376"
+    key    = "cloud-edge/terraform.tfstate"
+    region = "eu-central-1"
+  }
+}
+
 provider "kubernetes" {
   config_path = var.kubeconfig_path
 }
