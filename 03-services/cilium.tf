@@ -77,6 +77,13 @@ resource "helm_release" "cilium" {
           cert = base64encode(tls_self_signed_cert.internal_ca.cert_pem)
           key  = base64encode(tls_private_key.internal_ca.private_key_pem)
         }
+        caBundle = {
+          enabled   = true
+          name      = "cilium-root-ca.crt"
+          key       = "ca.crt"
+          useSecret = false
+          content   = tls_self_signed_cert.internal_ca.cert_pem
+        }
       }
 
       hubble = {
