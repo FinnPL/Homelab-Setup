@@ -1,3 +1,10 @@
+data "kubernetes_secret_v1" "internal_ca" {
+  metadata {
+    name      = "internal-ca"
+    namespace = "cert-manager"
+  }
+}
+
 resource "helm_release" "cilium" {
   name       = "cilium"
   repository = "https://helm.cilium.io/"
@@ -31,6 +38,18 @@ resource "helm_release" "cilium" {
           service = {
             type = "LoadBalancer"
           }
+          tls = {
+            auto = {
+              enabled              = true
+              method               = "certmanager"
+              certValidityDuration = 90
+              certManagerIssuerRef = {
+                group = "cert-manager.io"
+                kind  = "ClusterIssuer"
+                name  = "internal-ca-issuer"
+              }
+            }
+          }
         }
         mcsapi = {
           enabled = true
@@ -57,6 +76,12 @@ resource "helm_release" "cilium" {
           cleanCiliumState = [
             "NET_ADMIN", "SYS_ADMIN", "SYS_RESOURCE"
           ]
+        }
+      }
+
+      tls = {
+        ca = {
+          cert = base64encode(data.kubernetes_secret_v1.internal_ca.data["ca.crt"])
         }
       }
 
