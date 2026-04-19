@@ -1,10 +1,3 @@
-data "kubernetes_secret_v1" "internal_ca" {
-  metadata {
-    name      = "internal-ca"
-    namespace = "cert-manager"
-  }
-}
-
 resource "helm_release" "cilium" {
   name       = "cilium"
   repository = "https://helm.cilium.io/"
@@ -81,7 +74,8 @@ resource "helm_release" "cilium" {
 
       tls = {
         ca = {
-          cert = base64encode(data.kubernetes_secret_v1.internal_ca.data["ca.crt"])
+          cert = base64encode(tls_self_signed_cert.internal_ca.cert_pem)
+          key  = base64encode(tls_private_key.internal_ca.private_key_pem)
         }
       }
 
