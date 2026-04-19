@@ -42,48 +42,42 @@ resource "kubernetes_secret_v1" "cloudflare_api_token" {
   type = "Opaque"
 }
 
-resource "kubectl_manifest" "selfsigned_bootstrap_issuer" {
-  yaml_body = yamlencode({
-    apiVersion = "cert-manager.io/v1"
-    kind       = "ClusterIssuer"
-    metadata = {
-      name = "selfsigned-bootstrap"
-    }
-    spec = {
-      selfSigned = {}
-    }
-  })
-
-  depends_on = [helm_release.cert_manager]
+resource "tls_private_key" "internal_ca" {
+  algorithm   = "ECDSA"
+  ecdsa_curve = "P256"
 }
 
-resource "kubectl_manifest" "internal_ca_certificate" {
-  yaml_body = yamlencode({
-    apiVersion = "cert-manager.io/v1"
-    kind       = "Certificate"
-    metadata = {
-      name      = "internal-ca"
-      namespace = kubernetes_namespace_v1.cert_manager.metadata[0].name
-    }
-    spec = {
-      isCA        = true
-      commonName  = "homelab-internal-ca"
-      secretName  = "internal-ca"
-      duration    = "87600h" # 10y
-      renewBefore = "2160h"  # 90d
-      privateKey = {
-        algorithm = "ECDSA"
-        size      = 256
-      }
-      issuerRef = {
-        name  = "selfsigned-bootstrap"
-        kind  = "ClusterIssuer"
-        group = "cert-manager.io"
-      }
-    }
-  })
+resource "tls_self_signed_cert" "internal_ca" {
+  private_key_pem = tls_private_key.internal_ca.private_key_pem
 
-  depends_on = [kubectl_manifest.selfsigned_bootstrap_issuer]
+  subject {
+    common_name = "homelab-internal-ca"
+  }
+
+  is_ca_certificate     = true
+  validity_period_hours = 87600 # 10y
+  early_renewal_hours   = 2160  # renew when <90d remains
+
+  allowed_uses = [
+    "cert_signing",
+    "crl_signing",
+    "digital_signature",
+  ]
+}
+
+resource "kubernetes_secret_v1" "internal_ca" {
+  metadata {
+    name      = "internal-ca"
+    namespace = kubernetes_namespace_v1.cert_manager.metadata[0].name
+  }
+
+  type = "kubernetes.io/tls"
+
+  data = {
+    "tls.crt" = tls_self_signed_cert.internal_ca.cert_pem
+    "tls.key" = tls_private_key.internal_ca.private_key_pem
+    "ca.crt"  = tls_self_signed_cert.internal_ca.cert_pem
+  }
 }
 
 resource "kubectl_manifest" "internal_ca_issuer" {
@@ -100,7 +94,10 @@ resource "kubectl_manifest" "internal_ca_issuer" {
     }
   })
 
-  depends_on = [kubectl_manifest.internal_ca_certificate]
+  depends_on = [
+    helm_release.cert_manager,
+    kubernetes_secret_v1.internal_ca,
+  ]
 }
 
 resource "kubectl_manifest" "letsencrypt_prod" {

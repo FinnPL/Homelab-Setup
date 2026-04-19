@@ -31,6 +31,18 @@ resource "helm_release" "cilium" {
           service = {
             type = "LoadBalancer"
           }
+          tls = {
+            auto = {
+              enabled              = true
+              method               = "certmanager"
+              certValidityDuration = 90
+              certManagerIssuerRef = {
+                group = "cert-manager.io"
+                kind  = "ClusterIssuer"
+                name  = "internal-ca-issuer"
+              }
+            }
+          }
         }
         mcsapi = {
           enabled = true
@@ -57,6 +69,13 @@ resource "helm_release" "cilium" {
           cleanCiliumState = [
             "NET_ADMIN", "SYS_ADMIN", "SYS_RESOURCE"
           ]
+        }
+      }
+
+      tls = {
+        ca = {
+          cert = base64encode(tls_self_signed_cert.internal_ca.cert_pem)
+          key  = base64encode(tls_private_key.internal_ca.private_key_pem)
         }
       }
 
