@@ -96,6 +96,30 @@ resource "oci_core_security_list" "edge" {
     }
   }
 
+  # Ingress: Kubernetes NodePort range (OCI LB -> node backends)
+  ingress_security_rules {
+    protocol  = "6" # TCP
+    source    = var.public_subnet_cidr
+    stateless = false
+
+    tcp_options {
+      min = 30000
+      max = 32767
+    }
+  }
+
+  # Ingress: OCI LB health checks (from VCN CIDR)
+  ingress_security_rules {
+    protocol  = "6" # TCP
+    source    = var.vcn_cidr
+    stateless = false
+
+    tcp_options {
+      min = 10256
+      max = 10256
+    }
+  }
+
   # Ingress: ICMP (for path MTU discovery)
   ingress_security_rules {
     protocol  = "1" # ICMP

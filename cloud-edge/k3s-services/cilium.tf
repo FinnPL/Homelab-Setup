@@ -44,9 +44,6 @@ resource "helm_release" "cilium" {
 
       gatewayAPI = {
         enabled = true
-        hostNetwork = { # Replace with Cloud LB if needed in future
-          enabled = true
-        }
       }
 
       securityContext = {

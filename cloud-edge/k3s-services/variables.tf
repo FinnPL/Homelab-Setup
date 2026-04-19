@@ -38,8 +38,9 @@ variable "acme_email" {
   default     = ""
 }
 
-variable "gateway_private_ip" {
-  description = "Optional private node IP to set in Gateway spec.addresses (workaround for Cilium hostNetwork AddressNotAssigned status)"
+variable "oci_ccm_version" {
+  description = "OCI Cloud Controller Manager image tag"
   type        = string
-  default     = ""
+  # renovate: datasource=docker depName=ghcr.io/oracle/cloud-provider-oci
+  default = "v1.30.0"
 }

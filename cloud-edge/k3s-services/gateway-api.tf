@@ -30,10 +30,15 @@ resource "kubectl_manifest" "cloud_gateway" {
       name      = "cloud-gateway"
       namespace = kubernetes_namespace_v1.gateway.metadata[0].name
     }
-    spec = merge(
-      {
-        gatewayClassName = "cilium"
-        listeners = [
+    spec = {
+      gatewayClassName = "cilium"
+      infrastructure = {
+        annotations = {
+          "oci.oraclecloud.com/load-balancer-type"                              = "nlb"
+          "oci-network-load-balancer.oraclecloud.com/oci-reserved-public-ip-id" = local.cloud_edge.gateway_lb_reserved_ip_ocid
+        }
+      }
+      listeners = [
           # HTTP listener for ACME challenges and redirects
           {
             name     = "http"
@@ -81,16 +86,7 @@ resource "kubectl_manifest" "cloud_gateway" {
             }
           }
         ]
-      },
-      var.gateway_private_ip != "" ? {
-        addresses = [
-          {
-            type  = "IPAddress"
-            value = var.gateway_private_ip
-          }
-        ]
-      } : {}
-    )
+      }
   })
 
   depends_on = [

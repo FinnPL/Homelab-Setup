@@ -28,6 +28,21 @@ output "public_subnet_cidr" {
   value       = var.public_subnet_cidr
 }
 
+output "oci_compartment_ocid" {
+  description = "OCID of the compartment holding edge resources (consumed by CCM config)"
+  value       = local.oci_compartment_ocid
+}
+
+output "oci_region" {
+  description = "OCI region (consumed by CCM config)"
+  value       = local.oci_region
+}
+
+output "gateway_lb_reserved_ip_ocid" {
+  description = "OCID of the reserved public IP for the gateway load balancer"
+  value       = oci_core_public_ip.gateway_lb.id
+}
+
 output "cloud_subdomain" {
   description = "Cloud-hosted services subdomain"
   value       = "*.cloud.lippok.dev"
