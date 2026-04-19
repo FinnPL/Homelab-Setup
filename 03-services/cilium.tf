@@ -62,6 +62,14 @@ resource "helm_release" "cilium" {
 
       hubble = {
         enabled = true
+        tls = {
+          auto = {
+            enabled              = true
+            method               = "cronJob"
+            schedule             = "0 0 1 */4 *"
+            certValidityDuration = 1095
+          }
+        }
         relay = {
           enabled = true
           prometheus = {
