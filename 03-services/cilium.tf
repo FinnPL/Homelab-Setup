@@ -65,9 +65,13 @@ resource "helm_release" "cilium" {
         tls = {
           auto = {
             enabled              = true
-            method               = "cronJob"
-            schedule             = "0 0 1 */4 *"
-            certValidityDuration = 1095
+            method               = "certmanager"
+            certValidityDuration = 90
+            certManagerIssuerRef = {
+              group = "cert-manager.io"
+              kind  = "ClusterIssuer"
+              name  = "internal-ca-issuer"
+            }
           }
         }
         relay = {
