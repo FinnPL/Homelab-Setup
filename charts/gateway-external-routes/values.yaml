@@ -6,7 +6,7 @@ gateway:
   sectionName: https
 
 proxy:
-  image: nginxinc/nginx-unprivileged:1.29-alpine
+  image: nginxinc/nginx-unprivileged:1.30-alpine
   containerPort: 8080
   resolver: kube-dns.kube-system.svc.cluster.local
 
