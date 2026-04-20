@@ -43,6 +43,11 @@ output "gateway_lb_reserved_ip_ocid" {
   value       = oci_core_public_ip.gateway_lb.id
 }
 
+output "gateway_lb_reserved_ip" {
+  description = "Reserved public IPv4 address for the gateway load balancer"
+  value       = oci_core_public_ip.gateway_lb.ip_address
+}
+
 output "cloud_subdomain" {
   description = "Cloud-hosted services subdomain"
   value       = "*.cloud.lippok.dev"
