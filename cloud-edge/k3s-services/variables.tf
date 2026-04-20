@@ -15,7 +15,7 @@ variable "cilium_version" {
   description = "Cilium Helm chart version"
   type        = string
   # renovate: datasource=helm depName=cilium registryUrl=https://helm.cilium.io/
-  default = "1.19.2"
+  default = "1.19.3"
 }
 
 variable "cert_manager_version" {
