@@ -22,7 +22,7 @@ variable "cert_manager_version" {
   description = "cert-manager Helm chart version"
   type        = string
   # renovate: datasource=helm depName=cert-manager registryUrl=https://charts.jetstack.io
-  default = "v1.17.2"
+  default = "v1.20.2"
 }
 
 variable "cloudflare_api_token" {
