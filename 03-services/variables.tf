@@ -13,7 +13,7 @@ variable "gateway_api_version" {
   description = "Version of Gateway API CRDs to install"
   type        = string
   # renovate: datasource=github-releases depName=kubernetes-sigs/gateway-api
-  default = "v1.4.1"
+  default = "v1.5.1"
 }
 
 variable "crossplane_provider_sql_version" {
