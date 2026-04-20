@@ -166,9 +166,6 @@ resource "kubectl_manifest" "ccm_deployment" {
                 "--cloud-config=/etc/oci/cloud-provider.yaml",
                 "--cloud-provider=oci",
                 "--leader-elect=false",
-                # k3s embedded cloud-controller already binds 10258 on host
-                # (we run with hostNetwork for IMDS access), pick free ports.
-                # webhook-secure-port must differ from secure-port.
                 "--secure-port=10260",
                 "--webhook-secure-port=10261",
                 "--v=2",
