@@ -1,10 +1,10 @@
 locals {
-  cloud_edge  = data.terraform_remote_state.cloud_edge.outputs
-  ccm_ns      = "kube-system"
+  cloud_edge = data.terraform_remote_state.cloud_edge.outputs
+  ccm_ns     = "kube-system"
 
   cloud_provider_config = yamlencode({
     auth = {
-      region               = local.cloud_edge.oci_region
+      region                = local.cloud_edge.oci_region
       useInstancePrincipals = true
     }
     compartment = local.cloud_edge.oci_compartment_ocid
@@ -166,6 +166,8 @@ resource "kubectl_manifest" "ccm_deployment" {
                 "--cloud-config=/etc/oci/cloud-provider.yaml",
                 "--cloud-provider=oci",
                 "--leader-elect=false",
+                "--secure-port=10260",
+                "--webhook-secure-port=10261",
                 "--v=2",
               ]
               volumeMounts = [

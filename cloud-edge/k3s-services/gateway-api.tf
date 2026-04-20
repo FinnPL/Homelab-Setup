@@ -34,8 +34,8 @@ resource "kubectl_manifest" "cloud_gateway" {
       gatewayClassName = "cilium"
       infrastructure = {
         annotations = {
-          "oci.oraclecloud.com/load-balancer-type"                              = "nlb"
-          "oci-network-load-balancer.oraclecloud.com/oci-reserved-public-ip-id" = local.cloud_edge.gateway_lb_reserved_ip_ocid
+          "oci.oraclecloud.com/load-balancer-type" = "nlb"
+          "oci.oraclecloud.com/reserved-ips"       = local.cloud_edge.gateway_lb_reserved_ip
         }
       }
       listeners = [
