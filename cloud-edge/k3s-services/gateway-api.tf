@@ -32,10 +32,19 @@ resource "kubectl_manifest" "cloud_gateway" {
     }
     spec = {
       gatewayClassName = "cilium"
+      # OCI CCM has no reserved-IP annotation for LBaaS; set via spec.loadBalancerIP, propagated here via Gateway addresses.
+      addresses = [
+        {
+          type  = "IPAddress"
+          value = local.cloud_edge.gateway_lb_reserved_ip
+        }
+      ]
       infrastructure = {
         annotations = {
-          "oci.oraclecloud.com/load-balancer-type" = "nlb"
-          "oci.oraclecloud.com/reserved-ips"       = local.cloud_edge.gateway_lb_reserved_ip
+          "oci.oraclecloud.com/load-balancer-type"                      = "lb"
+          "service.beta.kubernetes.io/oci-load-balancer-shape"          = "flexible"
+          "service.beta.kubernetes.io/oci-load-balancer-shape-flex-min" = "10"
+          "service.beta.kubernetes.io/oci-load-balancer-shape-flex-max" = "10"
         }
       }
       listeners = [
