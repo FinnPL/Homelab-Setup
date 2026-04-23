@@ -1,16 +1,5 @@
 # DNS relay: forwards DoH traffic from the public cloud edge to Blocky in the homelab.
 # True E2EE: the cloud Gateway is in TLS Passthrough mode for *.relay.lippok.dev.
-#
-# Why the relay pod exists:
-# Cilium Gateway (hostNetwork Envoy DaemonSet, default in v1.19.x) sources
-# upstream connections from the reserved:ingress identity IP (10.42.0.185). That
-# IP has no kernel socket binding on the node, so SYN/ACK return traffic across
-# the Cluster Mesh tunnel arrives on cilium_host but never reaches Envoy's
-# socket — the handshake times out. Routing through a normal pod-CIDR relay
-# restores the return path (pod->pod across the mesh works fine).
-#
-# TLS passthrough is preserved: the relay uses nginx `stream` at L4, so SNI /
-# ALPN / certificates are untouched.
 
 resource "kubernetes_namespace_v1" "dns" {
   metadata {
@@ -49,12 +38,6 @@ resource "kubectl_manifest" "dns_reference_grant" {
   ]
 }
 
-# Look up the Cilium-derived Service backing the MCS-API ServiceImport `dns/dns`.
-# Cilium names it `derived-<hash>`; we match by the standard MCS-API label.
-# We pull the *name*, not the ClusterIP: the name is a deterministic hash of
-# the ServiceImport UID, while the ClusterIP churns on any Service re-creation.
-# nginx resolves the name dynamically via the kube-dns resolver, so ClusterIP
-# changes are picked up within `resolver_valid` without a TF apply.
 data "kubernetes_resources" "dns_derived" {
   api_version    = "v1"
   kind           = "Service"
@@ -67,11 +50,7 @@ locals {
     data.kubernetes_resources.dns_derived.objects[0].metadata.name,
     "",
   )
-  # Fresh-bootstrap guard: Cilium hasn't reconciled the ServiceImport yet on
-  # the very first apply of a new cluster. count=0 keeps the relay + TLSRoute
-  # absent until a second apply picks up the derived Service. Both the relay
-  # resources and the TLSRoute share this gate so the route is never published
-  # pointing at a Service that doesn't exist.
+  # Fresh-bootstrap guard
   dns_relay_enabled = local.dns_derived_name != ""
   dns_upstream_host = local.dns_relay_enabled ? "${local.dns_derived_name}.${kubernetes_namespace_v1.dns.metadata[0].name}.svc.cluster.local" : ""
 }
