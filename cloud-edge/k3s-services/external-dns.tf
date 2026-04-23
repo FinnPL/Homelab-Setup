@@ -1,7 +1,3 @@
-# external-dns: reconciles Cloudflare DNS records from Gateway listener hostnames
-# and attached Routes. Removes the need for a reserved public IP on the Cilium
-# gateway LB — DNS follows the ephemeral NLB IP automatically.
-
 resource "kubernetes_namespace_v1" "external_dns" {
   count = var.cloudflare_api_token != "" ? 1 : 0
 
