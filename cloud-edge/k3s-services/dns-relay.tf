@@ -1,5 +1,16 @@
 # DNS relay: forwards DoH traffic from the public cloud edge to Blocky in the homelab.
 # True E2EE: the cloud Gateway is in TLS Passthrough mode for *.relay.lippok.dev.
+#
+# Why the relay pod exists:
+# Cilium Gateway (hostNetwork Envoy DaemonSet, default in v1.19.x) sources
+# upstream connections from the reserved:ingress identity IP (10.42.0.185). That
+# IP has no kernel socket binding on the node, so SYN/ACK return traffic across
+# the Cluster Mesh tunnel arrives on cilium_host but never reaches Envoy's
+# socket — the handshake times out. Routing through a normal pod-CIDR relay
+# restores the return path (pod->pod across the mesh works fine).
+#
+# TLS passthrough is preserved: the relay uses nginx `stream` at L4, so SNI /
+# ALPN / certificates are untouched.
 
 resource "kubernetes_namespace_v1" "dns" {
   metadata {
@@ -25,10 +36,6 @@ resource "kubectl_manifest" "dns_reference_grant" {
       ]
       to = [
         {
-          group = "multicluster.x-k8s.io"
-          kind  = "ServiceImport"
-        },
-        {
           group = ""
           kind  = "Service"
         },
@@ -42,13 +49,12 @@ resource "kubectl_manifest" "dns_reference_grant" {
   ]
 }
 
-# L4 TCP relay pod: Cilium Gateway (hostNetwork Envoy) uses the reserved:ingress
-# source identity (10.42.0.185). That IP has no kernel socket binding on the node,
-# so SYN/ACK return traffic across the Cluster Mesh tunnel is dropped and the TLS
-# handshake never completes. Forwarding through a regular pod first gives Envoy a
-# real pod-CIDR destination; the cluster-mesh hop is then pod→pod and works
-# normally. Pattern mirrors charts/gateway-external-routes/_backend-proxy.tpl but
-# uses the nginx `stream` module for L4 passthrough (preserves SNI/TLS bytes).
+# Look up the Cilium-derived Service backing the MCS-API ServiceImport `dns/dns`.
+# Cilium names it `derived-<hash>`; we match by the standard MCS-API label.
+# We pull the *name*, not the ClusterIP: the name is a deterministic hash of
+# the ServiceImport UID, while the ClusterIP churns on any Service re-creation.
+# nginx resolves the name dynamically via the kube-dns resolver, so ClusterIP
+# changes are picked up within `resolver_valid` without a TF apply.
 data "kubernetes_resources" "dns_derived" {
   api_version    = "v1"
   kind           = "Service"
@@ -57,160 +63,34 @@ data "kubernetes_resources" "dns_derived" {
 }
 
 locals {
-  dns_derived_cluster_ip = try(
-    data.kubernetes_resources.dns_derived.objects[0].spec.clusterIP,
+  dns_derived_name = try(
+    data.kubernetes_resources.dns_derived.objects[0].metadata.name,
     "",
   )
-  dns_relay_enabled = local.dns_derived_cluster_ip != ""
+  # Fresh-bootstrap guard: Cilium hasn't reconciled the ServiceImport yet on
+  # the very first apply of a new cluster. count=0 keeps the relay + TLSRoute
+  # absent until a second apply picks up the derived Service. Both the relay
+  # resources and the TLSRoute share this gate so the route is never published
+  # pointing at a Service that doesn't exist.
+  dns_relay_enabled = local.dns_derived_name != ""
+  dns_upstream_host = local.dns_relay_enabled ? "${local.dns_derived_name}.${kubernetes_namespace_v1.dns.metadata[0].name}.svc.cluster.local" : ""
 }
 
-resource "kubernetes_config_map_v1" "dns_relay_nginx" {
-  count = local.dns_relay_enabled ? 1 : 0
+module "dns_relay" {
+  source = "./modules/tcp-relay"
+  count  = local.dns_relay_enabled ? 1 : 0
 
-  metadata {
-    name      = "dns-relay-nginx"
-    namespace = kubernetes_namespace_v1.dns.metadata[0].name
-  }
-
-  data = {
-    "nginx.conf" = <<-EOT
-      worker_processes auto;
-      pid /tmp/nginx.pid;
-      error_log /dev/stderr warn;
-
-      events {
-        worker_connections 1024;
-      }
-
-      stream {
-        access_log off;
-
-        server {
-          listen 8443;
-          proxy_pass ${local.dns_derived_cluster_ip}:443;
-          proxy_connect_timeout 5s;
-          proxy_timeout 30s;
-        }
-      }
-    EOT
-  }
-}
-
-resource "kubernetes_deployment_v1" "dns_relay" {
-  count = local.dns_relay_enabled ? 1 : 0
-
-  metadata {
-    name      = "dns-relay"
-    namespace = kubernetes_namespace_v1.dns.metadata[0].name
-    labels = {
-      app = "dns-relay"
-    }
-  }
-
-  spec {
-    replicas = 2
-
-    selector {
-      match_labels = {
-        app = "dns-relay"
-      }
-    }
-
-    template {
-      metadata {
-        labels = {
-          app = "dns-relay"
-        }
-        annotations = {
-          "checksum/nginx-conf" = sha256(kubernetes_config_map_v1.dns_relay_nginx[0].data["nginx.conf"])
-        }
-      }
-
-      spec {
-        security_context {
-          run_as_non_root = true
-          seccomp_profile {
-            type = "RuntimeDefault"
-          }
-        }
-
-        container {
-          name  = "nginx"
-          image = "nginxinc/nginx-unprivileged:1.29-alpine"
-
-          port {
-            name           = "doh-tls"
-            container_port = 8443
-            protocol       = "TCP"
-          }
-
-          security_context {
-            allow_privilege_escalation = false
-            capabilities {
-              drop = ["ALL"]
-            }
-          }
-
-          volume_mount {
-            name       = "nginx-conf"
-            mount_path = "/etc/nginx/nginx.conf"
-            sub_path   = "nginx.conf"
-            read_only  = true
-          }
-
-          readiness_probe {
-            tcp_socket {
-              port = 8443
-            }
-            initial_delay_seconds = 2
-            period_seconds        = 5
-          }
-
-          resources {
-            requests = {
-              cpu    = "10m"
-              memory = "32Mi"
-            }
-            limits = {
-              cpu    = "100m"
-              memory = "128Mi"
-            }
-          }
-        }
-
-        volume {
-          name = "nginx-conf"
-          config_map {
-            name = kubernetes_config_map_v1.dns_relay_nginx[0].metadata[0].name
-          }
-        }
-      }
-    }
-  }
-}
-
-resource "kubernetes_service_v1" "dns_relay" {
-  count = local.dns_relay_enabled ? 1 : 0
-
-  metadata {
-    name      = "dns-relay"
-    namespace = kubernetes_namespace_v1.dns.metadata[0].name
-  }
-
-  spec {
-    selector = {
-      app = "dns-relay"
-    }
-    port {
-      name        = "doh-tls"
-      port        = 443
-      target_port = 8443
-      protocol    = "TCP"
-    }
-  }
+  name          = "dns-relay"
+  namespace     = kubernetes_namespace_v1.dns.metadata[0].name
+  listen_port   = 8443
+  service_port  = 443
+  upstream_host = local.dns_upstream_host
+  upstream_port = 443
 }
 
 resource "kubectl_manifest" "relay_dns" {
+  count = local.dns_relay_enabled ? 1 : 0
+
   yaml_body = yamlencode({
     apiVersion = "gateway.networking.k8s.io/v1alpha2"
     kind       = "TLSRoute"
@@ -230,14 +110,11 @@ resource "kubectl_manifest" "relay_dns" {
         {
           backendRefs = [
             {
-              # Route to the in-cluster nginx L4 relay Service (see comment above
-              # on kubernetes_deployment_v1.dns_relay). The relay forwards to the
-              # Cilium-derived Service for the MCS-API ServiceImport dns/dns.
               group     = ""
               kind      = "Service"
-              name      = "dns-relay"
-              namespace = "dns"
-              port      = 443
+              name      = module.dns_relay[0].service_name
+              namespace = module.dns_relay[0].service_namespace
+              port      = module.dns_relay[0].service_port
             }
           ]
         }
