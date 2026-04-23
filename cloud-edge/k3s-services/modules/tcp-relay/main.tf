@@ -1,18 +1,4 @@
 # Reusable L4 TCP relay.
-#
-# Deploys a minimal nginx `stream` passthrough pod behind a ClusterIP Service.
-# Forwards bytes at L4 — TLS/SNI/ALPN are untouched. Useful for giving Gateway
-# TLSRoutes a pod-CIDR source IP before a cluster-mesh hop, or for any case
-# where you need a stable in-cluster Service to front an external TCP target.
-#
-# Intentional design choices:
-# - Upstream is resolved at connection time via nginx's `resolver` directive
-#   with a variable in proxy_pass. Avoids baking the ClusterIP into the
-#   ConfigMap, which breaks on Service recreation.
-# - Runs as non-root on a privileged-port-free listener (listen_port >= 1024),
-#   the Service then maps service_port -> listen_port.
-# - Pod Security: runAsNonRoot, seccompProfile RuntimeDefault, drop ALL caps,
-#   no privilege escalation.
 
 locals {
   app_label = var.name
