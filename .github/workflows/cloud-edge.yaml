@@ -91,7 +91,6 @@ jobs:
       TF_VAR_oci_region: ${{ vars.OCI_REGION }}
       TF_VAR_oci_compartment_ocid: ${{ secrets.OCI_COMPARTMENT_OCID }}
       TF_VAR_ssh_public_key: ${{ vars.OCI_SSH_PUBLIC_KEY }}
-      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       TF_VAR_instance_availability_domain: ${{ github.event_name == 'workflow_dispatch' && inputs.instance_availability_domain || '' }}
       REPLACE_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.replace_target || '' }}
 

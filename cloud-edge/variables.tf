@@ -102,10 +102,3 @@ variable "public_subnet_cidr" {
   default     = "10.70.1.0/24"
 }
 
-# Cloudflare DNS
-
-variable "cloudflare_api_token" {
-  description = "Cloudflare API Token with Edit Zone permissions"
-  type        = string
-  sensitive   = true
-}

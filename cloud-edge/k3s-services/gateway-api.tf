@@ -32,70 +32,60 @@ resource "kubectl_manifest" "cloud_gateway" {
     }
     spec = {
       gatewayClassName = "cilium"
-      # OCI CCM has no reserved-IP annotation for LBaaS; set via spec.loadBalancerIP, propagated here via Gateway addresses.
-      addresses = [
-        {
-          type  = "IPAddress"
-          value = local.cloud_edge.gateway_lb_reserved_ip
-        }
-      ]
       infrastructure = {
         annotations = {
-          "oci.oraclecloud.com/load-balancer-type"                      = "lb"
-          "service.beta.kubernetes.io/oci-load-balancer-shape"          = "flexible"
-          "service.beta.kubernetes.io/oci-load-balancer-shape-flex-min" = "10"
-          "service.beta.kubernetes.io/oci-load-balancer-shape-flex-max" = "10"
+          "oci.oraclecloud.com/load-balancer-type" = "nlb"
         }
       }
       listeners = [
-          # HTTP listener for ACME challenges and redirects
-          {
-            name     = "http"
-            protocol = "HTTP"
-            port     = 80
-            allowedRoutes = {
-              namespaces = {
-                from = "All"
-              }
-            }
-          },
-          # TLS passthrough for relay services
-          {
-            name     = "relay-passthrough"
-            protocol = "TLS"
-            port     = 443
-            hostname = "*.relay.lippok.dev"
-            tls = {
-              mode = "Passthrough"
-            }
-            allowedRoutes = {
-              namespaces = {
-                from = "All"
-              }
-            }
-          },
-          # HTTPS termination for cloud-hosted services
-          {
-            name     = "cloud-https"
-            protocol = "HTTPS"
-            port     = 443
-            hostname = "*.cloud.lippok.dev"
-            tls = {
-              mode = "Terminate"
-              certificateRefs = [
-                {
-                  name = "wildcard-cloud-lippok-dev-tls"
-                }
-              ]
-            }
-            allowedRoutes = {
-              namespaces = {
-                from = "All"
-              }
+        # HTTP listener for ACME challenges and redirects
+        {
+          name     = "http"
+          protocol = "HTTP"
+          port     = 80
+          allowedRoutes = {
+            namespaces = {
+              from = "All"
             }
           }
-        ]
-      }
+        },
+        # TLS passthrough for relay services
+        {
+          name     = "relay-passthrough"
+          protocol = "TLS"
+          port     = 443
+          hostname = "*.relay.lippok.dev"
+          tls = {
+            mode = "Passthrough"
+          }
+          allowedRoutes = {
+            namespaces = {
+              from = "All"
+            }
+          }
+        },
+        # HTTPS termination for cloud-hosted services
+        {
+          name     = "cloud-https"
+          protocol = "HTTPS"
+          port     = 443
+          hostname = "*.cloud.lippok.dev"
+          tls = {
+            mode = "Terminate"
+            certificateRefs = [
+              {
+                name = "wildcard-cloud-lippok-dev-tls"
+              }
+            ]
+          }
+          allowedRoutes = {
+            namespaces = {
+              from = "All"
+            }
+          }
+        }
+      ]
+    }
   })
 
   depends_on = [
