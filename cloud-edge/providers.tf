@@ -6,6 +6,10 @@ terraform {
       source  = "oracle/oci"
       version = "8.8.0"
     }
+    cloudflare = {
+      source  = "cloudflare/cloudflare"
+      version = "5.18.0"
+    }
   }
 }
 
@@ -33,4 +37,10 @@ provider "oci" {
   fingerprint  = local.oci_fingerprint
   private_key  = local.oci_private_key
   region       = local.oci_region
+}
+
+# Retained so Terraform can destroy the legacy `cloudflare_dns_record.*`
+# resources still in state. external-dns now owns Cloudflare records at runtime.
+provider "cloudflare" {
+  api_token = var.cloudflare_api_token
 }
