@@ -39,6 +39,8 @@ provider "oci" {
   region       = local.oci_region
 }
 
+# Retained so Terraform can destroy the legacy `cloudflare_dns_record.*`
+# resources still in state. external-dns now owns Cloudflare records at runtime.
 provider "cloudflare" {
   api_token = var.cloudflare_api_token
 }

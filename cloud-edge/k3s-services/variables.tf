@@ -26,7 +26,7 @@ variable "cert_manager_version" {
 }
 
 variable "cloudflare_api_token" {
-  description = "Cloudflare API Token for cert-manager DNS-01 challenges"
+  description = "Cloudflare API Token for cert-manager DNS-01 challenges and external-dns record management"
   type        = string
   sensitive   = true
   default     = ""
@@ -43,4 +43,11 @@ variable "oci_ccm_version" {
   type        = string
   # renovate: datasource=docker depName=ghcr.io/oracle/cloud-provider-oci
   default = "v1.30.0"
+}
+
+variable "external_dns_version" {
+  description = "external-dns Helm chart version"
+  type        = string
+  # renovate: datasource=helm depName=external-dns registryUrl=https://kubernetes-sigs.github.io/external-dns/
+  default = "1.15.2"
 }

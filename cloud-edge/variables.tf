@@ -102,10 +102,12 @@ variable "public_subnet_cidr" {
   default     = "10.70.1.0/24"
 }
 
-# Cloudflare DNS
-
+# Retained so the cloudflare provider can authenticate for destroy of
+# legacy `cloudflare_dns_record.*` resources still in state.
+# external-dns (cloud-edge/k3s-services) is the runtime owner of Cloudflare records.
 variable "cloudflare_api_token" {
-  description = "Cloudflare API Token with Edit Zone permissions"
+  description = "Cloudflare API Token — only used to authenticate destroy of pre-external-dns records"
   type        = string
   sensitive   = true
+  default     = ""
 }
