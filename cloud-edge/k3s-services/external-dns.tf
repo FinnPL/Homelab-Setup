@@ -59,6 +59,14 @@ resource "helm_release" "external_dns" {
       policy        = "sync"
       txtOwnerId    = "cloud-edge"
       txtPrefix     = "extdns-"
+      # OCI NLB publishes both the public and the private VCN IP in
+      # Service.status.loadBalancer.ingress. Filter out RFC1918 so only
+      # the public NLB IP ends up in Cloudflare.
+      extraArgs = [
+        "--exclude-target-net=10.0.0.0/8",
+        "--exclude-target-net=172.16.0.0/12",
+        "--exclude-target-net=192.168.0.0/16",
+      ]
     })
   ]
 
