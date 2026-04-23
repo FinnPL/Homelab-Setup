@@ -42,7 +42,7 @@ variable "oci_ccm_version" {
   description = "OCI Cloud Controller Manager image tag"
   type        = string
   # renovate: datasource=docker depName=ghcr.io/oracle/cloud-provider-oci
-  default = "v1.30.0"
+  default = "v1.34.0"
 }
 
 variable "external_dns_version" {
