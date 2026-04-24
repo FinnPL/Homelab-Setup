@@ -11,9 +11,10 @@ resource "helm_release" "cilium" {
   values = [
     yamlencode({
       kubeProxyReplacement = "true"
-      k8sServiceHost       = "127.0.0.1"
-      k8sServicePort       = 6443
-      devices              = "eth+ wg+"
+      kubeProxyReplacementHealthzBindAddr = "0.0.0.0:10256"
+      k8sServiceHost                      = "127.0.0.1"
+      k8sServicePort                      = 6443
+      devices                             = "eth+ wg+"
       ipam = {
         mode = "kubernetes"
       }
