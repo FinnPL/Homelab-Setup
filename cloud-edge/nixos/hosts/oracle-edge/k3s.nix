@@ -7,13 +7,6 @@ let
   # back to a degraded LB path that registers node backends at the listener
   # port (443/80) instead of the Service nodePort — which silently breaks all
   # Gateway/LoadBalancer traffic (TCP connects at the NLB, backend RSTs).
-  #
-  # `cloud-provider=external` tells kubelet to defer node init (IPs, zone
-  # labels, providerID) to the out-of-tree CCM. k3s still writes its own
-  # `k3s://<hostname>` providerID at initial Node registration, so on first
-  # boot after this change the existing Node resource must be deleted once so
-  # kubelet re-registers with the correct OCID. providerID is immutable after
-  # first set.
   k3sWriteOciConfig = pkgs.writeShellScript "k3s-write-oci-config" ''
     set -euo pipefail
     OCID=$(${pkgs.curl}/bin/curl -sSf --max-time 5 \
