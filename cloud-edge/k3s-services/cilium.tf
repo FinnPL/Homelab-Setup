@@ -45,6 +45,21 @@ resource "helm_release" "cilium" {
 
       gatewayAPI = {
         enabled = true
+        # hostNetwork binds Envoy directly to host :80/:443 instead of a random
+        # L7LB proxy port (17824) behind a NodePort redirect. Without this, Cilium
+        # BPF tries to redirect NodePort traffic to Envoy via tproxy and silently
+        # drops externally-sourced SYNs — local sock-LB (cgroup connect4) still
+        # works, masking the issue until external clients hit it.
+        #
+        # The SNAT-to-reserved:ingress issue that originally motivated disabling
+        # hostNetwork only affected Envoy's upstream leg to cluster-mesh
+        # ServiceImport backends. Current TLSRoute targets the in-cluster
+        # dns-relay Service (local pods that themselves reach Blocky via
+        # cluster-mesh from their own pod netns), so Envoy's upstream stays
+        # in-cluster and is unaffected by that SNAT.
+        hostNetwork = {
+          enabled = true
+        }
       }
 
       securityContext = {
