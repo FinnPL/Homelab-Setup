@@ -28,6 +28,7 @@
         80    # HTTP (ACME challenges)
         443   # HTTPS
         4240  # Cilium health checks
+        10256 # Cilium kube-proxy-replacement healthz (OCI NLB backend health check)
       ];
       allowedUDPPorts = [
         41641 # Tailscale WireGuard

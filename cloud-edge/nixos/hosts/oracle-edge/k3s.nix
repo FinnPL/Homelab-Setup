@@ -1,5 +1,33 @@
 { pkgs, ... }:
 
+let
+  # Render /etc/rancher/k3s/config.yaml before k3s starts. Fetches the OCI
+  # instance OCID from IMDS and hands it to kubelet as `--provider-id`, so the
+  # OCI CCM can map this Node to its compute instance. Without this, CCM falls
+  # back to a degraded LB path that registers node backends at the listener
+  # port (443/80) instead of the Service nodePort — which silently breaks all
+  # Gateway/LoadBalancer traffic (TCP connects at the NLB, backend RSTs).
+  #
+  # `cloud-provider=external` tells kubelet to defer node init (IPs, zone
+  # labels, providerID) to the out-of-tree CCM. k3s still writes its own
+  # `k3s://<hostname>` providerID at initial Node registration, so on first
+  # boot after this change the existing Node resource must be deleted once so
+  # kubelet re-registers with the correct OCID. providerID is immutable after
+  # first set.
+  k3sWriteOciConfig = pkgs.writeShellScript "k3s-write-oci-config" ''
+    set -euo pipefail
+    OCID=$(${pkgs.curl}/bin/curl -sSf --max-time 5 \
+      -H "Authorization: Bearer Oracle" \
+      http://169.254.169.254/opc/v2/instance/id)
+    install -d -m 0755 /etc/rancher/k3s
+    umask 077
+    cat > /etc/rancher/k3s/config.yaml <<EOF
+    kubelet-arg:
+      - "provider-id=$OCID"
+      - "cloud-provider=external"
+    EOF
+  '';
+in
 {
   services.k3s = {
     enable = true;
@@ -16,6 +44,9 @@
       "--write-kubeconfig-mode=0600"     # Secure read since CI connects via root SSH
     ];
   };
+
+  # Inject kubelet args dynamically via the config file (IMDS lookup at boot).
+  systemd.services.k3s.serviceConfig.ExecStartPre = [ "${k3sWriteOciConfig}" ];
 
   environment.systemPackages = with pkgs; [
     kubectl
