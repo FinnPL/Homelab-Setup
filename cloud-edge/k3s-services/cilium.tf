@@ -11,11 +11,6 @@ resource "helm_release" "cilium" {
   values = [
     yamlencode({
       kubeProxyReplacement = "true"
-      # Expose a kube-proxy compatible healthz listener on :10256 so the OCI
-      # CCM's default NLB backend health check (port 10256, path /healthz)
-      # succeeds. Without this, NLB backends stay UNHEALTHY and no data-path
-      # traffic is forwarded — TCP connects at the NLB frontend but the client
-      # never sees a SYN/ACK from the backend.
       kubeProxyReplacementHealthzBindAddr = "0.0.0.0:10256"
       k8sServiceHost                      = "127.0.0.1"
       k8sServicePort                      = 6443
