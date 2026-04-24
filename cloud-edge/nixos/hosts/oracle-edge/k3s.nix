@@ -14,12 +14,6 @@ let
       http://169.254.169.254/opc/v2/instance/id)
     install -d -m 0755 /etc/rancher/k3s
     umask 077
-    # No heredoc: Nix ''...'' strips the common leading indent at eval time,
-    # so an indented heredoc terminator is only safe as long as every line in
-    # the block shares that indent. A later unrelated edit that introduces a
-    # less-indented line would change the strip amount and leave the "EOF"
-    # marker with leftover whitespace, silently turning it into regular
-    # heredoc body and breaking k3s startup. printf sidesteps it entirely.
     printf '%s\n' \
       'kubelet-arg:' \
       "  - \"provider-id=$OCID\"" \
