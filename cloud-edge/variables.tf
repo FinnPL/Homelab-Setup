@@ -93,13 +93,13 @@ variable "ssh_public_key" {
 variable "vcn_cidr" {
   description = "CIDR block for the VCN"
   type        = string
-  default     = "10.75.0.0/16"
+  default     = "10.70.0.0/16"
 }
 
 variable "public_subnet_cidr" {
   description = "CIDR block for the public subnet"
   type        = string
-  default     = "10.75.1.0/24"
+  default     = "10.70.75.0/24"
 }
 
 # Retained so the cloudflare provider can authenticate for destroy of
