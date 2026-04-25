@@ -15,39 +15,6 @@ resource "helm_release" "cilium" {
         mode = "kubernetes"
       }
 
-      # Cluster identity for Cluster Mesh (cloud-edge is id=2)
-      cluster = {
-        name = "homelab-k8s"
-        id   = 1
-      }
-
-      # Cluster Mesh: enable apiserver for cross-cluster connectivity
-      clustermesh = {
-        useAPIServer = true
-        config = {
-          enabled = true
-        }
-        apiserver = {
-          service = {
-            type = "LoadBalancer"
-          }
-          tls = {
-            auto = {
-              enabled              = true
-              method               = "certmanager"
-              certValidityDuration = 90
-              certManagerIssuerRef = {
-                group = "cert-manager.io"
-                kind  = "ClusterIssuer"
-                name  = "internal-ca-issuer"
-              }
-            }
-          }
-        }
-        mcsapi = {
-          enabled = true
-        }
-      }
       l2announcements = {
         enabled = true
       }
