@@ -102,12 +102,14 @@ variable "public_subnet_cidr" {
   default     = "10.70.1.0/24"
 }
 
-# Retained so the cloudflare provider can authenticate for destroy of
-# legacy `cloudflare_dns_record.*` resources still in state.
-# external-dns (cloud-edge/k3s-services) is the runtime owner of Cloudflare records.
 variable "cloudflare_api_token" {
-  description = "Cloudflare API Token — only used to authenticate destroy of pre-external-dns records"
+  description = "Cloudflare API token with DNS edit on the lippok.dev zone"
   type        = string
   sensitive   = true
-  default     = ""
+}
+
+variable "cloudflare_zone_name" {
+  description = "Cloudflare zone hosting the relay records"
+  type        = string
+  default     = "lippok.dev"
 }
