@@ -1,5 +1,5 @@
 # WireGuard subnet router for Cilium clustermesh between homelab-k8s and cloud-edge.
-# Forwards 10.70.1.0/24 traffic through a WG tunnel to the OCI node (public IP).
+# Forwards 10.75.1.0/24 traffic through a WG tunnel to the OCI node (public IP).
 # No SNAT — VXLAN outer source IPs are preserved end-to-end.
 
 resource "proxmox_virtual_environment_container" "mesh_router" {
