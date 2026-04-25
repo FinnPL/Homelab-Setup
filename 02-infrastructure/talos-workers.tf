@@ -48,7 +48,7 @@ data "talos_machine_configuration" "worker" {
               routes = [
                 {
                   # Route to OCI cloud-edge VCN via mesh-router LXC.
-                  network = "10.70.1.0/24"
+                  network = "10.75.1.0/24"
                   gateway = "10.10.1.90"
                 }
               ]
