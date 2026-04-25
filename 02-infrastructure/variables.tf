@@ -285,7 +285,7 @@ variable "mesh_wg_peer_endpoint" {
 variable "cloud_vcn_cidr" {
   description = "CIDR of the OCI cloud-edge VCN (routed through WG tunnel)"
   type        = string
-  default     = "10.75.1.0/24"
+  default     = "10.70.75.0/24"
 }
 
 variable "postgres_root_password" {

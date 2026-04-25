@@ -157,7 +157,7 @@ data "talos_machine_configuration" "controlplane" {
               routes = [
                 {
                   # Route to OCI cloud-edge VCN via mesh-router LXC.
-                  network = "10.75.1.0/24"
+                  network = "10.70.75.0/24"
                   gateway = "10.10.1.90"
                 }
               ]
