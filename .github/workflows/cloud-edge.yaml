@@ -405,7 +405,7 @@ jobs:
           export NIX_SSHOPTS="-i ~/.ssh/edge_key -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=yes"
 
           # renovate: datasource=git-refs depName=nixpkgs packageName=https://github.com/NixOS/nixpkgs ref=master versioning=git
-          nix run github:NixOS/nixpkgs/f37d14db4e7f801872506a2dee5cce5da36ea512#nixos-rebuild -- \
+          nix run github:NixOS/nixpkgs/bc0d297a87c5245f2c076cfba06afad1dec85898#nixos-rebuild -- \
             switch \
             --flake ./cloud-edge/nixos#oracle-edge \
             --build-host root@$IP \
