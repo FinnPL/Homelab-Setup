@@ -1,8 +1,21 @@
+# OCI's UpdateVcn API treats cidr_blocks as updateable in-place, so a CIDR
+# change keeps the same VCN OCID. Empirically that "VCN reuse" leaves new
+# instances with sshd that accepts TCP but never exchanges the SSH banner.
+# This sentinel forces a destroy+create on any vcn_cidr change so the new
+# instance always lands in a freshly-allocated VCN.
+resource "terraform_data" "vcn_cidr_marker" {
+  input = var.vcn_cidr
+}
+
 resource "oci_core_vcn" "edge" {
   compartment_id = local.oci_compartment_ocid
   display_name   = "edge-vcn"
   cidr_blocks    = [var.vcn_cidr]
   dns_label      = "edgevcn"
+
+  lifecycle {
+    replace_triggered_by = [terraform_data.vcn_cidr_marker]
+  }
 }
 
 resource "oci_core_internet_gateway" "edge" {
