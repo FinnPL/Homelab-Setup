@@ -51,8 +51,7 @@ locals {
   mesh_router_ip  = lookup(local.host_ips, "mesh_router", "10.10.1.90")
   mesh_router_mac = try(local.host_vm_macs.mesh_router, null)
 
-  # WireGuard endpoint of the cloud-edge — pulled from cloud-edge state so
-  # the mesh-router config follows whatever public IP OCI hands out.
+  # WireGuard endpoint of the cloud-edge
   mesh_wg_peer_endpoint = "${data.terraform_remote_state.cloud_edge.outputs.instance_public_ip}:51820"
 
   # Resolve MACs from 01-network outputs
