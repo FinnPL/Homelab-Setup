@@ -116,4 +116,11 @@ resource "oci_core_subnet" "public" {
   route_table_id             = oci_core_route_table.public.id
   security_list_ids          = [oci_core_security_list.edge.id]
   prohibit_public_ip_on_vnic = false
+
+  # Force destroy+recreate when the VCN changes. OCI's UpdateSubnet rejects a
+  # new cidr_block that's outside the VCN's current cidr_blocks, and Terraform
+  # would otherwise try the subnet update before the VCN update lands.
+  lifecycle {
+    replace_triggered_by = [oci_core_vcn.edge]
+  }
 }
