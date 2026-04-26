@@ -1,8 +1,5 @@
 # WireGuard subnet router for the cloud-edge and homelab relay path.
 
-# The provisioner below only runs at create time, so when the cloud-edge public
-# IP changes, the LXC's wg0.conf is stale until something replaces the LXC.
-# This sentinel forces replacement on any peer-endpoint change.
 resource "terraform_data" "mesh_wg_peer_endpoint_marker" {
   input = local.mesh_wg_peer_endpoint
 }
