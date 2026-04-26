@@ -1,7 +1,7 @@
 # WireGuard subnet router for the cloud-edge and homelab relay path.
 
 resource "terraform_data" "mesh_wg_peer_endpoint_marker" {
-  input = local.mesh_wg_peer_endpoint
+  triggers_replace = local.mesh_wg_peer_endpoint
 }
 
 resource "proxmox_virtual_environment_container" "mesh_router" {
