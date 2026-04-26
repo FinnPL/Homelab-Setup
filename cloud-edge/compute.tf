@@ -57,12 +57,15 @@ resource "oci_core_instance" "edge" {
     )
   }
 
-  # Prevent replacement after nixos-anywhere has installed NixOS
+  # Prevent replacement after nixos-anywhere has installed NixOS, but force
+  # replacement when the VCN changes — the compute's VNIC pins the old subnet
+  # and blocks subnet destroy with a 409-Conflict otherwise.
   lifecycle {
     ignore_changes = [
       availability_domain,
       source_details[0].source_id,
       metadata,
     ]
+    replace_triggered_by = [oci_core_vcn.edge]
   }
 }
