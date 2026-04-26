@@ -57,12 +57,12 @@ resource "oci_core_instance" "edge" {
     )
   }
 
-  # Prevent replacement after nixos-anywhere has installed NixOS
   lifecycle {
     ignore_changes = [
       availability_domain,
       source_details[0].source_id,
       metadata,
     ]
+    replace_triggered_by = [oci_core_vcn.edge]
   }
 }
