@@ -405,9 +405,7 @@ deploy_tailscale_credentials() {
     chmod 644 /etc/tailscale/subnet-cidr
   ' <<< "$subnet_cidr"
 
-  # tailscaled-autoconnect runs once at boot guarded by ConditionPathExists on
-  # the authkey file. On a fresh install the file doesn't exist yet, so the
-  # unit goes to skipped+exited state. Restarting it now picks up the keys.
+  # Restarting to pick up the authkey file.
   ssh "${ssh_opts[@]}" "root@$IP" 'systemctl restart tailscaled-autoconnect.service'
 
   echo "Tailscale credentials and subnet CIDR deployed."
