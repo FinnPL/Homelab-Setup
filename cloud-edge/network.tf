@@ -1,8 +1,16 @@
+resource "terraform_data" "vcn_cidr_marker" {
+  input = var.vcn_cidr
+}
+
 resource "oci_core_vcn" "edge" {
   compartment_id = local.oci_compartment_ocid
   display_name   = "edge-vcn"
   cidr_blocks    = [var.vcn_cidr]
   dns_label      = "edgevcn"
+
+  lifecycle {
+    replace_triggered_by = [terraform_data.vcn_cidr_marker]
+  }
 }
 
 resource "oci_core_internet_gateway" "edge" {
