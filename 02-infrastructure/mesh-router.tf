@@ -86,42 +86,26 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
     destination = "/tmp/wg0.conf"
   }
 
+  provisioner "file" {
+    content = templatefile("${path.module}/templates/wg-mesh-nat.service", {
+      cloud_vcn_cidr = var.cloud_vcn_cidr
+    })
+    destination = "/tmp/wg-mesh-nat.service"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "set -e",
-
-      # Enable IP forwarding
       "echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-mesh-router.conf",
       "sysctl -w net.ipv4.ip_forward=1",
-
-      # Install WireGuard + iptables (LXC base image is minimal)
       "apt-get update",
       "apt-get install -y wireguard-tools iptables",
-
-      # Write WireGuard config
       "mkdir -p /etc/wireguard",
       "mv /tmp/wg0.conf /etc/wireguard/wg0.conf",
       "chmod 600 /etc/wireguard/wg0.conf",
-
-      # Enable and start WireGuard
       "systemctl enable --now wg-quick@wg0",
-
-      # Masquerade traffic from the OCI VCN out to the LAN.
-      "cat > /etc/systemd/system/wg-mesh-nat.service <<'EOF'",
-      "[Unit]",
-      "Description=Masquerade OCI VCN traffic to homelab LAN",
-      "After=wg-quick@wg0.service network-online.target",
-      "Wants=wg-quick@wg0.service network-online.target",
-      "",
-      "[Service]",
-      "Type=oneshot",
-      "RemainAfterExit=true",
-      "ExecStart=/sbin/iptables -t nat -A POSTROUTING -s ${var.cloud_vcn_cidr} -o eth0 -j MASQUERADE",
-      "ExecStop=/sbin/iptables -t nat -D POSTROUTING -s ${var.cloud_vcn_cidr} -o eth0 -j MASQUERADE",
-      "",
-      "[Install]",
-      "WantedBy=multi-user.target",
-      "EOF",
+      "mv /tmp/wg-mesh-nat.service /etc/systemd/system/wg-mesh-nat.service",
+      "chmod 644 /etc/systemd/system/wg-mesh-nat.service",
       "systemctl daemon-reload",
       "systemctl enable --now wg-mesh-nat.service",
     ]
