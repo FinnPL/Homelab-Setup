@@ -277,11 +277,6 @@ variable "mesh_wg_peer_pubkey" {
   type        = string
 }
 
-variable "mesh_wg_peer_endpoint" {
-  description = "WireGuard endpoint of the cloud-edge node (IP:port)"
-  type        = string
-}
-
 variable "cloud_vcn_cidr" {
   description = "CIDR of the OCI cloud-edge VCN (routed through WG tunnel)"
   type        = string

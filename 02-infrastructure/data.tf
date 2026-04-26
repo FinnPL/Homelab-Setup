@@ -8,6 +8,16 @@ data "terraform_remote_state" "network" {
   }
 }
 
+data "terraform_remote_state" "cloud_edge" {
+  backend = "s3"
+
+  config = {
+    bucket = "finnpl-homelab-tfstate-1766068376"
+    key    = "cloud-edge/terraform.tfstate"
+    region = "eu-central-1"
+  }
+}
+
 locals {
   # Network configuration from 01-network
   athena_network = data.terraform_remote_state.network.outputs.athena_network
@@ -40,6 +50,10 @@ locals {
   # Mesh router
   mesh_router_ip  = lookup(local.host_ips, "mesh_router", "10.10.1.90")
   mesh_router_mac = try(local.host_vm_macs.mesh_router, null)
+
+  # WireGuard endpoint of the cloud-edge — pulled from cloud-edge state so
+  # the mesh-router config follows whatever public IP OCI hands out.
+  mesh_wg_peer_endpoint = "${data.terraform_remote_state.cloud_edge.outputs.instance_public_ip}:51820"
 
   # Resolve MACs from 01-network outputs
   talos_controlplane_mac = try(local.host_vm_macs.talos_controlplane, null)

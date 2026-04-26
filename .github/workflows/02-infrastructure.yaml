@@ -55,7 +55,6 @@ jobs:
       TF_VAR_mesh_router_root_password: ${{ secrets.MESH_ROUTER_ROOT_PASSWORD }}
       TF_VAR_mesh_wg_private_key: ${{ secrets.MESH_ROUTER_WG_PRIVATE_KEY }}
       TF_VAR_mesh_wg_peer_pubkey: ${{ vars.CLOUD_WG_PUBKEY }}
-      TF_VAR_mesh_wg_peer_endpoint: ${{ vars.CLOUD_WG_ENDPOINT }}
 
     steps:
       - name: Checkout Code

@@ -1,5 +1,12 @@
 # WireGuard subnet router for the cloud-edge and homelab relay path.
 
+# The provisioner below only runs at create time, so when the cloud-edge public
+# IP changes, the LXC's wg0.conf is stale until something replaces the LXC.
+# This sentinel forces replacement on any peer-endpoint change.
+resource "terraform_data" "mesh_wg_peer_endpoint_marker" {
+  input = local.mesh_wg_peer_endpoint
+}
+
 resource "proxmox_virtual_environment_container" "mesh_router" {
   description = "WireGuard subnet router for clustermesh"
 
@@ -68,6 +75,10 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
 
   tags = sort(["terraform", "wireguard", "clustermesh"])
 
+  lifecycle {
+    replace_triggered_by = [terraform_data.mesh_wg_peer_endpoint_marker]
+  }
+
   connection {
     type        = "ssh"
     user        = "root"
@@ -80,7 +91,7 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
     content = templatefile("${path.module}/templates/mesh-wg0.conf", {
       private_key    = var.mesh_wg_private_key
       peer_pubkey    = var.mesh_wg_peer_pubkey
-      peer_endpoint  = var.mesh_wg_peer_endpoint
+      peer_endpoint  = local.mesh_wg_peer_endpoint
       cloud_vcn_cidr = var.cloud_vcn_cidr
     })
     destination = "/tmp/wg0.conf"
