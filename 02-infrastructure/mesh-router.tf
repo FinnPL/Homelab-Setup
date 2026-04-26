@@ -1,6 +1,4 @@
-# WireGuard subnet router for Cilium clustermesh between homelab-k8s and cloud-edge.
-# Forwards 10.75.1.0/24 traffic through a WG tunnel to the OCI node (public IP).
-# No SNAT — VXLAN outer source IPs are preserved end-to-end.
+# WireGuard subnet router for the cloud-edge and homelab relay path.
 
 resource "proxmox_virtual_environment_container" "mesh_router" {
   description = "WireGuard subnet router for clustermesh"
@@ -96,9 +94,9 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
       "echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-mesh-router.conf",
       "sysctl -w net.ipv4.ip_forward=1",
 
-      # Install WireGuard
+      # Install WireGuard + iptables (LXC base image is minimal)
       "apt-get update",
-      "apt-get install -y wireguard-tools",
+      "apt-get install -y wireguard-tools iptables",
 
       # Write WireGuard config
       "mkdir -p /etc/wireguard",
@@ -107,6 +105,25 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
 
       # Enable and start WireGuard
       "systemctl enable --now wg-quick@wg0",
+
+      # Masquerade traffic from the OCI VCN out to the LAN.
+      "cat > /etc/systemd/system/wg-mesh-nat.service <<'EOF'",
+      "[Unit]",
+      "Description=Masquerade OCI VCN traffic to homelab LAN",
+      "After=wg-quick@wg0.service network-online.target",
+      "Wants=wg-quick@wg0.service network-online.target",
+      "",
+      "[Service]",
+      "Type=oneshot",
+      "RemainAfterExit=true",
+      "ExecStart=/sbin/iptables -t nat -A POSTROUTING -s ${var.cloud_vcn_cidr} -o eth0 -j MASQUERADE",
+      "ExecStop=/sbin/iptables -t nat -D POSTROUTING -s ${var.cloud_vcn_cidr} -o eth0 -j MASQUERADE",
+      "",
+      "[Install]",
+      "WantedBy=multi-user.target",
+      "EOF",
+      "systemctl daemon-reload",
+      "systemctl enable --now wg-mesh-nat.service",
     ]
   }
 }

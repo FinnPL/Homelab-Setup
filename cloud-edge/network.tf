@@ -36,7 +36,7 @@ resource "oci_core_security_list" "edge" {
     stateless   = false
   }
 
-  # Ingress: HTTPS (443)
+  # Ingress: HTTPS (443) — HAProxy TLS passthrough
   ingress_security_rules {
     protocol  = "6" # TCP
     source    = "0.0.0.0/0"
@@ -45,18 +45,6 @@ resource "oci_core_security_list" "edge" {
     tcp_options {
       min = 443
       max = 443
-    }
-  }
-
-  # Ingress: HTTP (80) for ACME challenges
-  ingress_security_rules {
-    protocol  = "6" # TCP
-    source    = "0.0.0.0/0"
-    stateless = false
-
-    tcp_options {
-      min = 80
-      max = 80
     }
   }
 
@@ -72,7 +60,7 @@ resource "oci_core_security_list" "edge" {
     }
   }
 
-  # Ingress: WireGuard (UDP 51820) for clustermesh tunnel
+  # Ingress: WireGuard tunnel to homelab mesh-router (UDP 51820)
   ingress_security_rules {
     protocol  = "17" # UDP
     source    = "0.0.0.0/0"
@@ -93,30 +81,6 @@ resource "oci_core_security_list" "edge" {
     tcp_options {
       min = 22
       max = 22
-    }
-  }
-
-  # Ingress: Kubernetes NodePort range (OCI LB -> node backends)
-  ingress_security_rules {
-    protocol  = "6" # TCP
-    source    = var.public_subnet_cidr
-    stateless = false
-
-    tcp_options {
-      min = 30000
-      max = 32767
-    }
-  }
-
-  # Ingress: OCI LB health checks (from VCN CIDR)
-  ingress_security_rules {
-    protocol  = "6" # TCP
-    source    = var.vcn_cidr
-    stateless = false
-
-    tcp_options {
-      min = 10256
-      max = 10256
     }
   }
 
@@ -152,4 +116,11 @@ resource "oci_core_subnet" "public" {
   route_table_id             = oci_core_route_table.public.id
   security_list_ids          = [oci_core_security_list.edge.id]
   prohibit_public_ip_on_vnic = false
+
+  # Force destroy+recreate when the VCN changes. OCI's UpdateSubnet rejects a
+  # new cidr_block that's outside the VCN's current cidr_blocks, and Terraform
+  # would otherwise try the subnet update before the VCN update lands.
+  lifecycle {
+    replace_triggered_by = [oci_core_vcn.edge]
+  }
 }

@@ -341,7 +341,7 @@ deploy_wireguard_keys() {
     chmod 644 /etc/wireguard/peer-pubkey
   ' <<< "$WG_PEER_PUBKEY"
 
-  ssh "${ssh_opts[@]}" "root@$IP" 'systemctl restart clustermesh-wg || true'
+  ssh "${ssh_opts[@]}" "root@$IP" 'systemctl restart homelab-wg || true'
 
   echo "WireGuard keys deployed and service triggered."
 }
@@ -452,79 +452,6 @@ wait_for_tailscale() {
   error "Tailscale did not connect after $attempts attempts"
 }
 
-wait_for_k3s() {
-  require_var IP
-
-  local ssh_opts=(
-    -i ~/.ssh/edge_key
-    -o BatchMode=yes
-    -o ConnectTimeout=10
-    -o UserKnownHostsFile=~/.ssh/known_hosts
-    -o StrictHostKeyChecking=yes
-  )
-  local attempts="${K3S_WAIT_ATTEMPTS:-30}"
-  local delay_seconds="${K3S_WAIT_DELAY_SECONDS:-10}"
-
-  echo "Waiting for K3s API to become available..."
-
-  local i
-  for ((i = 1; i <= attempts; i++)); do
-    if ssh "${ssh_opts[@]}" "root@$IP" 'kubectl --kubeconfig /etc/rancher/k3s/k3s.yaml get nodes --no-headers 2>/dev/null' 2>/dev/null; then
-      echo "K3s API is ready."
-      return 0
-    fi
-
-    if [ "$i" -lt "$attempts" ]; then
-      echo "K3s not ready yet (attempt $i/$attempts). Retrying in ${delay_seconds}s..."
-      sleep "$delay_seconds"
-    fi
-  done
-
-  error "K3s API did not become available after $attempts attempts"
-}
-
-fetch_kubeconfig() {
-  require_var IP
-
-  local ssh_opts=(
-    -i ~/.ssh/edge_key
-    -o BatchMode=yes
-    -o ConnectTimeout=10
-    -o UserKnownHostsFile=~/.ssh/known_hosts
-    -o StrictHostKeyChecking=yes
-  )
-  local output_path="${KUBECONFIG_OUTPUT:-$CLOUD_EDGE_DIR/k3s-services/kubeconfig.yaml}"
-
-  echo "Fetching K3s kubeconfig from edge node..."
-
-  mkdir -p "$(dirname "$output_path")"
-  scp "${ssh_opts[@]}" "root@$IP:/etc/rancher/k3s/k3s.yaml" "$output_path"
-  chmod 600 "$output_path"
-
-  echo "kubeconfig_path=$output_path" >> "$GITHUB_OUTPUT"
-  echo "K3s kubeconfig saved to $output_path"
-}
-
-setup_k3s_tunnel() {
-  require_var IP
-
-  local ssh_opts=(
-    -i ~/.ssh/edge_key
-    -o BatchMode=yes
-    -o ConnectTimeout=10
-    -o UserKnownHostsFile=~/.ssh/known_hosts
-    -o StrictHostKeyChecking=yes
-    -o ExitOnForwardFailure=yes
-  )
-
-  echo "Establishing SSH tunnel to K3s API (localhost:6443 -> $IP:6443)..."
-
-  # Forward local port 6443 to the edge node's K3s API.
-  ssh "${ssh_opts[@]}" -fN -L 6443:127.0.0.1:6443 "root@$IP"
-
-  echo "SSH tunnel established. K3s API accessible at https://127.0.0.1:6443"
-}
-
 usage() {
   cat << 'EOF'
 Usage: cloud-edge-workflow.sh <command>
@@ -537,10 +464,9 @@ Commands:
   write-ssh-keys-nix
   refresh-ssh-after-install
   deploy-tailscale-credentials
+  deploy-wireguard-keys
   wait-for-tailscale
-  wait-for-k3s
-  fetch-kubeconfig
-  setup-k3s-tunnel
+  wait-for-wireguard
 EOF
 }
 
@@ -583,15 +509,6 @@ main() {
       ;;
     wait-for-wireguard)
       wait_for_wireguard
-      ;;
-    wait-for-k3s)
-      wait_for_k3s
-      ;;
-    fetch-kubeconfig)
-      fetch_kubeconfig
-      ;;
-    setup-k3s-tunnel)
-      setup_k3s_tunnel
       ;;
     *)
       usage

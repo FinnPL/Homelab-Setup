@@ -7,7 +7,7 @@
     ./ssh-keys.nix
     ./tailscale.nix
     ./wireguard.nix
-    ./k3s.nix
+    ./haproxy.nix
   ];
 
   boot.loader = {
@@ -24,26 +24,15 @@
     firewall = {
       enable = true;
       allowedTCPPorts = [
-        22    # SSH
-        80    # HTTP (ACME challenges)
-        443   # HTTPS
-        4240  # Cilium health checks
-        10256 # Cilium kube-proxy-replacement healthz (OCI NLB backend health check)
+        22  # SSH
+        443 # HTTPS (HAProxy TLS passthrough)
       ];
       allowedUDPPorts = [
         41641 # Tailscale WireGuard
-        8472  # Cilium VXLAN overlay
       ];
-      # Tailscale and Cilium interfaces trusted.
       trustedInterfaces = [
         "tailscale0"
-        "cilium_host"
-        "cilium_net"
-        "cilium_vxlan"
       ];
-      extraInputRules = ''
-        iifname "lxc*" accept
-      '';
       checkReversePath = "loose";
     };
   };

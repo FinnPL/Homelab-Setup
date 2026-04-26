@@ -5,9 +5,9 @@
 
   # CI writes WG private key to /etc/wireguard/private.key
   # CI writes LXC peer pubkey to /etc/wireguard/peer-pubkey
-  # CI then runs: systemctl restart clustermesh-wg
-  systemd.services.clustermesh-wg = {
-    description = "WireGuard tunnel for clustermesh";
+  # CI then runs: systemctl restart homelab-wg
+  systemd.services.homelab-wg = {
+    description = "WireGuard tunnel to the homelab mesh-router";
     after = [ "network-online.target" ];
     wants = [ "network-online.target" ];
     serviceConfig = {
@@ -47,13 +47,13 @@
         ip rule add to 10.10.1.0/24 lookup 51 priority 5260
       fi
 
-      echo "Clustermesh WG tunnel up: 10.10.1.0/24 via wg0 src $VCN_IP"
+      echo "Homelab WG tunnel up: 10.10.1.0/24 via wg0 src $VCN_IP"
     '';
   };
 
   # On boot, start the WG service if key files already exist (persisted from prior CI deploy).
-  systemd.paths.clustermesh-wg = {
-    description = "Start clustermesh WG tunnel when key files exist";
+  systemd.paths.homelab-wg = {
+    description = "Start homelab WG tunnel when key files exist";
     wantedBy = [ "multi-user.target" ];
     pathConfig = {
       # Triggers when the file exists at boot or appears later.
