@@ -405,6 +405,9 @@ deploy_tailscale_credentials() {
     chmod 644 /etc/tailscale/subnet-cidr
   ' <<< "$subnet_cidr"
 
+  # Restarting to pick up the authkey file.
+  ssh "${ssh_opts[@]}" "root@$IP" 'systemctl restart tailscaled-autoconnect.service'
+
   echo "Tailscale credentials and subnet CIDR deployed."
 }
 
