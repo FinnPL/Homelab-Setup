@@ -22,7 +22,7 @@ authentik:
   server:
     env:
       - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
-        value: "60"
+        value: "0"
       - name: AUTHENTIK_POSTGRESQL__DISABLE_SERVER_SIDE_CURSORS
         value: "true"
       - name: AUTHENTIK_SECRET_KEY
@@ -89,7 +89,7 @@ authentik:
   worker:
     env:
       - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
-        value: "60"
+        value: "0"
       - name: AUTHENTIK_POSTGRESQL__DISABLE_SERVER_SIDE_CURSORS
         value: "true"
       - name: AUTHENTIK_SECRET_KEY

@@ -12,6 +12,11 @@ kube-prometheus-stack:
   kubeProxy:
     enabled: false
 
+  # This reads /proc/sys/kernel/hung_task_detect_count that Talos current kernel doesn't expose. 
+  prometheus-node-exporter:
+    extraArgs:
+      - --no-collector.kernel_hung
+
   prometheus:
     prometheusSpec:
       externalUrl: https://prometheus.lippok.dev
@@ -131,7 +136,16 @@ kube-prometheus-stack:
         access: proxy
         isDefault: false
     persistence:
-      enabled: false 
+      enabled: false
+    # The kiwigrid k8s-sidecar containers (sc-dashboard, sc-datasources)
+    # log "Loading incluster config..." at INFO every poll cycle; the
+    # only useful output from them is connection failures, which still
+    # surface at WARN+. Silences ~0.07 lines/sec per pod.
+    sidecar:
+      dashboards:
+        logLevel: WARN
+      datasources:
+        logLevel: WARN
     envValueFrom:
       DB_HOST:
         secretKeyRef:

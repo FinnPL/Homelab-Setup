@@ -159,6 +159,8 @@
           min_pool_size: "5"
           reserve_pool_size: "5"
           reserve_pool_timeout: "5"
+          log_connections: "0"
+          log_disconnections: "0"
   patches:
     - type: FromCompositeFieldPath
       fromFieldPath: metadata.name
