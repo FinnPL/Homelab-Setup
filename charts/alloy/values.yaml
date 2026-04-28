@@ -12,6 +12,9 @@ alloy-agent:
     clustering:
       enabled: false
 
+    extraArgs:
+      - --disable-reporting
+
     storagePath: /var/lib/alloy/data
 
     mounts:
@@ -211,6 +214,10 @@ alloy-receiver:
   alloy:
     clustering:
       enabled: false
+
+    # Same as alloy-agent — disable usage reporting to stats.grafana.org.
+    extraArgs:
+      - --disable-reporting
 
     configMap:
       content: |
