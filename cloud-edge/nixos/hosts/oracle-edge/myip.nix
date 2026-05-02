@@ -42,8 +42,8 @@
     script = ''
       podman network exists myip-net || podman network create \
         --driver bridge \
-        --subnet 10.88.0.0/24 \
-        --gateway 10.88.0.1 \
+        --subnet 10.89.0.0/24 \
+        --gateway 10.89.0.1 \
         myip-net
     '';
   };
