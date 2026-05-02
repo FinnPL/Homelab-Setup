@@ -3,6 +3,16 @@
 #   *.relay.lippok.dev:   SNI passthrough to homelab (E2E TLS preserved)
 #   *.cloud.lippok.dev:   terminate locally, host-route to a cloud-edge backend
 {
+  # Wait for acme
+  systemd.services.haproxy = {
+    after = [ "acme-finished-cloud.lippok.dev.target" ];
+    wants = [ "acme-finished-cloud.lippok.dev.target" ];
+    serviceConfig = {
+      Restart = "on-failure";
+      RestartSec = "10s";
+    };
+  };
+
   services.haproxy = {
     enable = true;
     config = ''
