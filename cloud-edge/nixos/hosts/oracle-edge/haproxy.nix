@@ -66,11 +66,15 @@
 
         use_backend myip if { hdr(host) -i dns-check.cloud.lippok.dev }
 
-        http-request deny status 404
+        default_backend cloud_unknown
 
       backend myip
         mode http
         server myip 127.0.0.1:18966 check inter 10s
+
+      backend cloud_unknown
+        mode http
+        http-request deny status 404
     '';
   };
 }
