@@ -7,10 +7,6 @@
   systemd.services.haproxy = {
     after = [ "acme-finished-cloud.lippok.dev.target" ];
     wants = [ "acme-finished-cloud.lippok.dev.target" ];
-    serviceConfig = {
-      Restart = "on-failure";
-      RestartSec = "10s";
-    };
   };
 
   services.haproxy = {
