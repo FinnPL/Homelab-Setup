@@ -14,6 +14,9 @@
       image = "jason5ng32/myip:v6.1.0";
       autoStart = true;
       ports = [ "127.0.0.1:18966:18966" ];
+      environment = {
+        ALLOWED_DOMAINS = "dns-check.cloud.lippok.dev";
+      };
       extraOptions = [
         "--network=myip-net"
         "--read-only"
