@@ -278,6 +278,16 @@ write_ssh_keys_nix() {
 EOF
 }
 
+write_acme_email_nix() {
+  require_var ACME_EMAIL
+
+  cat > "$CLOUD_EDGE_DIR/nixos/hosts/oracle-edge/acme-email.nix" << EOF
+{
+  security.acme.defaults.email = "$ACME_EMAIL";
+}
+EOF
+}
+
 refresh_ssh_after_install() {
   require_var IP
 
@@ -377,6 +387,37 @@ wait_for_wireguard() {
   error "WireGuard tunnel did not come up after $attempts attempts"
 }
 
+deploy_cloudflare_credentials() {
+  require_var IP
+  require_var CLOUDFLARE_API_TOKEN
+
+  local ssh_opts=(
+    -i ~/.ssh/edge_key
+    -o BatchMode=yes
+    -o ConnectTimeout=10
+    -o UserKnownHostsFile=~/.ssh/known_hosts
+    -o StrictHostKeyChecking=yes
+  )
+
+  echo "Deploying Cloudflare credentials for ACME DNS-01..."
+  ssh "${ssh_opts[@]}" "root@$IP" '
+    install -d -m 0700 /etc/cloudflare
+    umask 077
+    cat > /etc/cloudflare/credentials
+    chmod 600 /etc/cloudflare/credentials
+  ' <<EOF
+CLOUDFLARE_DNS_API_TOKEN=$CLOUDFLARE_API_TOKEN
+EOF
+
+  # Kick acme to issue/renew now that credentials exist. The unit is a oneshot
+  # backed by a daily timer; starting it manually is safe and idempotent.
+  ssh "${ssh_opts[@]}" "root@$IP" '
+    systemctl start acme-cloud.lippok.dev.service || true
+  '
+
+  echo "Cloudflare credentials deployed and acme issuance triggered."
+}
+
 deploy_tailscale_credentials() {
   require_var IP
   require_var TAILSCALE_OAUTH_SECRET
@@ -465,7 +506,9 @@ Commands:
   setup-ssh
   detect-nixos-state
   write-ssh-keys-nix
+  write-acme-email-nix
   refresh-ssh-after-install
+  deploy-cloudflare-credentials
   deploy-tailscale-credentials
   deploy-wireguard-keys
   wait-for-tailscale
@@ -498,8 +541,14 @@ main() {
     write-ssh-keys-nix)
       write_ssh_keys_nix
       ;;
+    write-acme-email-nix)
+      write_acme_email_nix
+      ;;
     refresh-ssh-after-install)
       refresh_ssh_after_install
+      ;;
+    deploy-cloudflare-credentials)
+      deploy_cloudflare_credentials
       ;;
     deploy-tailscale-credentials)
       deploy_tailscale_credentials
