@@ -15,3 +15,23 @@ resource "cloudflare_dns_record" "relay_wildcard" {
   content = oci_core_instance.edge.public_ip
   proxied = false
 }
+
+# Stable public name for the cloud-edge IP.
+resource "cloudflare_dns_record" "cloud_oci" {
+  zone_id = data.cloudflare_zone.main.id
+  name    = "oci.cloud"
+  type    = "A"
+  ttl     = 300
+  content = oci_core_instance.edge.public_ip
+  proxied = false
+}
+
+# Devices using Blocky see the customDNS override others will fail by resolving to this IP.
+resource "cloudflare_dns_record" "cloud_dns_check_blackhole" {
+  zone_id = data.cloudflare_zone.main.id
+  name    = "dns-check.cloud"
+  type    = "A"
+  ttl     = 300
+  content = "192.0.2.1"
+  proxied = false
+}
