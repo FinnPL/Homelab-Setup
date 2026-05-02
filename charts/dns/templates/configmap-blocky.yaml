@@ -10,6 +10,13 @@ data:
         default:
           - 127.0.0.1:5335
 
+    customDNS:
+      customTTL: 1h
+      mapping:
+        # Resolve only via Blocky as Public DNS points this name at 192.0.2.1
+        # Serves as simple "Am I using Blocky?" check.
+        dns-check.cloud.lippok.dev: oci.cloud.lippok.dev
+
     log:
       level: warn
       format: text

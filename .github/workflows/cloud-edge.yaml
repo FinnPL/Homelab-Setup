@@ -277,6 +277,11 @@ jobs:
           OCI_SSH_PUBLIC_KEY: ${{ vars.OCI_SSH_PUBLIC_KEY }}
         run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh write-ssh-keys-nix
 
+      - name: Write ACME email for NixOS
+        env:
+          ACME_EMAIL: ${{ vars.ACME_EMAIL }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh write-acme-email-nix
+
       # First-time install (nixos-anywhere) when Terraform proved a new VM
       - name: Guard install when target already has NixOS
         if: |
@@ -386,6 +391,14 @@ jobs:
           WG_PEER_PUBKEY: ${{ secrets.MESH_ROUTER_WG_PUBKEY }}
           OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
         run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh deploy-wireguard-keys
+
+      # Cloudflare API token for acme DNS-01 wildcard cert
+      - name: Deploy Cloudflare credentials
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh deploy-cloudflare-credentials
 
       # Config update (nixos-rebuild)
       - name: "Update NixOS (nixos-rebuild)"

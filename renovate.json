@@ -46,6 +46,16 @@
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+nix\\s+run\\s+github:[^/\\s]+/[^/\\s]+/(?<currentValue>[^\\s#]+)(?:#[^\\s]+)?",
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s+packageName=(?<packageName>\\S+)\\s+ref=(?<currentValue>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+nix\\s+run\\s+github:[^/\\s]+/[^/\\s]+/(?<currentDigest>[0-9a-f]{40})#[^\\s]+"
       ]
+    },
+    {
+      "customType": "regex",
+      "description": "Track Docker image tag+digest in NixOS modules (image = \"name:tag@sha256:...\")",
+      "managerFilePatterns": [
+        "/\\.nix$/"
+      ],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+\\w+\\s*=\\s*\"[^\"]+:(?<currentValue>[^@\"]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\";?"
+      ]
     }
   ],
   "packageRules": [
@@ -120,6 +130,16 @@
         "dependencies",
         "infrastructure-critical"
       ]
+    },
+    {
+      "description": "Pin digests for Docker images referenced from NixOS modules",
+      "matchFileNames": [
+        "**/*.nix"
+      ],
+      "matchDatasources": [
+        "docker"
+      ],
+      "pinDigests": true
     }
   ]
 }

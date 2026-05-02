@@ -8,6 +8,10 @@
     ./tailscale.nix
     ./wireguard.nix
     ./haproxy.nix
+    ./acme.nix
+    ./acme-email.nix
+    ./myip.nix
+    ./container-egress.nix
   ];
 
   boot.loader = {
