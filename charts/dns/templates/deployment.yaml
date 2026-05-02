@@ -14,6 +14,8 @@ spec:
     metadata:
       labels:
         app: dns
+      annotations:
+        checksum/blocky-config: {{ include (print $.Template.BasePath "/configmap-blocky.yaml") . | sha256sum }}
     spec:
 
       # Prefer worker nodes but tolerate control-plane as a fallback

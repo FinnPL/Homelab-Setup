@@ -12,10 +12,11 @@ data:
 
     customDNS:
       customTTL: 1h
-      mapping:
-        # Resolve only via Blocky as Public DNS points this name at 192.0.2.1
-        # Serves as simple "Am I using Blocky?" check.
-        dns-check.cloud.lippok.dev: oci.cloud.lippok.dev
+      # Resolve only via Blocky as Public DNS points this name at 192.0.2.1
+      # Serves as simple "Am I using Blocky?" check.
+      zone: |
+        $TTL 3600
+        dns-check.cloud.lippok.dev. IN CNAME oci.cloud.lippok.dev.
 
     log:
       level: warn
