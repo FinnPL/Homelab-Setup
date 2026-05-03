@@ -38,11 +38,14 @@ Terraform layers with S3-backed state, deployed via GitHub Actions.
 Docker Compose files for the Minerva site.
 
 ### Cloud Edge <sub><sup>via `cloud-edge.yaml`</sup></sub>
+This Site utilizes HAProxy for SNI routing, WireGuard for secure homelab tunneling, and Tailscale for management.
 
 | Layer | Scope | What it configures |
 |:------|:------|:-------------------|
 | `cloud-edge/*.tf` | OCI instance, VCN, security list | Oracle Always Free ARM instance, edge subnet/firewall, Cloudflare `*.cloud` and `*.relay` records |
-| `cloud-edge/nixos/` | NixOS flake, deployed via nixos-anywhere | NixOS configuration for the edge node |
+| `cloud-edge/nixos/` | NixOS flake, deployed via nixos-anywhere | Full host configuration for the oracle-edge node |
+
+
 
 ### CI/CD Pipeline
 
@@ -78,8 +81,17 @@ Cloudflare manages the `lippok.dev` zone. A wildcard and root A record are creat
 | Subdomain | DNS | TLS terminated at | Use case |
 |:----------|:------|:-------------------|:---------|
 | `*.lippok.dev` | Local LB IP | Local Gateway | Local-only services |
-| `*.cloud.lippok.dev` | Oracle IP | Cloud Gateway | Cloud-hosted services |
-| `*.relay.lippok.dev` | Oracle IP | Local Gateway (TLSRoute passthrough) | Proxied services (DoH) |
+| `*.cloud.lippok.dev` | Oracle IP | HAProxy | Cloud-hosted services |
+| `*.relay.lippok.dev` | Oracle IP | HAProxy TLS passthrough to Local | Proxied services |
+
+### DoH Relay
+
+1. **Entry:** Client (DoH) to `dns.relay.lippok.dev` via Oracle HAProxy.
+2. **Tunnel:** TLS relay over WireGuard to HomeLab (E2EE)
+3. **Homelab:** Terminates TLS and resolves through Blocky (filtering) and then Unbound (DNSSEC).
+4. **Upstream:** ODoH-style via VPN + DoT to 1.1.1.1.
+
+**Validation:** `dns-check.cloud.lippok.dev` only resolves to `oci.cloud.lippok.dev` behind Blocky.
 
 ---
 
