@@ -25,12 +25,15 @@
       environmentFiles = [ "/etc/myip/secrets.env" ];
       extraOptions = [
         "--network=myip-net"
+        "--dns=1.1.1.1"
+        "--dns=1.0.0.1"
         "--read-only"
         "--tmpfs=/tmp:rw,size=64m,mode=1777"
+        "--tmpfs=/app/common/maxmind-db:rw,size=256m"
         "--cap-drop=ALL"
         "--security-opt=no-new-privileges"
-        "--memory=384m"
-        "--memory-swap=384m"
+        "--memory=768m"
+        "--memory-swap=768m"
         "--pids-limit=128"
         "--cpus=0.5"
       ];
@@ -53,6 +56,7 @@
         --driver bridge \
         --subnet 10.89.0.0/24 \
         --gateway 10.89.0.1 \
+        --disable-dns \
         myip-net
     '';
   };
