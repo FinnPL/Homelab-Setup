@@ -174,3 +174,49 @@ Terraform seeds the initial secrets (Authentik, ArgoCD OIDC, Tailscale OAuth, CN
 ## ArgoCD GitOps
 
 Deployed via Helm in `03-services`. All application workloads beyond the platform services are managed through ArgoCD's **App of Apps** pattern. A root Application watches the `apps/` directory in this repo and automatically syncs each application definition to the cluster.
+
+---
+
+## Deployed Services
+
+All workloads run in the Talos cluster and are managed via ArgoCD from `apps/`.
+
+### Platform
+
+| Service | Role |
+|:--------|:-----|
+| **ArgoCD** | GitOps controller: self-managed via App of Apps |
+| **CloudNative-PG** | PostgreSQL operator; provides databases for Services |
+| **Crossplane** | Provides DBaaS: provisions Postgres databases, PgBouncer and credentials. |
+| **Local Path Provisioner** | Node-local dynamic storage for DBs |
+
+### Observability
+
+A unified OTel-based stack for metrics, logs, and alerting.
+
+| Service | Role |
+|:--------|:-----|
+| **kube-prometheus-stack** | Prometheus + Alertmanager + Grafana for cluster-wide metrics and dashboards |
+| **Loki** | Log aggregation backend (single-binary, filesystem-backed) |
+| **Alloy** | Telemetry collection agent deployed as both DaemonSet (node logs/metrics) and StatefulSet (syslog ingestion from Talos, Proxmox, UniFi) |
+
+### Authentication
+
+| Service | Role |
+|:--------|:-----|
+| **Authentik** | Self-hosted identity provider and SSO; backed by CNPG PostgreSQL |
+
+### Networking & DNS
+
+| Service | Role |
+|:--------|:-----|
+| **Tailscale Operator** | Kubernetes-native Tailscale integration for secure mesh access |
+| **Blocky + Unbound** | Internal DNS stack: Blocky for filtering/caching, Unbound as DNSSEC-validating resolver with DoT upstream |
+| **Gateway External Routes** | Nginx reverse-proxy deployed as `HTTPRoute` targets to bridge non-Kubernetes hosts (NAS, Proxmox, router) into the cluster ingress |
+
+### Applications
+
+| Service | Role |
+|:--------|:-----|
+| **Gatus** | Endpoint health monitoring and status page; Discord alerting, PostgreSQL-backed history |
+| **IT-Tools** | Self-hosted suite of developer and network utilities |
