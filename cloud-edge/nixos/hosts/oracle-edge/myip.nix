@@ -1,6 +1,11 @@
 { pkgs, ... }:
 
 {
+  systemd.tmpfiles.rules = [
+    "d /etc/myip 0700 root root -"
+    "f /etc/myip/secrets.env 0600 root root -"
+  ];
+
   virtualisation.podman = {
     enable = true;
     dockerCompat = false;
@@ -17,6 +22,7 @@
       environment = {
         ALLOWED_DOMAINS = "dns-check.cloud.lippok.dev";
       };
+      environmentFiles = [ "/etc/myip/secrets.env" ];
       extraOptions = [
         "--network=myip-net"
         "--read-only"

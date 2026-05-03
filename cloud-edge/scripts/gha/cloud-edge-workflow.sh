@@ -387,6 +387,39 @@ wait_for_wireguard() {
   error "WireGuard tunnel did not come up after $attempts attempts"
 }
 
+deploy_myip_secrets() {
+  require_var IP
+
+  local ssh_opts=(
+    -i ~/.ssh/edge_key
+    -o BatchMode=yes
+    -o ConnectTimeout=10
+    -o UserKnownHostsFile=~/.ssh/known_hosts
+    -o StrictHostKeyChecking=yes
+  )
+
+  echo "Deploying MyIP API key env file..."
+  ssh "${ssh_opts[@]}" "root@$IP" '
+    install -d -m 0700 /etc/myip
+    umask 077
+    cat > /etc/myip/secrets.env
+    chmod 600 /etc/myip/secrets.env
+  ' <<EOF
+IPINFO_API_TOKEN=${IPINFO_API_TOKEN:-}
+CLOUDFLARE_API=${MYIP_CLOUDFLARE_API:-}
+IPAPIIS_API_KEY=${IPAPIIS_API_KEY:-}
+IP2LOCATION_API_KEY=${IP2LOCATION_API_KEY:-}
+IPCHECKING_API_KEY=${IPCHECKING_API_KEY:-}
+GOOGLE_MAP_API_KEY=${GOOGLE_MAP_API_KEY:-}
+MAXMIND_ACCOUNT_ID=${MAXMIND_ACCOUNT_ID:-}
+MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY:-}
+MAXMIND_AUTO_UPDATE=${MAXMIND_AUTO_UPDATE:-false}
+EOF
+
+  ssh "${ssh_opts[@]}" "root@$IP" 'systemctl restart podman-myip.service || true'
+  echo "MyIP secrets deployed and container restarted."
+}
+
 deploy_cloudflare_credentials() {
   require_var IP
   require_var CLOUDFLARE_API_TOKEN
@@ -509,6 +542,7 @@ Commands:
   write-acme-email-nix
   refresh-ssh-after-install
   deploy-cloudflare-credentials
+  deploy-myip-secrets
   deploy-tailscale-credentials
   deploy-wireguard-keys
   wait-for-tailscale
@@ -549,6 +583,9 @@ main() {
       ;;
     deploy-cloudflare-credentials)
       deploy_cloudflare_credentials
+      ;;
+    deploy-myip-secrets)
+      deploy_myip_secrets
       ;;
     deploy-tailscale-credentials)
       deploy_tailscale_credentials
