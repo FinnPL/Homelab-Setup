@@ -105,7 +105,6 @@ Provisions VMs and containers on a Proxmox host (Intel NUC) and bootstraps a Tal
 - **Image:** Built via Talos Image Factory with `qemu-guest-agent` extension
 - **CNI:** Set to `none` at bootstrap (Cilium installed in `03-services`)
 - **kube-proxy:** Disabled (Cilium takes over)
-- **KubePrism:** Enabled on port 7445 for HA API server discovery
 
 | Node Role | Count | Platform |
 |:----------|:------|:---------|
