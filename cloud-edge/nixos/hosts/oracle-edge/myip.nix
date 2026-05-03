@@ -28,7 +28,7 @@
         "--dns=1.1.1.1"
         "--dns=1.0.0.1"
         "--read-only"
-        "--tmpfs=/tmp:rw,size=64m,mode=1777"
+        "--tmpfs=/tmp:rw,size=256m,mode=1777"
         "--tmpfs=/app/common/maxmind-db:rw,size=256m"
         "--cap-drop=ALL"
         "--security-opt=no-new-privileges"
