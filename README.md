@@ -5,6 +5,7 @@
 [![Orchestrator](https://github.com/FinnPL/Homelab-Setup/actions/workflows/main-deploy.yaml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/main-deploy.yaml)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat&logo=github-actions&logoColor=white)
 ![Terraform](https://img.shields.io/badge/Terraform-623CE4?style=flat&logo=terraform&logoColor=white)
+![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=flat&logo=ansible&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=flat&logo=kubernetes&logoColor=white)
 ![Helm](https://img.shields.io/badge/Helm-0F1628?style=flat&logo=helm&logoColor=white)
 <br />
@@ -37,7 +38,7 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 
 | Domain | Tools |
 |:-------|:------|
-| **IaC & CI/CD** | Terraform (S3-backed state), GitHub Actions, Tailscale runner, Renovate |
+| **IaC & CI/CD** | Terraform (S3-backed state), Ansible, GitHub Actions, Tailscale runner, Renovate |
 | **Compute** | Proxmox (Intel NUC), Talos Linux, NixOS, Raspberry Pi workers |
 | **Orchestration** | Kubernetes, ArgoCD (App of Apps), Helm |
 | **Networking** | Cilium (CNI, kube-proxy replacement, Gateway API, Hubble), UniFi, Cloudflare, HAProxy, WireGuard, Tailscale |

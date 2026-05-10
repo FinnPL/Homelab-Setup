@@ -1,0 +1,9 @@
+[Interface]
+PrivateKey = {{ wg_private_key }}
+MTU = 1420
+
+[Peer]
+PublicKey = {{ wg_peer_pubkey }}
+Endpoint = {{ wg_peer_endpoint }}
+AllowedIPs = {{ cloud_vcn_cidr }}
+PersistentKeepalive = 25

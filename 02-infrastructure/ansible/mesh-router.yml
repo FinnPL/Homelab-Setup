@@ -1,0 +1,64 @@
+- hosts: all
+  become: true
+  vars:
+    wg_private_key: ""
+    wg_peer_pubkey: ""
+    wg_peer_endpoint: ""
+    cloud_vcn_cidr: ""
+  pre_tasks:
+    - name: Wait for SSH to become available
+      wait_for_connection:
+        delay: 5
+        timeout: 300
+  tasks:
+    - name: Enable IP forwarding
+      sysctl:
+        name: net.ipv4.ip_forward
+        value: "1"
+        sysctl_file: /etc/sysctl.d/99-mesh-router.conf
+        reload: true
+
+    - name: Install WireGuard and iptables
+      apt:
+        name:
+          - wireguard-tools
+          - iptables
+        update_cache: true
+
+    - name: Create WireGuard config directory
+      file:
+        path: /etc/wireguard
+        state: directory
+        mode: "0700"
+
+    - name: Write WireGuard configuration
+      template:
+        src: templates/wg0.conf.j2
+        dest: /etc/wireguard/wg0.conf
+        mode: "0600"
+      notify: restart wireguard
+
+    - name: Enable and start WireGuard
+      systemd:
+        name: wg-quick@wg0
+        enabled: true
+        state: started
+
+    - name: Write WireGuard NAT masquerade service
+      template:
+        src: templates/wg-mesh-nat.service.j2
+        dest: /etc/systemd/system/wg-mesh-nat.service
+        mode: "0644"
+
+    - name: Enable and start wg-mesh-nat
+      systemd:
+        name: wg-mesh-nat
+        enabled: true
+        state: started
+        daemon_reload: true
+
+  handlers:
+    - name: restart wireguard
+      systemd:
+        name: wg-quick@wg0
+        state: restarted

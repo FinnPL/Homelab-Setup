@@ -1,0 +1,39 @@
+- hosts: all
+  become: true
+  vars:
+    nfs_export_subnet: ""
+  pre_tasks:
+    - name: Wait for SSH to become available
+      wait_for_connection:
+        delay: 5
+        timeout: 300
+  tasks:
+    - name: Install nfs-kernel-server
+      apt:
+        name: nfs-kernel-server
+        update_cache: true
+
+    - name: Create NFS export directory
+      file:
+        path: /srv/nfs/kubernetes
+        state: directory
+        owner: nobody
+        group: nogroup
+        mode: "0777"
+
+    - name: Configure NFS exports
+      copy:
+        content: "/srv/nfs/kubernetes {{ nfs_export_subnet }}(rw,sync,no_subtree_check,no_root_squash)\n"
+        dest: /etc/exports
+      notify: reload exports
+
+    - name: Enable and start nfs-kernel-server
+      systemd:
+        name: nfs-kernel-server
+        enabled: true
+        state: started
+
+  handlers:
+    - name: reload exports
+      command: exportfs -ra
+      changed_when: false
