@@ -37,7 +37,7 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 
 | Domain | Tools |
 |:-------|:------|
-| **IaC & CI/CD** | Terraform (S3-backed state), GitHub Actions, Tailscale runner |
+| **IaC & CI/CD** | Terraform (S3-backed state), GitHub Actions, Tailscale runner, Renovate |
 | **Compute** | Proxmox (Intel NUC), Talos Linux, NixOS, Raspberry Pi workers |
 | **Orchestration** | Kubernetes, ArgoCD (App of Apps), Helm |
 | **Networking** | Cilium (CNI, kube-proxy replacement, Gateway API, Hubble), UniFi, Cloudflare, HAProxy, WireGuard, Tailscale |
@@ -49,7 +49,7 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 
 ### CI/CD Pipeline
 
-Push to `main` triggers an orchestrator workflow that detects which layers changed and runs them in order. PRs get a Terraform plan comment for review. Tailscale connects the GitHub runner to the homelab network.
+Push to `main` triggers an orchestrator workflow that detects which layers changed and runs them in order. PRs get a Terraform plan comment for review. Tailscale connects the GitHub runner to the homelab network. Renovate keeps dependencies (Helm charts, container images, Terraform providers, Action versions, Nix flake refs, and more) up to date by opening PRs against the repo.
 
 ---
 
