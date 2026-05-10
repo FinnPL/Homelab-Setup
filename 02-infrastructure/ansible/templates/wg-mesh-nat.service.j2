@@ -6,8 +6,8 @@ Wants=wg-quick@wg0.service network-online.target
 [Service]
 Type=oneshot
 RemainAfterExit=true
-ExecStart=/sbin/iptables -t nat -A POSTROUTING -s ${cloud_vcn_cidr} -o eth0 -j MASQUERADE
-ExecStop=/sbin/iptables -t nat -D POSTROUTING -s ${cloud_vcn_cidr} -o eth0 -j MASQUERADE
+ExecStart=/sbin/iptables -t nat -A POSTROUTING -s {{ cloud_vcn_cidr }} -o eth0 -j MASQUERADE
+ExecStop=/sbin/iptables -t nat -D POSTROUTING -s {{ cloud_vcn_cidr }} -o eth0 -j MASQUERADE
 
 [Install]
 WantedBy=multi-user.target
