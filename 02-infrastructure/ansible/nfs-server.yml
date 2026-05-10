@@ -2,6 +2,11 @@
   become: true
   vars:
     nfs_export_subnet: ""
+  pre_tasks:
+    - name: Wait for SSH to become available
+      wait_for_connection:
+        delay: 5
+        timeout: 300
   tasks:
     - name: Install nfs-kernel-server
       apt:

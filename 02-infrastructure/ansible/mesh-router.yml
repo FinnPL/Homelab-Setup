@@ -5,6 +5,11 @@
     wg_peer_pubkey: ""
     wg_peer_endpoint: ""
     cloud_vcn_cidr: ""
+  pre_tasks:
+    - name: Wait for SSH to become available
+      wait_for_connection:
+        delay: 5
+        timeout: 300
   tasks:
     - name: Enable IP forwarding
       sysctl:
