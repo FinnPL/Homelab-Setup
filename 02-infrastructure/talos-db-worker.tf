@@ -1,6 +1,6 @@
 # Temporary worker for DB and other block-storage workloads until NAS iSCSI/NFS replaces this node and the Proxmox NFS server.
 locals {
-  talos_db_worker_ip = try(local.host_ips.talos_worker_6, null)
+  talos_db_worker_ip = local.host_ips.talos_worker_6
 }
 
 data "talos_machine_configuration" "db_worker" {
