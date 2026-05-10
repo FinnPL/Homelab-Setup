@@ -71,26 +71,15 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
 
   tags = sort(["kubernetes", "storage", "nfs", "terraform"])
 
-  provisioner "remote-exec" {
-    inline = [
-      "set -e",
-      "apt-get update",
-      "apt-get install -y nfs-kernel-server",
-      "mkdir -p /srv/nfs/kubernetes",
-      "chown nobody:nogroup /srv/nfs/kubernetes",
-      "chmod 777 /srv/nfs/kubernetes",
-      "echo '/srv/nfs/kubernetes ${local.athena_subnet}(rw,sync,no_subtree_check,no_root_squash)' > /etc/exports",
-      "systemctl enable --now nfs-kernel-server",
-      "exportfs -ra"
-    ]
-
-    connection {
-      type        = "ssh"
-      user        = "root"
-      private_key = var.proxmox_ssh_private_key
-      host        = local.nfs_server_ip
-      timeout     = "5m"
-    }
+  provisioner "local-exec" {
+    command = <<-EOT
+      ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook \
+        -i '${local.nfs_server_ip},' \
+        --private-key '${local_sensitive_file.ansible_ssh_key.filename}' \
+        --user root \
+        --extra-vars 'nfs_export_subnet=${local.athena_subnet}' \
+        '${path.module}/ansible/nfs-server.yml'
+    EOT
   }
 }
 

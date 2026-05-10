@@ -76,46 +76,14 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
     replace_triggered_by = [terraform_data.mesh_wg_peer_endpoint_marker]
   }
 
-  connection {
-    type        = "ssh"
-    user        = "root"
-    private_key = var.proxmox_ssh_private_key
-    host        = local.mesh_router_ip
-    timeout     = "5m"
-  }
-
-  provisioner "file" {
-    content = templatefile("${path.module}/templates/mesh-wg0.conf", {
-      private_key    = var.mesh_wg_private_key
-      peer_pubkey    = var.mesh_wg_peer_pubkey
-      peer_endpoint  = local.mesh_wg_peer_endpoint
-      cloud_vcn_cidr = var.cloud_vcn_cidr
-    })
-    destination = "/tmp/wg0.conf"
-  }
-
-  provisioner "file" {
-    content = templatefile("${path.module}/templates/wg-mesh-nat.service", {
-      cloud_vcn_cidr = var.cloud_vcn_cidr
-    })
-    destination = "/tmp/wg-mesh-nat.service"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "set -e",
-      "echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-mesh-router.conf",
-      "sysctl -w net.ipv4.ip_forward=1",
-      "apt-get update",
-      "apt-get install -y wireguard-tools iptables",
-      "mkdir -p /etc/wireguard",
-      "mv /tmp/wg0.conf /etc/wireguard/wg0.conf",
-      "chmod 600 /etc/wireguard/wg0.conf",
-      "systemctl enable --now wg-quick@wg0",
-      "mv /tmp/wg-mesh-nat.service /etc/systemd/system/wg-mesh-nat.service",
-      "chmod 644 /etc/systemd/system/wg-mesh-nat.service",
-      "systemctl daemon-reload",
-      "systemctl enable --now wg-mesh-nat.service",
-    ]
+  provisioner "local-exec" {
+    command = <<-EOT
+      ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook \
+        -i '${local.mesh_router_ip},' \
+        --private-key '${local_sensitive_file.ansible_ssh_key.filename}' \
+        --user root \
+        --extra-vars '{"wg_private_key":"${var.mesh_wg_private_key}","wg_peer_pubkey":"${var.mesh_wg_peer_pubkey}","wg_peer_endpoint":"${local.mesh_wg_peer_endpoint}","cloud_vcn_cidr":"${var.cloud_vcn_cidr}"}' \
+        '${path.module}/ansible/mesh-router.yml'
+    EOT
   }
 }
