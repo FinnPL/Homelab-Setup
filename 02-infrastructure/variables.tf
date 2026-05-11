@@ -220,24 +220,6 @@ variable "nfs_root_password" {
   sensitive   = true
 }
 
-variable "postgres_server_config" {
-  description = "Postgres LXC container configuration"
-  type = object({
-    vmid      = number
-    name      = string
-    cores     = number
-    memory    = number
-    disk_size = number
-  })
-  default = {
-    vmid      = 410
-    name      = "postgres-db"
-    cores     = 2
-    memory    = 2048
-    disk_size = 10
-  }
-}
-
 # =============================================================================
 # Mesh Router Configuration (Tailscale subnet router for clustermesh)
 # =============================================================================
@@ -283,14 +265,3 @@ variable "cloud_vcn_cidr" {
   default     = "10.80.1.0/24"
 }
 
-variable "postgres_root_password" {
-  description = "Root password for the Postgres LXC OS"
-  type        = string
-  sensitive   = true
-}
-
-variable "postgres_admin_password" {
-  description = "Password for the database superuser"
-  type        = string
-  sensitive   = true
-}
