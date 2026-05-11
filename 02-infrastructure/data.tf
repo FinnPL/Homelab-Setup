@@ -35,8 +35,6 @@ locals {
   windows_server_ip     = local.host_ips.windows_server
   talos_controlplane_ip = local.host_ips.talos_controlplane
   nfs_server_ip         = local.host_ips.nfs_server
-  postgres_server_ip    = local.host_ips.postgres_server
-
   talos_worker_ips = [
     local.host_ips.talos_worker_1,
     local.host_ips.talos_worker_2,

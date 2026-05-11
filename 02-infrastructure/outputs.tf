@@ -30,15 +30,6 @@ output "nfs_server" {
   }
 }
 
-output "postgres_server" {
-  description = "Connection details for the shared Postgres server"
-  value = {
-    ip       = local.postgres_server_ip
-    password = var.postgres_admin_password
-  }
-  sensitive = true
-}
-
 output "proxmox_exporter_credentials" {
   description = "Managed read-only Proxmox token components for the Proxmox metrics exporter"
   value = {
