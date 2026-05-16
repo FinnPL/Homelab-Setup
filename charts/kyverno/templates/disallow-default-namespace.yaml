@@ -1,0 +1,28 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: disallow-default-namespace
+  annotations:
+    policies.kyverno.io/title: Disallow Default Namespace
+    policies.kyverno.io/severity: low
+    policies.kyverno.io/description: >-
+      Workloads in the 'default' namespace make it hard to apply
+      namespace-scoped RBAC and network policies cleanly.
+spec:
+  validationFailureAction: Audit
+  background: true
+  rules:
+    - name: check-default-namespace
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      validate:
+        message: "Use a dedicated namespace instead of 'default'."
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.metadata.namespace }}"
+                operator: Equals
+                value: default
