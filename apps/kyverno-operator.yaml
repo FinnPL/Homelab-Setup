@@ -1,0 +1,95 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kyverno-operator
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  project: default
+  source:
+    repoURL: https://kyverno.github.io/kyverno/
+    chart: kyverno
+    targetRevision: 3.3.7
+    helm:
+      values: |
+        features:
+          policyExceptions:
+            enabled: true
+            namespace: kyverno
+        config:
+          webhookAnnotations:
+            admissions.enforcer/disabled: "true"
+          webhookLabels: {}
+          excludeUsernames:
+            - "system:serviceaccount:kube-system:generic-garbage-collector"
+        admissionController:
+          replicas: 1
+          priorityClassName: system-cluster-critical
+          serviceMonitor:
+            enabled: true
+            additionalLabels:
+              release: kube-prometheus-stack
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              memory: 384Mi
+          container:
+            extraArgs:
+              webhookTimeout: "10"
+          # Flip to Fail once confident in the policy set.
+          webhooks:
+            - failurePolicy: Ignore
+        backgroundController:
+          replicas: 1
+          priorityClassName: system-cluster-critical
+          serviceMonitor:
+            enabled: true
+            additionalLabels:
+              release: kube-prometheus-stack
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+        cleanupController:
+          replicas: 1
+          priorityClassName: system-cluster-critical
+          serviceMonitor:
+            enabled: true
+            additionalLabels:
+              release: kube-prometheus-stack
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 256Mi
+        reportsController:
+          replicas: 1
+          priorityClassName: system-cluster-critical
+          serviceMonitor:
+            enabled: true
+            additionalLabels:
+              release: kube-prometheus-stack
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              memory: 512Mi
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kyverno
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

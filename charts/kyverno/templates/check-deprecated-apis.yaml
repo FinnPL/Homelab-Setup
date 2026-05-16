@@ -1,0 +1,35 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: check-deprecated-apis
+  annotations:
+    policies.kyverno.io/title: Check Deprecated APIs
+    policies.kyverno.io/severity: medium
+    policies.kyverno.io/description: >-
+      Flags resources using API versions removed in recent Kubernetes releases.
+spec:
+  validationFailureAction: Audit
+  background: false
+  rules:
+    - name: check-deprecated-apis
+      match:
+        any:
+          - resources:
+              kinds:
+                - "*"
+      validate:
+        message: "API version '{{ request.object.apiVersion }}' is deprecated or removed. Migrate to the stable API."
+        deny:
+          conditions:
+            any:
+              - key: "{{ request.object.apiVersion }}"
+                operator: In
+                value:
+                  - extensions/v1beta1
+                  - apps/v1beta1
+                  - apps/v1beta2
+                  - networking.k8s.io/v1beta1
+                  - policy/v1beta1
+                  - batch/v1beta1
+                  - autoscaling/v2beta1
+                  - autoscaling/v2beta2

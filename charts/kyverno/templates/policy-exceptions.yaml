@@ -1,0 +1,75 @@
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: kyverno-self
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      Kyverno's own components set memory limits only (no CPU limit), which
+      is the chart's intentional default.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces:
+            - kyverno
+  exceptions:
+    - policyName: require-resource-limits
+      ruleNames:
+        - require-limits
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: local-path-storage
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      local-path-provisioner and its on-demand busybox helper pods mount the
+      node's local-path directory (hostPath) and run without limits / with a
+      writable rootfs by design.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces:
+            - local-path-storage
+  exceptions:
+    - policyName: require-resource-limits
+      ruleNames:
+        - require-limits
+    - policyName: require-ro-rootfs
+      ruleNames:
+        - require-ro-rootfs
+    - policyName: disallow-host-path
+      ruleNames:
+        - host-path
+    - policyName: restrict-volume-types
+      ruleNames:
+        - restricted-volumes
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: monitoring-node-exporter
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      prometheus-node-exporter runs with hostNetwork + hostPID and mounts
+      host /proc, /sys, / to scrape node metrics. Required for its function.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces:
+            - monitoring
+  exceptions:
+    - policyName: disallow-host-namespaces
+      ruleNames:
+        - host-namespaces
+    - policyName: disallow-host-path
+      ruleNames:
+        - host-path
+    - policyName: restrict-volume-types
+      ruleNames:
+        - restricted-volumes
