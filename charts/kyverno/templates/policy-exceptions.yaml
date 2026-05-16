@@ -1,0 +1,62 @@
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: kyverno-self
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      Kyverno's own components set memory limits only (no CPU limit), which
+      is the chart's intentional default.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces:
+            - kyverno
+  exceptions:
+    - policyName: require-resource-limits
+      ruleNames:
+        - require-limits
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: kube-system-rootfs
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      Cilium agents and CCM components in kube-system need a writable root
+      filesystem for runtime sockets / bpf state.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces:
+            - kube-system
+  exceptions:
+    - policyName: require-ro-rootfs
+      ruleNames:
+        - require-ro-rootfs
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: local-path-helper-pods
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      local-path-provisioner spawns short-lived busybox helper pods to mkdir
+      on hostPath. They have no limits and a writable rootfs by design.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces:
+            - local-path-storage
+  exceptions:
+    - policyName: require-resource-limits
+      ruleNames:
+        - require-limits
+    - policyName: require-ro-rootfs
+      ruleNames:
+        - require-ro-rootfs
