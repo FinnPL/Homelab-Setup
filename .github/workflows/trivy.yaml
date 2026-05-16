@@ -1,0 +1,84 @@
+name: "Security: Trivy"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**"
+  pull_request:
+    paths:
+      - "**"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  scan-secrets:
+    name: "Trivy: Secret Scanning"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Trivy scan (Secrets)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: secret
+          format: sarif
+          output: trivy-secrets.sarif
+          exit-code: "1"
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-secrets.sarif
+          category: trivy-secrets
+
+  scan-misconfig:
+    name: "Trivy: IaC & Misconfig"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: "Terraform"
+            path: "."
+            skip_dirs: "apps,charts,minerva"
+            category: "trivy-terraform"
+          - target: "Helm Charts"
+            path: "./charts"
+            skip_dirs: ""
+            category: "trivy-helm"
+          - target: "Kubernetes"
+            path: "./apps"
+            skip_dirs: ""
+            category: "trivy-k8s"
+          - target: "Docker Compose"
+            path: "./minerva"
+            skip_dirs: ""
+            category: "trivy-compose"
+            
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Trivy scan (${{ matrix.target }})
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ${{ matrix.path }}
+          scanners: misconfig
+          skip-dirs: ${{ matrix.skip_dirs }}
+          format: sarif
+          output: results.sarif
+          exit-code: "0"
+
+      - name: Upload SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: results.sarif
+          category: ${{ matrix.category }}
