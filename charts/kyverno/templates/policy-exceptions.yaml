@@ -21,32 +21,13 @@ spec:
 apiVersion: kyverno.io/v2
 kind: PolicyException
 metadata:
-  name: kube-system-rootfs
+  name: local-path-storage
   namespace: kyverno
   annotations:
     policies.kyverno.io/description: >-
-      Cilium agents and CCM components in kube-system need a writable root
-      filesystem for runtime sockets / bpf state.
-spec:
-  match:
-    any:
-      - resources:
-          namespaces:
-            - kube-system
-  exceptions:
-    - policyName: require-ro-rootfs
-      ruleNames:
-        - require-ro-rootfs
----
-apiVersion: kyverno.io/v2
-kind: PolicyException
-metadata:
-  name: local-path-helper-pods
-  namespace: kyverno
-  annotations:
-    policies.kyverno.io/description: >-
-      local-path-provisioner spawns short-lived busybox helper pods to mkdir
-      on hostPath. They have no limits and a writable rootfs by design.
+      local-path-provisioner and its on-demand busybox helper pods mount the
+      node's local-path directory (hostPath) and run without limits / with a
+      writable rootfs by design.
 spec:
   match:
     any:
@@ -60,3 +41,35 @@ spec:
     - policyName: require-ro-rootfs
       ruleNames:
         - require-ro-rootfs
+    - policyName: disallow-host-path
+      ruleNames:
+        - host-path
+    - policyName: restrict-volume-types
+      ruleNames:
+        - restricted-volumes
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: monitoring-node-exporter
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      prometheus-node-exporter runs with hostNetwork + hostPID and mounts
+      host /proc, /sys, / to scrape node metrics. Required for its function.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces:
+            - monitoring
+  exceptions:
+    - policyName: disallow-host-namespaces
+      ruleNames:
+        - host-namespaces
+    - policyName: disallow-host-path
+      ruleNames:
+        - host-path
+    - policyName: restrict-volume-types
+      ruleNames:
+        - restricted-volumes
