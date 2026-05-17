@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: it-tools
-  namespace: it-tools
+  namespace: {{ .Release.Namespace }}
   labels:
     app.kubernetes.io/name: it-tools
     app.kubernetes.io/part-of: homelab
