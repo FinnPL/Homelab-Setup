@@ -18,11 +18,11 @@ spec:
               kinds:
                 - "*"
       validate:
-        message: "API version '{{ request.object.apiVersion }}' is deprecated or removed. Migrate to the stable API."
+        message: "API version '{{ `{{ request.object.apiVersion }}` }}' is deprecated or removed. Migrate to the stable API."
         deny:
           conditions:
             any:
-              - key: "{{ request.object.apiVersion }}"
+              - key: "{{ `{{ request.object.apiVersion }}` }}"
                 operator: In
                 value:
                   - extensions/v1beta1

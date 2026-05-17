@@ -25,29 +25,29 @@ spec:
             deny:
               conditions:
                 any:
-                  - key: "{{ element.resources.limits.memory || '' }}"
+                  - key: "{{ `{{ element.resources.limits.memory || '' }}` }}"
                     operator: Equals
                     value: ""
-                  - key: "{{ element.resources.limits.cpu || '' }}"
+                  - key: "{{ `{{ element.resources.limits.cpu || '' }}` }}"
                     operator: Equals
                     value: ""
           - list: "request.object.spec.initContainers || `[]`"
             deny:
               conditions:
                 any:
-                  - key: "{{ element.resources.limits.memory || '' }}"
+                  - key: "{{ `{{ element.resources.limits.memory || '' }}` }}"
                     operator: Equals
                     value: ""
-                  - key: "{{ element.resources.limits.cpu || '' }}"
+                  - key: "{{ `{{ element.resources.limits.cpu || '' }}` }}"
                     operator: Equals
                     value: ""
           - list: "request.object.spec.ephemeralContainers || `[]`"
             deny:
               conditions:
                 any:
-                  - key: "{{ element.resources.limits.memory || '' }}"
+                  - key: "{{ `{{ element.resources.limits.memory || '' }}` }}"
                     operator: Equals
                     value: ""
-                  - key: "{{ element.resources.limits.cpu || '' }}"
+                  - key: "{{ `{{ element.resources.limits.cpu || '' }}` }}"
                     operator: Equals
                     value: ""
