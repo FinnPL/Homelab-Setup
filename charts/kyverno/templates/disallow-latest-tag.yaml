@@ -24,29 +24,29 @@ spec:
             deny:
               conditions:
                 any:
-                  - key: "{{ element.image }}"
+                  - key: "{{ `{{ element.image }}` }}"
                     operator: AnyIn
                     value: ["*:latest"]
-                  - key: "{{ element.image }}"
-                    operator: NotContains
-                    value: ":"
+                  - key: "{{ `{{ element.image }}` }}"
+                    operator: AnyNotIn
+                    value: ["*:*"]
           - list: "request.object.spec.initContainers || `[]`"
             deny:
               conditions:
                 any:
-                  - key: "{{ element.image }}"
+                  - key: "{{ `{{ element.image }}` }}"
                     operator: AnyIn
                     value: ["*:latest"]
-                  - key: "{{ element.image }}"
-                    operator: NotContains
-                    value: ":"
+                  - key: "{{ `{{ element.image }}` }}"
+                    operator: AnyNotIn
+                    value: ["*:*"]
           - list: "request.object.spec.ephemeralContainers || `[]`"
             deny:
               conditions:
                 any:
-                  - key: "{{ element.image }}"
+                  - key: "{{ `{{ element.image }}` }}"
                     operator: AnyIn
                     value: ["*:latest"]
-                  - key: "{{ element.image }}"
-                    operator: NotContains
-                    value: ":"
+                  - key: "{{ `{{ element.image }}` }}"
+                    operator: AnyNotIn
+                    value: ["*:*"]
