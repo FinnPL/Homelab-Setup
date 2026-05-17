@@ -46,6 +46,7 @@ spec:
             extraArgs:
               webhookTimeout: "10"
               forceFailurePolicyIgnore: "true"
+              v: "0"
         backgroundController:
           replicas: 1
           priorityClassName: system-cluster-critical
@@ -59,6 +60,9 @@ spec:
               memory: 64Mi
             limits:
               memory: 256Mi
+          container:
+            extraArgs:
+              v: "0"
         cleanupController:
           replicas: 1
           priorityClassName: system-cluster-critical
@@ -72,6 +76,9 @@ spec:
               memory: 64Mi
             limits:
               memory: 256Mi
+          container:
+            extraArgs:
+              v: "0"
         reportsController:
           replicas: 1
           priorityClassName: system-cluster-critical
@@ -85,9 +92,57 @@ spec:
               memory: 128Mi
             limits:
               memory: 512Mi
+          container:
+            extraArgs:
+              v: "0"
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno
+  ignoreDifferences:
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: deletingpolicies.policies.kyverno.io
+      jsonPointers: [/metadata/labels, /metadata/annotations]
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: generatingpolicies.policies.kyverno.io
+      jsonPointers: [/metadata/labels, /metadata/annotations]
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: imagevalidatingpolicies.policies.kyverno.io
+      jsonPointers: [/metadata/labels, /metadata/annotations]
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: mutatingpolicies.policies.kyverno.io
+      jsonPointers: [/metadata/labels, /metadata/annotations]
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: namespaceddeletingpolicies.policies.kyverno.io
+      jsonPointers: [/metadata/labels, /metadata/annotations]
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: namespacedgeneratingpolicies.policies.kyverno.io
+      jsonPointers: [/metadata/labels, /metadata/annotations]
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: namespacedimagevalidatingpolicies.policies.kyverno.io
+      jsonPointers: [/metadata/labels, /metadata/annotations]
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: namespacedmutatingpolicies.policies.kyverno.io
+      jsonPointers: [/metadata/labels, /metadata/annotations]
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: namespacedvalidatingpolicies.policies.kyverno.io
+      jsonPointers: [/metadata/labels, /metadata/annotations]
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: policyexceptions.policies.kyverno.io
+      jsonPointers: [/metadata/labels, /metadata/annotations]
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      name: validatingpolicies.policies.kyverno.io
+      jsonPointers: [/metadata/labels, /metadata/annotations]
   syncPolicy:
     automated:
       prune: true

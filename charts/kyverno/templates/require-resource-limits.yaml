@@ -20,34 +20,20 @@ spec:
                 - Pod
       validate:
         message: "CPU and memory limits are required on all containers."
-        foreach:
-          - list: "request.object.spec.containers"
-            deny:
-              conditions:
-                any:
-                  - key: "{{ `{{ element.resources.limits.memory || '' }}` }}"
-                    operator: Equals
-                    value: ""
-                  - key: "{{ `{{ element.resources.limits.cpu || '' }}` }}"
-                    operator: Equals
-                    value: ""
-          - list: "request.object.spec.initContainers || `[]`"
-            deny:
-              conditions:
-                any:
-                  - key: "{{ `{{ element.resources.limits.memory || '' }}` }}"
-                    operator: Equals
-                    value: ""
-                  - key: "{{ `{{ element.resources.limits.cpu || '' }}` }}"
-                    operator: Equals
-                    value: ""
-          - list: "request.object.spec.ephemeralContainers || `[]`"
-            deny:
-              conditions:
-                any:
-                  - key: "{{ `{{ element.resources.limits.memory || '' }}` }}"
-                    operator: Equals
-                    value: ""
-                  - key: "{{ `{{ element.resources.limits.cpu || '' }}` }}"
-                    operator: Equals
-                    value: ""
+        pattern:
+          spec:
+            =(ephemeralContainers):
+              - resources:
+                  limits:
+                    memory: "?*"
+                    cpu: "?*"
+            =(initContainers):
+              - resources:
+                  limits:
+                    memory: "?*"
+                    cpu: "?*"
+            containers:
+              - resources:
+                  limits:
+                    memory: "?*"
+                    cpu: "?*"
