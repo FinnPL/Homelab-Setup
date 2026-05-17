@@ -60,9 +60,8 @@ spec:
               memory: 64Mi
             limits:
               memory: 256Mi
-          container:
-            extraArgs:
-              v: "0"
+          extraArgs:
+            v: "0"
         cleanupController:
           replicas: 1
           priorityClassName: system-cluster-critical
@@ -76,9 +75,8 @@ spec:
               memory: 64Mi
             limits:
               memory: 256Mi
-          container:
-            extraArgs:
-              v: "0"
+          extraArgs:
+            v: "0"
         reportsController:
           replicas: 1
           priorityClassName: system-cluster-critical
@@ -92,9 +90,8 @@ spec:
               memory: 128Mi
             limits:
               memory: 512Mi
-          container:
-            extraArgs:
-              v: "0"
+          extraArgs:
+            v: "0"
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno
