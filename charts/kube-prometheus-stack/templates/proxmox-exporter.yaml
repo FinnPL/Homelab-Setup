@@ -57,6 +57,11 @@ spec:
         - name: exporter
           image: "{{ .Values.proxmoxExporter.image.repository }}:{{ .Values.proxmoxExporter.image.tag }}"
           imagePullPolicy: {{ .Values.proxmoxExporter.image.pullPolicy }}
+          securityContext:
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           env:
             - name: PVE_USER
               valueFrom:
@@ -83,6 +88,9 @@ spec:
               protocol: TCP
           resources:
 {{ toYaml .Values.proxmoxExporter.resources | indent 12 }}
+      volumes:
+        - name: tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service

@@ -104,7 +104,13 @@ resource "helm_release" "argocd" {
               }
             ]
             securityContext = {
-              runAsUser = 0
+              runAsUser              = 0
+              readOnlyRootFilesystem = true
+              allowPrivilegeEscalation = false
+              capabilities = {
+                drop = ["ALL"]
+                add  = ["CHOWN", "FOWNER"]
+              }
             }
           }
         ]

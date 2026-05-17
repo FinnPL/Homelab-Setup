@@ -1,5 +1,11 @@
 alloy-agent:
   enabled: true
+  configReloader:
+    securityContext:
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
   alloy:
     resources:
       limits:
@@ -8,6 +14,12 @@ alloy-agent:
       requests:
         memory: "128Mi"
         cpu: "100m"
+
+    securityContext:
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
 
     clustering:
       enabled: false
@@ -211,7 +223,19 @@ alloy-agent:
 
 alloy-receiver:
   enabled: true
+  configReloader:
+    securityContext:
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
   alloy:
+    securityContext:
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
+
     clustering:
       enabled: false
 

@@ -230,3 +230,91 @@ spec:
     - policyName: restrict-volume-types
       ruleNames:
         - restricted-volumes
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: dns-generate-root-key-init
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      The generate-root-key init container runs `apk add unbound curl` on
+      every pod start to fetch the DNSSEC trust anchor; apk needs a writable
+      rootfs.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [dns]
+          kinds: [Pod, ReplicaSet, Deployment]
+          names: [dns, dns-*]
+  exceptions:
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: authentik
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      authentik-server and authentik-worker write runtime state under /tmp
+      and import blueprints to working dirs that live on the container
+      rootfs.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [authentik]
+          kinds: [Pod, ReplicaSet, Deployment]
+          names: [authentik-server, authentik-server-*, authentik-worker, authentik-worker-*]
+  exceptions:
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: tailscale
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      tailscale operator and the exit-node statefulset need a writable rootfs
+      for tailscaled state (/var/lib/tailscale, /tmp/tailscaled.sock).
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [tailscale]
+          kinds: [Pod, ReplicaSet, StatefulSet, Deployment]
+          names: [operator, operator-*, ts-*]
+  exceptions:
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs]
+    - policyName: disallow-privileged-containers
+      ruleNames: [privileged-containers]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: crossplane-runtime
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      Crossplane Providers and Functions ship as Deployments managed by the
+      Crossplane control plane (names hashed). They lack readOnlyRootFilesystem
+      and resources by default. Can be tightened with a DeploymentRuntimeConfig
+      per provider/function.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [crossplane-system]
+          kinds: [Pod, ReplicaSet, Deployment]
+          names: [provider-*, function-*]
+  exceptions:
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs]
+    - policyName: require-resource-limits
+      ruleNames: [require-limits]
