@@ -47,13 +47,21 @@ spec:
               apk add --no-cache unbound curl
               unbound-anchor -a /tmp/unbound/root.key || true
               curl -sL https://curl.se/ca/cacert.pem -o /tmp/unbound/ca-certificates.crt
-              chown 1000:1000 /tmp/unbound/root.key /tmp/unbound/ca-certificates.crt
           volumeMounts:
             - name: unbound-data
               mountPath: /tmp/unbound
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
           securityContext:
             runAsUser: 0
             allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
 
       # Blocky: filtering, caching
       containers:

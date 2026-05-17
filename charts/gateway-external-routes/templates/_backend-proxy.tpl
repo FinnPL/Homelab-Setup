@@ -82,6 +82,9 @@ spec:
     spec:
       securityContext:
         runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
       containers:
@@ -91,6 +94,8 @@ spec:
             - name: http
               containerPort: {{ $proxy.containerPort }}
               protocol: TCP
+          resources:
+            {{- toYaml $proxy.resources | nindent 12 }}
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
