@@ -34,6 +34,8 @@ spec:
 
       securityContext:
         fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
 
       initContainers:
         - name: generate-root-key
@@ -42,15 +44,25 @@ spec:
             - sh
             - -c
             - |
+              umask 002
               apk add --no-cache unbound curl
               unbound-anchor -a /tmp/unbound/root.key || true
               curl -sL https://curl.se/ca/cacert.pem -o /tmp/unbound/ca-certificates.crt
-              chown 1000:1000 /tmp/unbound/root.key /tmp/unbound/ca-certificates.crt
           volumeMounts:
             - name: unbound-data
               mountPath: /tmp/unbound
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
           securityContext:
             runAsUser: 0
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
 
       # Blocky: filtering, caching
       containers:
@@ -116,6 +128,7 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
+            runAsNonRoot: true
             capabilities:
               add: ["NET_BIND_SERVICE"]
               drop: ["ALL"]
@@ -171,6 +184,7 @@ spec:
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
+            runAsNonRoot: true
             runAsUser: 1000
             runAsGroup: 1000
             capabilities:
