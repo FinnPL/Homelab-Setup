@@ -12,7 +12,7 @@ spec:
   source:
     repoURL: https://kyverno.github.io/kyverno/
     chart: kyverno
-    targetRevision: 3.3.7
+    targetRevision: 3.8.0
     helm:
       values: |
         features:
@@ -39,11 +39,10 @@ spec:
             limits:
               memory: 384Mi
           container:
+            # Flip forceFailurePolicyIgnore to "false" once confident in the policy set.
             extraArgs:
               webhookTimeout: "10"
-          # Flip to Fail once confident in the policy set.
-          webhooks:
-            - failurePolicy: Ignore
+              forceFailurePolicyIgnore: "true"
         backgroundController:
           replicas: 1
           priorityClassName: system-cluster-critical

@@ -25,20 +25,20 @@ spec:
             deny:
               conditions:
                 any:
-                  - key: "{{ element.securityContext.readOnlyRootFilesystem || false }}"
+                  - key: "{{ `{{ element.securityContext.readOnlyRootFilesystem || false }}` }}"
                     operator: Equals
                     value: false
           - list: "request.object.spec.initContainers || `[]`"
             deny:
               conditions:
                 any:
-                  - key: "{{ element.securityContext.readOnlyRootFilesystem || false }}"
+                  - key: "{{ `{{ element.securityContext.readOnlyRootFilesystem || false }}` }}"
                     operator: Equals
                     value: false
           - list: "request.object.spec.ephemeralContainers || `[]`"
             deny:
               conditions:
                 any:
-                  - key: "{{ element.securityContext.readOnlyRootFilesystem || false }}"
+                  - key: "{{ `{{ element.securityContext.readOnlyRootFilesystem || false }}` }}"
                     operator: Equals
                     value: false
