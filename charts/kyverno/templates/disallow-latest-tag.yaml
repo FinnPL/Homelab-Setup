@@ -28,8 +28,8 @@ spec:
                     operator: AnyIn
                     value: ["*:latest"]
                   - key: "{{ `{{ element.image }}` }}"
-                    operator: NotContains
-                    value: ":"
+                    operator: AnyNotIn
+                    value: ["*:*"]
           - list: "request.object.spec.initContainers || `[]`"
             deny:
               conditions:
@@ -38,8 +38,8 @@ spec:
                     operator: AnyIn
                     value: ["*:latest"]
                   - key: "{{ `{{ element.image }}` }}"
-                    operator: NotContains
-                    value: ":"
+                    operator: AnyNotIn
+                    value: ["*:*"]
           - list: "request.object.spec.ephemeralContainers || `[]`"
             deny:
               conditions:
@@ -48,5 +48,5 @@ spec:
                     operator: AnyIn
                     value: ["*:latest"]
                   - key: "{{ `{{ element.image }}` }}"
-                    operator: NotContains
-                    value: ":"
+                    operator: AnyNotIn
+                    value: ["*:*"]
