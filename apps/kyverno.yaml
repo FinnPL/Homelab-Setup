@@ -24,6 +24,7 @@ spec:
         - /spec/emitWarning
       jqPathExpressions:
         - .spec.rules[]?.skipBackgroundRequests
+        - .spec.rules[]?.validate.allowExistingViolations
     - group: kyverno.io
       kind: Policy
       jsonPointers:
@@ -31,6 +32,7 @@ spec:
         - /spec/emitWarning
       jqPathExpressions:
         - .spec.rules[]?.skipBackgroundRequests
+        - .spec.rules[]?.validate.allowExistingViolations
   syncPolicy:
     automated:
       prune: true
