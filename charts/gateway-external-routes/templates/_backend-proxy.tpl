@@ -93,6 +93,7 @@ spec:
               protocol: TCP
           securityContext:
             allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
             capabilities:
               drop:
                 - ALL
@@ -101,10 +102,20 @@ spec:
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: default.conf
               readOnly: true
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-tmp
+              mountPath: /tmp
       volumes:
         - name: nginx-conf
           configMap:
             name: {{ $backend.name }}-external-proxy-nginx
+        - name: nginx-cache
+          emptyDir:
+            medium: Memory
+        - name: nginx-tmp
+          emptyDir:
+            medium: Memory
 ---
 apiVersion: v1
 kind: Service
