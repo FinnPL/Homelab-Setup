@@ -102,17 +102,22 @@ spec:
 
           resources:
             requests:
-              cpu: 50m
-              memory: 64Mi
+              cpu: 200m
+              memory: 128Mi
             limits:
-              cpu: 1000m
-              memory: 256Mi
+              memory: 512Mi
+          startupProbe:
+            httpGet:
+              path: /api/blocking/status
+              port: 4000
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
 
           readinessProbe:
             httpGet:
               path: /api/blocking/status
               port: 4000
-            initialDelaySeconds: 15
             periodSeconds: 10
             timeoutSeconds: 5
             failureThreshold: 5
@@ -121,7 +126,6 @@ spec:
             httpGet:
               path: /api/blocking/status
               port: 4000
-            initialDelaySeconds: 60
             periodSeconds: 30
             timeoutSeconds: 5
             failureThreshold: 5
