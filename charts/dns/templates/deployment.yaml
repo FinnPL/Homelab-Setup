@@ -44,10 +44,10 @@ spec:
             - sh
             - -c
             - |
-              umask 002
               apk add --no-cache unbound curl
               unbound-anchor -a /tmp/unbound/root.key || true
               curl -sL https://curl.se/ca/cacert.pem -o /tmp/unbound/ca-certificates.crt
+              chown 1000:1000 /tmp/unbound/root.key /tmp/unbound/ca-certificates.crt
           volumeMounts:
             - name: unbound-data
               mountPath: /tmp/unbound
@@ -63,6 +63,7 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop: ["ALL"]
+              add: ["CHOWN"]
 
       # Blocky: filtering, caching
       containers:
