@@ -3,11 +3,11 @@ kind: ClusterPolicy
 metadata:
   name: require-resource-limits
   annotations:
-    policies.kyverno.io/title: Require Resource Limits
+    policies.kyverno.io/title: Require Resource Requests and Memory Limit
     policies.kyverno.io/severity: medium
     policies.kyverno.io/description: >-
-      Containers without CPU/memory limits can starve other workloads and
-      make capacity planning impossible.
+      Every container must declare CPU and memory requests and a memory limit. 
+      CPU limits are intentionally NOT required.
 spec:
   validationFailureAction: Audit
   background: true
@@ -19,21 +19,27 @@ spec:
               kinds:
                 - Pod
       validate:
-        message: "CPU and memory limits are required on all containers."
+        message: "CPU+memory requests and a memory limit are required on all containers."
         pattern:
           spec:
             =(ephemeralContainers):
               - resources:
-                  limits:
+                  requests:
                     memory: "?*"
                     cpu: "?*"
+                  limits:
+                    memory: "?*"
             =(initContainers):
               - resources:
-                  limits:
+                  requests:
                     memory: "?*"
                     cpu: "?*"
+                  limits:
+                    memory: "?*"
             containers:
               - resources:
-                  limits:
+                  requests:
                     memory: "?*"
                     cpu: "?*"
+                  limits:
+                    memory: "?*"
