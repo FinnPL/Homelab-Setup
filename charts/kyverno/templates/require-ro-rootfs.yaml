@@ -20,25 +20,14 @@ spec:
                 - Pod
       validate:
         message: "Containers must set securityContext.readOnlyRootFilesystem=true"
-        foreach:
-          - list: "request.object.spec.containers"
-            deny:
-              conditions:
-                any:
-                  - key: "{{ `{{ element.securityContext.readOnlyRootFilesystem || false }}` }}"
-                    operator: Equals
-                    value: false
-          - list: "request.object.spec.initContainers || `[]`"
-            deny:
-              conditions:
-                any:
-                  - key: "{{ `{{ element.securityContext.readOnlyRootFilesystem || false }}` }}"
-                    operator: Equals
-                    value: false
-          - list: "request.object.spec.ephemeralContainers || `[]`"
-            deny:
-              conditions:
-                any:
-                  - key: "{{ `{{ element.securityContext.readOnlyRootFilesystem || false }}` }}"
-                    operator: Equals
-                    value: false
+        pattern:
+          spec:
+            =(ephemeralContainers):
+              - securityContext:
+                  readOnlyRootFilesystem: true
+            =(initContainers):
+              - securityContext:
+                  readOnlyRootFilesystem: true
+            containers:
+              - securityContext:
+                  readOnlyRootFilesystem: true
