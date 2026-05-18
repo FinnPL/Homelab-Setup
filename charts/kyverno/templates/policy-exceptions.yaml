@@ -1,26 +1,6 @@
 apiVersion: kyverno.io/v2
 kind: PolicyException
 metadata:
-  name: kyverno-self
-  namespace: kyverno
-  annotations:
-    policies.kyverno.io/description: >-
-      Kyverno's own components set memory limits only (no CPU limit), which
-      is the chart's intentional default.
-spec:
-  match:
-    any:
-      - resources:
-          namespaces:
-            - kyverno
-  exceptions:
-    - policyName: require-resource-limits
-      ruleNames:
-        - require-limits
----
-apiVersion: kyverno.io/v2
-kind: PolicyException
-metadata:
   name: local-path-storage
   namespace: kyverno
   annotations:
@@ -38,15 +18,206 @@ spec:
     - policyName: require-resource-limits
       ruleNames:
         - require-limits
+        - autogen-require-limits
     - policyName: require-ro-rootfs
       ruleNames:
         - require-ro-rootfs
+        - autogen-require-ro-rootfs
     - policyName: disallow-host-path
       ruleNames:
         - host-path
+        - autogen-host-path
     - policyName: restrict-volume-types
       ruleNames:
         - restricted-volumes
+        - autogen-restricted-volumes
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: kube-system-cilium-agent
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      cilium-agent is the CNI and requires hostNetwork, hostPID,
+      privileged, CAP_NET_ADMIN/SYS_ADMIN, hostPath mounts (/sys/fs/bpf,
+      /var/run/cilium, /proc), seccomp Unconfined for bpf syscalls, and
+      writable rootfs for in-place config updates. Resource limits are
+      intentionally omitted.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [kube-system]
+          kinds: [Pod, DaemonSet]
+          selector:
+            matchLabels:
+              k8s-app: cilium
+  exceptions:
+    - policyName: disallow-capabilities
+      ruleNames: [adding-capabilities, autogen-adding-capabilities]
+    - policyName: disallow-host-namespaces
+      ruleNames: [host-namespaces, autogen-host-namespaces]
+    - policyName: disallow-host-path
+      ruleNames: [host-path, autogen-host-path]
+    - policyName: disallow-host-ports
+      ruleNames: [host-ports-none, autogen-host-ports-none]
+    - policyName: disallow-privileged-containers
+      ruleNames: [privileged-containers, autogen-privileged-containers]
+    - policyName: disallow-selinux
+      ruleNames: [selinux-type, autogen-selinux-type]
+    - policyName: require-resource-limits
+      ruleNames: [require-limits, autogen-require-limits]
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+    - policyName: restrict-seccomp
+      ruleNames: [check-seccomp, autogen-check-seccomp]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: kube-system-cilium-envoy
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      cilium-envoy is the L7 data plane DaemonSet.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [kube-system]
+          kinds: [Pod, DaemonSet]
+          selector:
+            matchLabels:
+              k8s-app: cilium-envoy
+  exceptions:
+    - policyName: disallow-capabilities
+      ruleNames: [adding-capabilities, autogen-adding-capabilities]
+    - policyName: disallow-host-namespaces
+      ruleNames: [host-namespaces, autogen-host-namespaces]
+    - policyName: disallow-host-path
+      ruleNames: [host-path, autogen-host-path]
+    - policyName: disallow-host-ports
+      ruleNames: [host-ports-none, autogen-host-ports-none]
+    - policyName: disallow-selinux
+      ruleNames: [selinux-type, autogen-selinux-type]
+    - policyName: require-resource-limits
+      ruleNames: [require-limits, autogen-require-limits]
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: kube-system-cilium-operator
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      cilium-operator runs the CNI control loop. Binds host-port 9963 for
+      its metrics/healthz endpoint on the host network.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [kube-system]
+          kinds: [Pod, ReplicaSet, Deployment]
+          selector:
+            matchLabels:
+              io.cilium/app: operator
+  exceptions:
+    - policyName: disallow-host-namespaces
+      ruleNames: [host-namespaces, autogen-host-namespaces]
+    - policyName: disallow-host-ports
+      ruleNames: [host-ports-none, autogen-host-ports-none]
+    - policyName: require-resource-limits
+      ruleNames: [require-limits, autogen-require-limits]
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: kube-system-hubble
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      hubble-relay and hubble-ui ship without resources/readOnlyRootFilesystem
+      set by the cilium chart. Exempted as part of the cilium exemption.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [kube-system]
+          kinds: [Pod, ReplicaSet, Deployment]
+          selector:
+            matchExpressions:
+              - key: k8s-app
+                operator: In
+                values: [hubble-relay, hubble-ui]
+  exceptions:
+    - policyName: require-resource-limits
+      ruleNames: [require-limits, autogen-require-limits]
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: kube-system-csi-nfs
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      csi-nfs-node mounts NFS shares onto the host (hostPath, privileged,
+      CAP_SYS_ADMIN, mount propagation Bidirectional). csi-nfs-controller
+      needs hostNetwork to talk to the kubelet. Required for a working
+      RWX CSI driver.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [kube-system]
+          kinds: [Pod, ReplicaSet, Deployment, DaemonSet]
+          names: [csi-nfs-node, csi-nfs-node-*, csi-nfs-controller, csi-nfs-controller-*]
+  exceptions:
+    - policyName: disallow-capabilities
+      ruleNames: [adding-capabilities, autogen-adding-capabilities]
+    - policyName: disallow-host-namespaces
+      ruleNames: [host-namespaces, autogen-host-namespaces]
+    - policyName: disallow-host-path
+      ruleNames: [host-path, autogen-host-path]
+    - policyName: disallow-host-ports
+      ruleNames: [host-ports-none, autogen-host-ports-none]
+    - policyName: disallow-privileged-containers
+      ruleNames: [privileged-containers, autogen-privileged-containers]
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: kube-system-talos-static-pods
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      kube-apiserver, kube-controller-manager and kube-scheduler are Talos
+      static pods. They run with hostNetwork, mount /etc/kubernetes from
+      the host, and lack memory limits or readOnlyRootFilesystem.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [kube-system]
+          kinds: [Pod]
+          names: [kube-apiserver-*, kube-controller-manager-*, kube-scheduler-*]
+  exceptions:
+    - policyName: disallow-host-namespaces
+      ruleNames: [host-namespaces]
+    - policyName: disallow-host-path
+      ruleNames: [host-path]
+    - policyName: require-resource-limits
+      ruleNames: [require-limits]
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -67,9 +238,76 @@ spec:
     - policyName: disallow-host-namespaces
       ruleNames:
         - host-namespaces
+        - autogen-host-namespaces
     - policyName: disallow-host-path
       ruleNames:
         - host-path
+        - autogen-host-path
     - policyName: restrict-volume-types
       ruleNames:
         - restricted-volumes
+        - autogen-restricted-volumes
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: dns-generate-root-key-init
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      The generate-root-key init container runs `apk add unbound curl` on
+      every pod start to fetch the DNSSEC trust anchor; apk needs a writable
+      rootfs.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [dns]
+          kinds: [Pod, ReplicaSet, Deployment]
+          names: [dns, dns-*]
+  exceptions:
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: authentik
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      authentik-server and authentik-worker write runtime state under /tmp
+      and import blueprints to working dirs that live on the container
+      rootfs.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [authentik]
+          kinds: [Pod, ReplicaSet, Deployment]
+          names: [authentik-server, authentik-server-*, authentik-worker, authentik-worker-*]
+  exceptions:
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: tailscale
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      tailscale operator and the exit-node statefulset need a writable rootfs
+      for tailscaled state (/var/lib/tailscale, /tmp/tailscaled.sock).
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [tailscale]
+          kinds: [Pod, ReplicaSet, StatefulSet, Deployment]
+          names: [operator, operator-*, ts-*]
+  exceptions:
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+    - policyName: disallow-privileged-containers
+      ruleNames: [privileged-containers, autogen-privileged-containers]

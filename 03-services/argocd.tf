@@ -95,7 +95,7 @@ resource "helm_release" "argocd" {
         initContainers = [
           {
             name    = "fix-nfs-permissions"
-            image   = "busybox"
+            image   = "busybox:1.37.0"
             command = ["sh", "-c", "chown 999:999 /nfs-tmp && chmod 777 /nfs-tmp"]
             volumeMounts = [
               {
@@ -104,7 +104,13 @@ resource "helm_release" "argocd" {
               }
             ]
             securityContext = {
-              runAsUser = 0
+              runAsUser                = 0
+              readOnlyRootFilesystem   = true
+              allowPrivilegeEscalation = false
+              capabilities = {
+                drop = ["ALL"]
+                add  = ["CHOWN", "FOWNER"]
+              }
             }
           }
         ]

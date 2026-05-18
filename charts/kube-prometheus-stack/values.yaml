@@ -137,6 +137,11 @@ kube-prometheus-stack:
         isDefault: false
     persistence:
       enabled: false
+    containerSecurityContext:
+      readOnlyRootFilesystem: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: ["ALL"]
     # The kiwigrid k8s-sidecar containers (sc-dashboard, sc-datasources)
     # log "Loading incluster config..." at INFO every poll cycle; the
     # only useful output from them is connection failures, which still

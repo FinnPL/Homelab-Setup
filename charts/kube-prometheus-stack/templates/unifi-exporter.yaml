@@ -93,6 +93,14 @@ spec:
               protocol: TCP
           resources:
 {{ toYaml .Values.unifiExporter.resources | indent 12 }}
+          securityContext:
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
