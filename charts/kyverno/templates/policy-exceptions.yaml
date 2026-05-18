@@ -18,15 +18,19 @@ spec:
     - policyName: require-resource-limits
       ruleNames:
         - require-limits
+        - autogen-require-limits
     - policyName: require-ro-rootfs
       ruleNames:
         - require-ro-rootfs
+        - autogen-require-ro-rootfs
     - policyName: disallow-host-path
       ruleNames:
         - host-path
+        - autogen-host-path
     - policyName: restrict-volume-types
       ruleNames:
         - restricted-volumes
+        - autogen-restricted-volumes
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -51,23 +55,23 @@ spec:
               k8s-app: cilium
   exceptions:
     - policyName: disallow-capabilities
-      ruleNames: [adding-capabilities]
+      ruleNames: [adding-capabilities, autogen-adding-capabilities]
     - policyName: disallow-host-namespaces
-      ruleNames: [host-namespaces]
+      ruleNames: [host-namespaces, autogen-host-namespaces]
     - policyName: disallow-host-path
-      ruleNames: [host-path]
+      ruleNames: [host-path, autogen-host-path]
     - policyName: disallow-host-ports
-      ruleNames: [host-ports-none]
+      ruleNames: [host-ports-none, autogen-host-ports-none]
     - policyName: disallow-privileged-containers
-      ruleNames: [privileged-containers]
+      ruleNames: [privileged-containers, autogen-privileged-containers]
     - policyName: disallow-selinux
-      ruleNames: [selinux-type]
+      ruleNames: [selinux-type, autogen-selinux-type]
     - policyName: require-resource-limits
-      ruleNames: [require-limits]
+      ruleNames: [require-limits, autogen-require-limits]
     - policyName: require-ro-rootfs
-      ruleNames: [require-ro-rootfs]
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
     - policyName: restrict-seccomp
-      ruleNames: [check-seccomp]
+      ruleNames: [check-seccomp, autogen-check-seccomp]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -88,19 +92,19 @@ spec:
               k8s-app: cilium-envoy
   exceptions:
     - policyName: disallow-capabilities
-      ruleNames: [adding-capabilities]
+      ruleNames: [adding-capabilities, autogen-adding-capabilities]
     - policyName: disallow-host-namespaces
-      ruleNames: [host-namespaces]
+      ruleNames: [host-namespaces, autogen-host-namespaces]
     - policyName: disallow-host-path
-      ruleNames: [host-path]
+      ruleNames: [host-path, autogen-host-path]
     - policyName: disallow-host-ports
-      ruleNames: [host-ports-none]
+      ruleNames: [host-ports-none, autogen-host-ports-none]
     - policyName: disallow-selinux
-      ruleNames: [selinux-type]
+      ruleNames: [selinux-type, autogen-selinux-type]
     - policyName: require-resource-limits
-      ruleNames: [require-limits]
+      ruleNames: [require-limits, autogen-require-limits]
     - policyName: require-ro-rootfs
-      ruleNames: [require-ro-rootfs]
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -122,13 +126,13 @@ spec:
               io.cilium/app: operator
   exceptions:
     - policyName: disallow-host-namespaces
-      ruleNames: [host-namespaces]
+      ruleNames: [host-namespaces, autogen-host-namespaces]
     - policyName: disallow-host-ports
-      ruleNames: [host-ports-none]
+      ruleNames: [host-ports-none, autogen-host-ports-none]
     - policyName: require-resource-limits
-      ruleNames: [require-limits]
+      ruleNames: [require-limits, autogen-require-limits]
     - policyName: require-ro-rootfs
-      ruleNames: [require-ro-rootfs]
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -152,9 +156,9 @@ spec:
                 values: [hubble-relay, hubble-ui]
   exceptions:
     - policyName: require-resource-limits
-      ruleNames: [require-limits]
+      ruleNames: [require-limits, autogen-require-limits]
     - policyName: require-ro-rootfs
-      ruleNames: [require-ro-rootfs]
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -176,17 +180,17 @@ spec:
           names: [csi-nfs-node, csi-nfs-node-*, csi-nfs-controller, csi-nfs-controller-*]
   exceptions:
     - policyName: disallow-capabilities
-      ruleNames: [adding-capabilities]
+      ruleNames: [adding-capabilities, autogen-adding-capabilities]
     - policyName: disallow-host-namespaces
-      ruleNames: [host-namespaces]
+      ruleNames: [host-namespaces, autogen-host-namespaces]
     - policyName: disallow-host-path
-      ruleNames: [host-path]
+      ruleNames: [host-path, autogen-host-path]
     - policyName: disallow-host-ports
-      ruleNames: [host-ports-none]
+      ruleNames: [host-ports-none, autogen-host-ports-none]
     - policyName: disallow-privileged-containers
-      ruleNames: [privileged-containers]
+      ruleNames: [privileged-containers, autogen-privileged-containers]
     - policyName: require-ro-rootfs
-      ruleNames: [require-ro-rootfs]
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -234,12 +238,15 @@ spec:
     - policyName: disallow-host-namespaces
       ruleNames:
         - host-namespaces
+        - autogen-host-namespaces
     - policyName: disallow-host-path
       ruleNames:
         - host-path
+        - autogen-host-path
     - policyName: restrict-volume-types
       ruleNames:
         - restricted-volumes
+        - autogen-restricted-volumes
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -260,7 +267,7 @@ spec:
           names: [dns, dns-*]
   exceptions:
     - policyName: require-ro-rootfs
-      ruleNames: [require-ro-rootfs]
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -281,7 +288,7 @@ spec:
           names: [authentik-server, authentik-server-*, authentik-worker, authentik-worker-*]
   exceptions:
     - policyName: require-ro-rootfs
-      ruleNames: [require-ro-rootfs]
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -301,6 +308,6 @@ spec:
           names: [operator, operator-*, ts-*]
   exceptions:
     - policyName: require-ro-rootfs
-      ruleNames: [require-ro-rootfs]
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
     - policyName: disallow-privileged-containers
-      ruleNames: [privileged-containers]
+      ruleNames: [privileged-containers, autogen-privileged-containers]
