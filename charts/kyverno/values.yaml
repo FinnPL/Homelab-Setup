@@ -1,6 +1,6 @@
 kyverno-policies:
   validationFailureAction: Audit
-  background: true
+  background: false
   podSecurity:
     standard: restricted
     validationFailureAction: Audit
