@@ -10,7 +10,7 @@ metadata:
       namespace-scoped RBAC and network policies cleanly.
 spec:
   validationFailureAction: Audit
-  background: true
+  background: false
   rules:
     - name: check-default-namespace
       match:

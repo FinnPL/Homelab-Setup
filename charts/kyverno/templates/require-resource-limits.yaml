@@ -10,7 +10,7 @@ metadata:
       CPU limits are intentionally NOT required.
 spec:
   validationFailureAction: Audit
-  background: true
+  background: false
   rules:
     - name: require-limits
       match:
