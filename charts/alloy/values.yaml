@@ -261,6 +261,8 @@ alloy-receiver:
     extraArgs:
       - --disable-reporting
 
+    storagePath: /var/lib/alloy/data
+
     # rootfs is RO; alloy needs writable /var/lib/alloy/data (storage)
     # and /tmp (remotecfg cache).
     mounts:
