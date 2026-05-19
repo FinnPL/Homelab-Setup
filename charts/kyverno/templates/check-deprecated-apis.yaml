@@ -16,7 +16,16 @@ spec:
         any:
           - resources:
               kinds:
-                - "*"
+                - Deployment
+                - DaemonSet
+                - StatefulSet
+                - ReplicaSet
+                - Ingress
+                - IngressClass
+                - NetworkPolicy
+                - PodDisruptionBudget
+                - CronJob
+                - HorizontalPodAutoscaler
       validate:
         message: "API version '{{ `{{ request.object.apiVersion }}` }}' is deprecated or removed. Migrate to the stable API."
         deny:
