@@ -40,6 +40,9 @@ alloy-agent:
       extra:
         - name: alloy-data
           mountPath: /var/lib/alloy/data
+        # /tmp must be writable for alloy's remotecfg cache; rootfs is RO
+        - name: alloy-tmp
+          mountPath: /tmp
 
         - name: varlogpods
           mountPath: /var/log/pods
@@ -221,6 +224,10 @@ alloy-agent:
           emptyDir:
             medium: Memory
             sizeLimit: 100Mi
+        - name: alloy-tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 50Mi
         - name: varlogpods
           hostPath:
             path: /var/log/pods
@@ -254,6 +261,15 @@ alloy-receiver:
     extraArgs:
       - --disable-reporting
 
+    # rootfs is RO; alloy needs writable /var/lib/alloy/data (storage)
+    # and /tmp (remotecfg cache).
+    mounts:
+      extra:
+        - name: alloy-data
+          mountPath: /var/lib/alloy/data
+        - name: alloy-tmp
+          mountPath: /tmp
+
     configMap:
       content: |
         logging {
@@ -282,6 +298,16 @@ alloy-receiver:
   controller:
     type: statefulset
     replicas: 1
+    volumes:
+      extra:
+        - name: alloy-data
+          emptyDir:
+            medium: Memory
+            sizeLimit: 100Mi
+        - name: alloy-tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 50Mi
     nodeSelector:
       dedicated: "database"
     tolerations:
