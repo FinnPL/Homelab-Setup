@@ -10,7 +10,7 @@ metadata:
       image layer, limiting the blast radius of a compromised container.
 spec:
   validationFailureAction: Audit
-  background: true
+  background: false
   rules:
     - name: require-ro-rootfs
       match:

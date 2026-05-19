@@ -9,7 +9,7 @@ metadata:
       Using the :latest tag prevents reproducible rollbacks.
 spec:
   validationFailureAction: Audit
-  background: true
+  background: false
   rules:
     - name: require-image-tag
       match:
