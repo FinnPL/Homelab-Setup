@@ -12,10 +12,32 @@ kube-prometheus-stack:
   kubeProxy:
     enabled: false
 
-  # This reads /proc/sys/kernel/hung_task_detect_count that Talos current kernel doesn't expose. 
+  # This reads /proc/sys/kernel/hung_task_detect_count that Talos current kernel doesn't expose.
   prometheus-node-exporter:
     extraArgs:
       - --no-collector.kernel_hung
+    resources:
+      requests:
+        cpu: 20m
+        memory: 32Mi
+      limits:
+        memory: 64Mi
+
+  prometheusOperator:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+
+  kube-state-metrics:
+    resources:
+      requests:
+        cpu: 20m
+        memory: 32Mi
+      limits:
+        memory: 128Mi
 
   prometheus:
     prometheusSpec:
@@ -137,6 +159,12 @@ kube-prometheus-stack:
         isDefault: false
     persistence:
       enabled: false
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 384Mi
     containerSecurityContext:
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
@@ -147,6 +175,17 @@ kube-prometheus-stack:
     # only useful output from them is connection failures, which still
     # surface at WARN+. Silences ~0.07 lines/sec per pod.
     sidecar:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 96Mi
+      securityContext:
+        readOnlyRootFilesystem: true
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop: ["ALL"]
       dashboards:
         logLevel: WARN
       datasources:
