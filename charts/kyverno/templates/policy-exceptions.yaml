@@ -232,8 +232,11 @@ spec:
   match:
     any:
       - resources:
-          namespaces:
-            - monitoring
+          namespaces: [monitoring]
+          kinds: [Pod, DaemonSet]
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus-node-exporter
   exceptions:
     - policyName: disallow-host-namespaces
       ruleNames:
