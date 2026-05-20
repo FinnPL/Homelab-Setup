@@ -243,6 +243,10 @@ spec:
       ruleNames:
         - host-path
         - autogen-host-path
+    - policyName: disallow-host-ports
+      ruleNames:
+        - host-ports-none
+        - autogen-host-ports-none
     - policyName: restrict-volume-types
       ruleNames:
         - restricted-volumes
@@ -311,3 +315,5 @@ spec:
       ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
     - policyName: disallow-privileged-containers
       ruleNames: [privileged-containers, autogen-privileged-containers]
+    - policyName: require-resource-limits
+      ruleNames: [require-limits, autogen-require-limits]

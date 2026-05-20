@@ -92,6 +92,12 @@ spec:
               memory: 512Mi
           extraArgs:
             v: "0"
+          rbac:
+            clusterRole:
+              extraResources:
+                - apiGroups: ["networking.k8s.io"]
+                  resources: ["ingressclasses"]
+                  verbs: ["get", "list", "watch"]
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno
