@@ -12,8 +12,15 @@ spec:
   match:
     any:
       - resources:
-          namespaces:
-            - local-path-storage
+          namespaces: [local-path-storage]
+          kinds: [Pod, ReplicaSet, Deployment]
+          selector:
+            matchLabels:
+              app: local-path-provisioner
+      - resources:
+          namespaces: [local-path-storage]
+          kinds: [Pod]
+          names: [helper-pod-*]
   exceptions:
     - policyName: require-resource-limits
       ruleNames:
