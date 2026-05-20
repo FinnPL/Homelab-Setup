@@ -155,7 +155,7 @@ variable "talos_controlplane_config" {
     vmid      = 200
     name      = "talos-controlplane"
     cores     = 4
-    memory    = 4096
+    memory    = 5120
     disk_size = 20
   }
 }
