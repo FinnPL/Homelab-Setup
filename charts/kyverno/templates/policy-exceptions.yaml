@@ -1,22 +1,18 @@
 apiVersion: kyverno.io/v2
 kind: PolicyException
 metadata:
-  name: local-path-storage
+  name: local-path-storage-helper-pod
   namespace: kyverno
   annotations:
     policies.kyverno.io/description: >-
-      local-path-provisioner and its on-demand busybox helper pods mount the
-      node's local-path directory (hostPath) and run without limits / with a
-      writable rootfs by design.
+      On-demand busybox helper pods spawned by local-path-provisioner mount
+      the node's local-path directory (hostPath), run mkdir/chown as root with
+      a writable rootfs, and have no resources/securityContext fields set by
+      the provisioner script. The controller pod itself is policy-compliant
+      via chart values.
 spec:
   match:
     any:
-      - resources:
-          namespaces: [local-path-storage]
-          kinds: [Pod, ReplicaSet, Deployment]
-          selector:
-            matchLabels:
-              app: local-path-provisioner
       - resources:
           namespaces: [local-path-storage]
           kinds: [Pod]
@@ -38,6 +34,14 @@ spec:
       ruleNames:
         - restricted-volumes
         - autogen-restricted-volumes
+    - policyName: disallow-capabilities-strict
+      ruleNames: [require-drop-all, autogen-require-drop-all, adding-capabilities-strict, autogen-adding-capabilities-strict]
+    - policyName: disallow-privilege-escalation
+      ruleNames: [privilege-escalation, autogen-privilege-escalation]
+    - policyName: require-run-as-nonroot
+      ruleNames: [run-as-non-root, autogen-run-as-non-root]
+    - policyName: restrict-seccomp-strict
+      ruleNames: [check-seccomp-strict, autogen-check-seccomp-strict]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -79,6 +83,16 @@ spec:
       ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
     - policyName: restrict-seccomp
       ruleNames: [check-seccomp, autogen-check-seccomp]
+    - policyName: disallow-capabilities-strict
+      ruleNames: [require-drop-all, autogen-require-drop-all, adding-capabilities-strict, autogen-adding-capabilities-strict]
+    - policyName: disallow-privilege-escalation
+      ruleNames: [privilege-escalation, autogen-privilege-escalation]
+    - policyName: require-run-as-nonroot
+      ruleNames: [run-as-non-root, autogen-run-as-non-root]
+    - policyName: restrict-seccomp-strict
+      ruleNames: [check-seccomp-strict, autogen-check-seccomp-strict]
+    - policyName: restrict-volume-types
+      ruleNames: [restricted-volumes, autogen-restricted-volumes]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -112,6 +126,16 @@ spec:
       ruleNames: [require-limits, autogen-require-limits]
     - policyName: require-ro-rootfs
       ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+    - policyName: disallow-capabilities-strict
+      ruleNames: [require-drop-all, autogen-require-drop-all, adding-capabilities-strict, autogen-adding-capabilities-strict]
+    - policyName: disallow-privilege-escalation
+      ruleNames: [privilege-escalation, autogen-privilege-escalation]
+    - policyName: require-run-as-nonroot
+      ruleNames: [run-as-non-root, autogen-run-as-non-root]
+    - policyName: restrict-seccomp-strict
+      ruleNames: [check-seccomp-strict, autogen-check-seccomp-strict]
+    - policyName: restrict-volume-types
+      ruleNames: [restricted-volumes, autogen-restricted-volumes]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -140,6 +164,8 @@ spec:
       ruleNames: [require-limits, autogen-require-limits]
     - policyName: require-ro-rootfs
       ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+    - policyName: require-run-as-nonroot
+      ruleNames: [run-as-non-root, autogen-run-as-non-root]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -166,6 +192,12 @@ spec:
       ruleNames: [require-limits, autogen-require-limits]
     - policyName: require-ro-rootfs
       ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+    - policyName: disallow-capabilities-strict
+      ruleNames: [require-drop-all, autogen-require-drop-all, adding-capabilities-strict, autogen-adding-capabilities-strict]
+    - policyName: require-run-as-nonroot
+      ruleNames: [run-as-non-root, autogen-run-as-non-root]
+    - policyName: restrict-seccomp-strict
+      ruleNames: [check-seccomp-strict, autogen-check-seccomp-strict]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -198,6 +230,14 @@ spec:
       ruleNames: [privileged-containers, autogen-privileged-containers]
     - policyName: require-ro-rootfs
       ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+    - policyName: disallow-capabilities-strict
+      ruleNames: [require-drop-all, autogen-require-drop-all, adding-capabilities-strict, autogen-adding-capabilities-strict]
+    - policyName: disallow-privilege-escalation
+      ruleNames: [privilege-escalation, autogen-privilege-escalation]
+    - policyName: require-run-as-nonroot
+      ruleNames: [run-as-non-root, autogen-run-as-non-root]
+    - policyName: restrict-volume-types
+      ruleNames: [restricted-volumes, autogen-restricted-volumes]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -225,6 +265,8 @@ spec:
       ruleNames: [require-limits]
     - policyName: require-ro-rootfs
       ruleNames: [require-ro-rootfs]
+    - policyName: restrict-volume-types
+      ruleNames: [restricted-volumes]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
@@ -327,3 +369,85 @@ spec:
       ruleNames: [privileged-containers, autogen-privileged-containers]
     - policyName: require-resource-limits
       ruleNames: [require-limits, autogen-require-limits]
+    - policyName: disallow-capabilities-strict
+      ruleNames: [require-drop-all, autogen-require-drop-all, adding-capabilities-strict, autogen-adding-capabilities-strict]
+    - policyName: disallow-privilege-escalation
+      ruleNames: [privilege-escalation, autogen-privilege-escalation]
+    - policyName: require-run-as-nonroot
+      ruleNames: [run-as-non-root, autogen-run-as-non-root]
+    - policyName: restrict-seccomp-strict
+      ruleNames: [check-seccomp-strict, autogen-check-seccomp-strict]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: kube-system-coredns
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      coredns from the Talos in-cluster manifests runs without runAsNonRoot
+      and without a seccompProfile set.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [kube-system]
+          kinds: [Pod, ReplicaSet, Deployment]
+          selector:
+            matchLabels:
+              k8s-app: kube-dns
+  exceptions:
+    - policyName: require-run-as-nonroot
+      ruleNames: [run-as-non-root, autogen-run-as-non-root]
+    - policyName: restrict-seccomp-strict
+      ruleNames: [check-seccomp-strict, autogen-check-seccomp-strict]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: gateway-external-proxy
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      Cilium Gateway external-proxy Deployments are envoy instances generated
+      by the Gateway API controller; they ship without resource limits or
+      readOnlyRootFilesystem and we have no chart values to set on them.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [gateway]
+          kinds: [Pod, ReplicaSet, Deployment]
+          names: ["*-external-proxy", "*-external-proxy-*"]
+  exceptions:
+    - policyName: require-resource-limits
+      ruleNames: [require-limits, autogen-require-limits]
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: crossplane-functions-providers
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      Crossplane functions and providers are deployed via Configuration /
+      Provider CRs; their runtime pod specs ship without securityContext or
+      resources and are not chart-overridable.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [crossplane-system]
+          kinds: [Pod, ReplicaSet, Deployment]
+          names: ["function-*", "provider-*"]
+  exceptions:
+    - policyName: disallow-capabilities-strict
+      ruleNames: [require-drop-all, autogen-require-drop-all, adding-capabilities-strict, autogen-adding-capabilities-strict]
+    - policyName: require-resource-limits
+      ruleNames: [require-limits, autogen-require-limits]
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+    - policyName: restrict-seccomp-strict
+      ruleNames: [check-seccomp-strict, autogen-check-seccomp-strict]
