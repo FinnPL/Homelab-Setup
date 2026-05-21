@@ -23,6 +23,22 @@ resource "helm_release" "external_secrets" {
   values = [
     yamlencode({
       installCRDs = true
+      resources = {
+        requests = { cpu = "10m", memory = "64Mi" }
+        limits   = { memory = "128Mi" }
+      }
+      certController = {
+        resources = {
+          requests = { cpu = "10m", memory = "64Mi" }
+          limits   = { memory = "128Mi" }
+        }
+      }
+      webhook = {
+        resources = {
+          requests = { cpu = "10m", memory = "32Mi" }
+          limits   = { memory = "64Mi" }
+        }
+      }
     })
   ]
 
