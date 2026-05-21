@@ -161,6 +161,16 @@
           reserve_pool_timeout: "5"
           log_connections: "0"
           log_disconnections: "0"
+      template:
+        spec:
+          containers:
+            - name: pgbouncer
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
   patches:
     - type: FromCompositeFieldPath
       fromFieldPath: metadata.name
