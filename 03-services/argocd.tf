@@ -28,9 +28,32 @@ resource "helm_release" "argocd" {
         logging = {
           level = "warn"
         }
+        securityContext = {
+          runAsNonRoot   = true
+          runAsUser      = 999
+          runAsGroup     = 999
+          fsGroup        = 999
+          seccompProfile = { type = "RuntimeDefault" }
+        }
+      }
+      controller = {
+        resources = {
+          requests = { cpu = "100m", memory = "256Mi" }
+          limits   = { memory = "512Mi" }
+        }
       }
       server = {
         extraArgs = ["--insecure"]
+        resources = {
+          requests = { cpu = "50m", memory = "64Mi" }
+          limits   = { memory = "256Mi" }
+        }
+      }
+      dex = {
+        resources = {
+          requests = { cpu = "10m", memory = "32Mi" }
+          limits   = { memory = "64Mi" }
+        }
       }
       configs = {
         params = {
@@ -48,6 +71,10 @@ resource "helm_release" "argocd" {
       }
       redis = {
         enabled = true
+        resources = {
+          requests = { cpu = "10m", memory = "32Mi" }
+          limits   = { memory = "128Mi" }
+        }
         volumes = [
           {
             name = "redis-data"
@@ -70,6 +97,10 @@ resource "helm_release" "argocd" {
       }
 
       repoServer = {
+        resources = {
+          requests = { cpu = "50m", memory = "128Mi" }
+          limits   = { memory = "512Mi" }
+        }
         volumes = [
           {
             name = "nfs-tmp"
@@ -103,6 +134,10 @@ resource "helm_release" "argocd" {
                 mountPath = "/nfs-tmp"
               }
             ]
+            resources = {
+              requests = { cpu = "10m", memory = "16Mi" }
+              limits   = { memory = "32Mi" }
+            }
             securityContext = {
               runAsUser                = 0
               readOnlyRootFilesystem   = true
@@ -118,10 +153,18 @@ resource "helm_release" "argocd" {
 
       applicationSet = {
         enabled = true
+        resources = {
+          requests = { cpu = "10m", memory = "64Mi" }
+          limits   = { memory = "128Mi" }
+        }
       }
 
       notifications = {
         enabled = true
+        resources = {
+          requests = { cpu = "10m", memory = "32Mi" }
+          limits   = { memory = "64Mi" }
+        }
 
         secret = {
           create = false # managed by charts/argocd/notifications-secret.yaml (ExternalSecret)
