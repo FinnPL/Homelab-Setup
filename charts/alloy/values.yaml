@@ -7,12 +7,24 @@ alloy-agent:
     podSecurityContext:
       fsGroup: 473
       fsGroupChangePolicy: OnRootMismatch
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
   configReloader:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        memory: 32Mi
     securityContext:
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
+      runAsNonRoot: true
       capabilities:
         drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
   alloy:
     resources:
       limits:
@@ -25,8 +37,11 @@ alloy-agent:
     securityContext:
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
+      runAsNonRoot: true
       capabilities:
         drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
 
     clustering:
       enabled: false
@@ -241,18 +256,39 @@ alloy-receiver:
     podSecurityContext:
       fsGroup: 473
       fsGroupChangePolicy: OnRootMismatch
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
   configReloader:
+    resources:
+      requests:
+        cpu: 10m
+        memory: 16Mi
+      limits:
+        memory: 32Mi
     securityContext:
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
+      runAsNonRoot: true
       capabilities:
         drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
   alloy:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
     securityContext:
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
+      runAsNonRoot: true
       capabilities:
         drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
 
     clustering:
       enabled: false
