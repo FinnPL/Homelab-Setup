@@ -46,6 +46,12 @@ spec:
         app.kubernetes.io/name: unifi-exporter
         app.kubernetes.io/part-of: monitoring-stack
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: exporter
           image: "{{ .Values.unifiExporter.image.repository }}:{{ .Values.unifiExporter.image.tag }}"
@@ -95,6 +101,12 @@ spec:
 {{ toYaml .Values.unifiExporter.resources | indent 12 }}
           securityContext:
             readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop: [ALL]
+            seccompProfile:
+              type: RuntimeDefault
           volumeMounts:
             - name: tmp
               mountPath: /tmp
