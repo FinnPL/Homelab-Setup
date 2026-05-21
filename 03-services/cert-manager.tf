@@ -23,6 +23,22 @@ resource "helm_release" "cert_manager" {
         kind             = "ControllerConfiguration"
         enableGatewayAPI = true
       }
+      resources = {
+        requests = { cpu = "10m", memory = "64Mi" }
+        limits   = { memory = "128Mi" }
+      }
+      cainjector = {
+        resources = {
+          requests = { cpu = "10m", memory = "128Mi" }
+          limits   = { memory = "256Mi" }
+        }
+      }
+      webhook = {
+        resources = {
+          requests = { cpu = "10m", memory = "32Mi" }
+          limits   = { memory = "64Mi" }
+        }
+      }
     })
   ]
 

@@ -20,6 +20,17 @@ authentik:
     enabled: false
 
   server:
+    securityContext:
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+    containerSecurityContext:
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+      seccompProfile:
+        type: RuntimeDefault
     env:
       - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
         value: "0"
@@ -87,6 +98,24 @@ authentik:
           release: kube-prometheus-stack
 
   worker:
+    securityContext:
+      runAsNonRoot: true
+      seccompProfile:
+        type: RuntimeDefault
+    containerSecurityContext:
+      runAsNonRoot: true
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop: [ALL]
+      seccompProfile:
+        type: RuntimeDefault
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
     env:
       - name: AUTHENTIK_POSTGRESQL__CONN_MAX_AGE
         value: "0"
