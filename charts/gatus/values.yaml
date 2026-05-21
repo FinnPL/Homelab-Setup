@@ -3,6 +3,22 @@ crossplane:
   dedicatedPoolerPoolMode: transaction
 
 gatus:
+  podSecurityContext:
+    fsGroup: 65534
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65534
+    runAsGroup: 65534
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: [ALL]
+    seccompProfile:
+      type: RuntimeDefault
+
   env:
     GATUS_LOG_LEVEL: "WARN"
     DISCORD_WEBHOOK_URL:
