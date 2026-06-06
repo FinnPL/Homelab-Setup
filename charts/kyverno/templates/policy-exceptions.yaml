@@ -312,8 +312,8 @@ spec:
           kinds: [Pod, DaemonSet]
           selector:
             matchLabels:
-              app.kubernetes.io/name: alloy
-              app.kubernetes.io/instance: alloy-agent
+              app.kubernetes.io/name: alloy-agent
+              app.kubernetes.io/instance: alloy
   exceptions:
     - policyName: disallow-host-namespaces
       ruleNames: [host-namespaces, autogen-host-namespaces]
