@@ -278,7 +278,8 @@ metadata:
       The fix-nfs-permissions init container runs as root with CAP_CHOWN +
       CAP_FOWNER to chown an RWX NFS volume to uid 999 before the repo-server
       can write to it. NFS exports don't honor fsGroup, so the chown must
-      happen in-pod.
+      happen in-pod. The init and main containers ship without a
+      seccompProfile set.
 spec:
   match:
     any:
@@ -293,6 +294,8 @@ spec:
       ruleNames: [run-as-non-root, autogen-run-as-non-root]
     - policyName: require-run-as-non-root-user
       ruleNames: [run-as-non-root-user, autogen-run-as-non-root-user]
+    - policyName: restrict-seccomp-strict
+      ruleNames: [check-seccomp-strict, autogen-check-seccomp-strict]
 ---
 apiVersion: kyverno.io/v2
 kind: PolicyException
