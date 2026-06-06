@@ -9,6 +9,28 @@ spec:
     repoURL: https://charts.crossplane.io/stable
     chart: crossplane
     targetRevision: 2.2.0
+    helm:
+      valuesObject:
+        podSecurityContextCrossplane:
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        securityContextCrossplane:
+          runAsNonRoot: true
+          capabilities:
+            drop: [ALL]
+          seccompProfile:
+            type: RuntimeDefault
+        podSecurityContextRBACManager:
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+        securityContextRBACManager:
+          runAsNonRoot: true
+          capabilities:
+            drop: [ALL]
+          seccompProfile:
+            type: RuntimeDefault
   destination:
     server: https://kubernetes.default.svc
     namespace: crossplane-system

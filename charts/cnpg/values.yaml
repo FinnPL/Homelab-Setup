@@ -3,3 +3,9 @@ cloudnative-pg:
     podMonitorEnabled: true
     podMonitorAdditionalLabels:
       release: kube-prometheus-stack
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi

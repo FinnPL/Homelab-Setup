@@ -22,6 +22,21 @@ kube-prometheus-stack:
         memory: 32Mi
       limits:
         memory: 64Mi
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop: [ALL]
+      seccompProfile:
+        type: RuntimeDefault
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      runAsGroup: 65534
+      fsGroup: 65534
+      seccompProfile:
+        type: RuntimeDefault
 
   prometheusOperator:
     resources:
@@ -30,6 +45,14 @@ kube-prometheus-stack:
         memory: 64Mi
       limits:
         memory: 256Mi
+    admissionWebhooks:
+      patch:
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            memory: 64Mi
 
   kube-state-metrics:
     resources:
@@ -38,6 +61,22 @@ kube-prometheus-stack:
         memory: 32Mi
       limits:
         memory: 128Mi
+    securityContext:
+      enabled: true
+      runAsNonRoot: true
+      runAsUser: 65534
+      runAsGroup: 65534
+      fsGroup: 65534
+      seccompProfile:
+        type: RuntimeDefault
+    containerSecurityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      capabilities:
+        drop: [ALL]
+      seccompProfile:
+        type: RuntimeDefault
 
   prometheus:
     prometheusSpec:
@@ -47,7 +86,26 @@ kube-prometheus-stack:
         runAsGroup: 2000
         fsGroup: 2000
         fsGroupChangePolicy: "OnRootMismatch"
-        
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: config-reloader
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
+      initContainers:
+        - name: init-config-reloader
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
+
       resources:
         requests:
           memory: 512Mi
@@ -78,7 +136,18 @@ kube-prometheus-stack:
         runAsGroup: 2000
         fsGroup: 2000
         fsGroupChangePolicy: "OnRootMismatch"
-        
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: config-reloader
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
+
       resources:
         requests:
           memory: 50Mi
@@ -165,11 +234,21 @@ kube-prometheus-stack:
         memory: 128Mi
       limits:
         memory: 384Mi
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 472
+      runAsGroup: 472
+      fsGroup: 472
+      seccompProfile:
+        type: RuntimeDefault
     containerSecurityContext:
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
+      runAsNonRoot: true
       capabilities:
         drop: ["ALL"]
+      seccompProfile:
+        type: RuntimeDefault
     extraVolumes:
       - name: tmp
         emptyDir:
@@ -192,8 +271,11 @@ kube-prometheus-stack:
       securityContext:
         readOnlyRootFilesystem: true
         allowPrivilegeEscalation: false
+        runAsNonRoot: true
         capabilities:
           drop: ["ALL"]
+        seccompProfile:
+          type: RuntimeDefault
       dashboards:
         logLevel: WARN
       datasources:

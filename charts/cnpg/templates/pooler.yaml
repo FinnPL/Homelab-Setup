@@ -15,3 +15,13 @@ spec:
       min_pool_size: "5"
       reserve_pool_size: "5"
       reserve_pool_timeout: "5"
+  template:
+    spec:
+      containers:
+        - name: pgbouncer
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 128Mi

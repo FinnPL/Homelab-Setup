@@ -8,13 +8,20 @@ spec:
       selector: {}
       template:
         spec:
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           containers:
             - name: package-runtime
               securityContext:
                 readOnlyRootFilesystem: true
                 allowPrivilegeEscalation: false
+                runAsNonRoot: true
                 capabilities:
                   drop: ["ALL"]
+                seccompProfile:
+                  type: RuntimeDefault
               resources:
                 requests:
                   cpu: 50m
