@@ -249,6 +249,14 @@ kube-prometheus-stack:
         drop: ["ALL"]
       seccompProfile:
         type: RuntimeDefault
+    extraVolumes:
+      - name: tmp
+        emptyDir:
+          medium: Memory
+          sizeLimit: 128Mi
+    extraVolumeMounts:
+      - name: tmp
+        mountPath: /tmp
     # The kiwigrid k8s-sidecar containers (sc-dashboard, sc-datasources)
     # log "Loading incluster config..." at INFO every poll cycle; the
     # only useful output from them is connection failures, which still
