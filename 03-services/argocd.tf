@@ -28,18 +28,11 @@ resource "helm_release" "argocd" {
         logging = {
           level = "warn"
         }
-        securityContext = {
-          runAsNonRoot   = true
-          runAsUser      = 999
-          runAsGroup     = 999
-          fsGroup        = 999
-          seccompProfile = { type = "RuntimeDefault" }
-        }
       }
       controller = {
         resources = {
           requests = { cpu = "100m", memory = "256Mi" }
-          limits   = { memory = "512Mi" }
+          limits   = { memory = "1Gi" }
         }
       }
       server = {
