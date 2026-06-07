@@ -9,7 +9,7 @@ metadata:
       Every container must declare CPU and memory requests and a memory limit. 
       CPU limits are intentionally NOT required.
 spec:
-  validationFailureAction: Audit
+  validationFailureAction: Enforce
   background: false
   rules:
     - name: require-limits

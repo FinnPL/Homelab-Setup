@@ -9,7 +9,7 @@ metadata:
       Workloads in the 'default' namespace make it hard to apply
       namespace-scoped RBAC and network policies cleanly.
 spec:
-  validationFailureAction: Audit
+  validationFailureAction: Enforce
   background: false
   rules:
     - name: check-default-namespace

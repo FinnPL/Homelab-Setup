@@ -8,7 +8,7 @@ metadata:
     policies.kyverno.io/description: >-
       Flags resources using API versions removed in recent Kubernetes releases.
 spec:
-  validationFailureAction: Audit
+  validationFailureAction: Enforce
   background: false
   rules:
     - name: check-deprecated-apis
