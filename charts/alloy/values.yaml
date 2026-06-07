@@ -1,13 +1,9 @@
 alloy-agent:
   enabled: true
-  # alloy image runs as uid/gid 473; with readOnlyRootFilesystem + the
-  # /var/lib/alloy/data emptyDir, kubelet needs fsGroup to chgrp the tmpfs
-  # so alloy can write to it.
   global:
     podSecurityContext:
       fsGroup: 473
       fsGroupChangePolicy: OnRootMismatch
-      runAsNonRoot: true
       seccompProfile:
         type: RuntimeDefault
   configReloader:
@@ -21,6 +17,7 @@ alloy-agent:
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
       runAsNonRoot: true
+      runAsUser: 65534
       capabilities:
         drop: ["ALL"]
       seccompProfile:
@@ -37,7 +34,6 @@ alloy-agent:
     securityContext:
       readOnlyRootFilesystem: true
       allowPrivilegeEscalation: false
-      runAsNonRoot: true
       capabilities:
         drop: ["ALL"]
       seccompProfile:
@@ -257,6 +253,8 @@ alloy-receiver:
       fsGroup: 473
       fsGroupChangePolicy: OnRootMismatch
       runAsNonRoot: true
+      runAsUser: 473
+      runAsGroup: 473
       seccompProfile:
         type: RuntimeDefault
   configReloader:

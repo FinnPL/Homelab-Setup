@@ -306,7 +306,8 @@ metadata:
     policies.kyverno.io/description: >-
       alloy-agent is a hostNetwork DaemonSet that binds syslog hostPorts
       (5140/5141/5142) and mounts /var/log + /var/log/pods to tail container
-      logs for Loki.
+      logs for Loki. The alloy container runs as root because a non-root uid
+      cannot reliably read the root-owned host log files.
 spec:
   match:
     any:
@@ -324,6 +325,10 @@ spec:
       ruleNames: [host-path, autogen-host-path]
     - policyName: disallow-host-ports
       ruleNames: [host-ports-none, autogen-host-ports-none]
+    - policyName: require-run-as-nonroot
+      ruleNames: [run-as-non-root, autogen-run-as-non-root]
+    - policyName: require-run-as-non-root-user
+      ruleNames: [run-as-non-root-user, autogen-run-as-non-root-user]
     - policyName: restrict-volume-types
       ruleNames: [restricted-volumes, autogen-restricted-volumes]
 ---
