@@ -179,7 +179,7 @@ ArgoCD is deployed via Helm in `03-services`. Everything beyond the platform ser
 | **ArgoCD** | GitOps controller: self-managed via App of Apps |
 | **CloudNative-PG** | PostgreSQL operator; provides databases for services |
 | **Crossplane** | DBaaS: provisions Postgres databases, PgBouncer, and credentials |
-| **Kyverno** | Admission policy engine; PSS Restricted via `kyverno-policies` + custom rules |
+| **Kyverno** | Admission policy engine; PSS Restricted via `kyverno-policies` + custom rules, in Enforce mode |
 | **Local Path Provisioner** | Node-local dynamic storage for DBs |
 
 #### Observability
