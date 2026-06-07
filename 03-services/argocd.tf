@@ -92,56 +92,33 @@ resource "helm_release" "argocd" {
       repoServer = {
         resources = {
           requests = { cpu = "50m", memory = "128Mi" }
-          limits   = { memory = "512Mi" }
+          limits   = { memory = "1Gi" }
         }
         volumes = [
           {
-            name = "nfs-tmp"
-            persistentVolumeClaim = {
-              claimName = kubernetes_persistent_volume_claim_v1.argocd_repo_server.metadata[0].name
+            name = "git-cache"
+            emptyDir = {
+              medium    = "Memory"
+              sizeLimit = "512Mi"
             }
           }
         ]
 
         volumeMounts = [
           {
-            name      = "nfs-tmp"
-            mountPath = "/nfs-tmp"
+            name      = "git-cache"
+            mountPath = "/git-cache"
           }
         ]
 
         env = [
           {
             name  = "TMPDIR"
-            value = "/nfs-tmp"
+            value = "/git-cache"
           }
         ]
-        initContainers = [
-          {
-            name    = "fix-nfs-permissions"
-            image   = "busybox:1.37.0"
-            command = ["sh", "-c", "chown 999:999 /nfs-tmp && chmod 777 /nfs-tmp"]
-            volumeMounts = [
-              {
-                name      = "nfs-tmp"
-                mountPath = "/nfs-tmp"
-              }
-            ]
-            resources = {
-              requests = { cpu = "10m", memory = "16Mi" }
-              limits   = { memory = "32Mi" }
-            }
-            securityContext = {
-              runAsUser                = 0
-              readOnlyRootFilesystem   = true
-              allowPrivilegeEscalation = false
-              capabilities = {
-                drop = ["ALL"]
-                add  = ["CHOWN", "FOWNER"]
-              }
-            }
-          }
-        ]
+        livenessProbe  = { timeoutSeconds = 10 }
+        readinessProbe = { timeoutSeconds = 10 }
       }
 
       applicationSet = {
@@ -241,26 +218,6 @@ resource "helm_release" "argocd" {
   ]
 
   depends_on = [kubernetes_storage_class_v1.nfs, helm_release.cilium]
-}
-
-resource "kubernetes_persistent_volume_claim_v1" "argocd_repo_server" {
-  metadata {
-    name      = "argocd-repo-server-nfs"
-    namespace = kubernetes_namespace_v1.argocd.metadata[0].name
-  }
-
-  spec {
-    access_modes       = ["ReadWriteMany"]
-    storage_class_name = "nfs-client"
-
-    resources {
-      requests = {
-        storage = "1Gi"
-      }
-    }
-  }
-
-  depends_on = [kubernetes_storage_class_v1.nfs]
 }
 
 # Root Application for App of Apps pattern
