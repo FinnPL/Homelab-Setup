@@ -147,6 +147,14 @@ kube-prometheus-stack:
               memory: 16Mi
             limits:
               memory: 32Mi
+      initContainers:
+        - name: init-config-reloader
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              memory: 32Mi
 
       resources:
         requests:
