@@ -1,0 +1,30 @@
+# Report-only persistence/rootkit tripwires.
+#   - Kernel module loads. A pod loading a module on Talos is never legitimate.
+#     Traced via syscall: true so the probe attaches arch-independently on both
+#     the amd64 VMs and the arm64 Pis (the raw __x64_/__arm64_ symbols differ).
+#   - Access to /etc/ld.so.preload and /etc/ld.so.conf*, the classic ld.so
+#     library-injection persistence files. ld.so.preload normally does not even
+#     exist, so an access means something created it. (Note: /etc/ld.so.cache,
+#     read on every exec, does not share this prefix and so is not matched.)
+apiVersion: cilium.io/v1alpha1
+kind: TracingPolicy
+metadata:
+  name: monitor-rootkit-techniques
+spec:
+  kprobes:
+    - call: "sys_finit_module"
+      syscall: true
+    - call: "sys_init_module"
+      syscall: true
+    - call: "security_file_permission"
+      syscall: false
+      args:
+        - index: 0
+          type: "file"
+      selectors:
+        - matchArgs:
+            - index: 0
+              operator: "Prefix"
+              values:
+                - "/etc/ld.so.preload"
+                - "/etc/ld.so.conf"
