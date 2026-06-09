@@ -46,7 +46,7 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 | **Data** | CloudNativePG, Crossplane (DBaaS) |
 | **Observability** | Prometheus, Alertmanager, Grafana, Loki, Alloy |
 | **Identity & Secrets** | Authentik (SSO), External Secrets Operator, cert-manager *(planned: Vault)* |
-| **Security** | Kyverno (admission policy), Trivy (CI scanning) *(planned: Tetragon runtime, Kubescape posture)* |
+| **Security** | Kyverno (admission policy), Tetragon (eBPF runtime security), Trivy (CI scanning) |
 | **DNS** | Blocky (filtering), Unbound (DNSSEC + DoT upstream), Cloudflare |
 
 ### CI/CD Pipeline
@@ -180,6 +180,7 @@ ArgoCD is deployed via Helm in `03-services`. Everything beyond the platform ser
 | **CloudNative-PG** | PostgreSQL operator; provides databases for services |
 | **Crossplane** | DBaaS: provisions Postgres databases, PgBouncer, and credentials |
 | **Kyverno** | Admission policy engine; PSS Restricted via `kyverno-policies` + custom rules, in Enforce mode |
+| **Tetragon** | Cilium eBPF runtime-security agent; observe-only `TracingPolicy` tripwires shipped to Loki via Alloy |
 | **Local Path Provisioner** | Node-local dynamic storage for DBs |
 
 #### Observability
