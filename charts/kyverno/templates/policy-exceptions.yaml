@@ -518,3 +518,60 @@ spec:
   exceptions:
     - policyName: require-resource-limits
       ruleNames: [require-limits, autogen-require-limits]
+---
+apiVersion: kyverno.io/v2
+kind: PolicyException
+metadata:
+  name: tetragon-agent
+  namespace: kyverno
+  annotations:
+    policies.kyverno.io/description: >-
+      The tetragon agent is a privileged eBPF DaemonSet: it needs
+      hostNetwork, a privileged container (raw bpf syscalls), hostPath mounts
+      (/sys/fs/bpf, /proc, /var/run/cilium, /var/run/tetragon) and a writable
+      rootfs, and runs as root. The export-stdout sidecar and the
+      tetragon-operator are hardened via chart values and need no exception;
+      this is scoped to the agent only.
+spec:
+  match:
+    any:
+      - resources:
+          namespaces: [tetragon]
+          kinds: [Pod, DaemonSet]
+          selector:
+            matchLabels:
+              app.kubernetes.io/name: tetragon
+              app.kubernetes.io/component: agent
+  exceptions:
+    - policyName: disallow-host-namespaces
+      ruleNames: [host-namespaces, autogen-host-namespaces]
+    - policyName: disallow-host-path
+      ruleNames: [host-path, autogen-host-path]
+    - policyName: disallow-host-ports
+      ruleNames: [host-ports-none, autogen-host-ports-none]
+    - policyName: disallow-host-process
+      ruleNames: [host-process-containers, autogen-host-process-containers]
+    - policyName: disallow-privileged-containers
+      ruleNames: [privileged-containers, autogen-privileged-containers]
+    - policyName: disallow-proc-mount
+      ruleNames: [check-proc-mount, autogen-check-proc-mount]
+    - policyName: disallow-selinux
+      ruleNames: [selinux-type, autogen-selinux-type, selinux-user-role, autogen-selinux-user-role]
+    - policyName: restrict-seccomp
+      ruleNames: [check-seccomp, autogen-check-seccomp]
+    - policyName: restrict-seccomp-strict
+      ruleNames: [check-seccomp-strict, autogen-check-seccomp-strict]
+    - policyName: disallow-capabilities-strict
+      ruleNames: [require-drop-all, autogen-require-drop-all, adding-capabilities-strict, autogen-adding-capabilities-strict]
+    - policyName: disallow-privilege-escalation
+      ruleNames: [privilege-escalation, autogen-privilege-escalation]
+    - policyName: require-run-as-nonroot
+      ruleNames: [run-as-non-root, autogen-run-as-non-root]
+    - policyName: require-run-as-non-root-user
+      ruleNames: [run-as-non-root-user, autogen-run-as-non-root-user]
+    - policyName: require-ro-rootfs
+      ruleNames: [require-ro-rootfs, autogen-require-ro-rootfs]
+    - policyName: require-resource-limits
+      ruleNames: [require-limits, autogen-require-limits]
+    - policyName: restrict-volume-types
+      ruleNames: [restricted-volumes, autogen-restricted-volumes]
