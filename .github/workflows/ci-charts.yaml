@@ -71,17 +71,26 @@ jobs:
             | sudo tar xz -C /usr/local/bin kubeconform
       - name: Fetch chart dependencies
         run: |
-          helm dependency build "charts/${{ matrix.chart.name }}" \
-            || helm dependency update "charts/${{ matrix.chart.name }}"
+          d="charts/${{ matrix.chart.name }}"
+          [ -f "$d/Chart.yaml" ] || { echo "plain manifest dir — no Helm deps"; exit 0; }
+          helm dependency build "$d" || helm dependency update "$d"
 
       - name: Helm lint
-        run: helm lint "charts/${{ matrix.chart.name }}"
+        run: |
+          d="charts/${{ matrix.chart.name }}"
+          [ -f "$d/Chart.yaml" ] || { echo "plain manifest dir — skipping lint"; exit 0; }
+          helm lint "$d"
 
       # Render into the real destination namespace
-      - name: Helm template
+      - name: Render
         run: |
-          helm template "${{ matrix.chart.name }}" "charts/${{ matrix.chart.name }}" \
-            --namespace "${{ matrix.chart.ns }}" \
+          d="charts/${{ matrix.chart.name }}"
+          if [ -f "$d/Chart.yaml" ]; then
+            helm template "${{ matrix.chart.name }}" "$d" --namespace "${{ matrix.chart.ns }}"
+          else
+            find "$d" -type f \( -name '*.yaml' -o -name '*.yml' \) \
+              -exec sh -c 'for f; do cat "$f"; echo; echo "---"; done' _ {} +
+          fi \
             | NS="${{ matrix.chart.ns }}" yq eval '
                 select(.kind != null)
                 | select((.metadata.annotations."helm.sh/hook" // "") | test("test") | not)
