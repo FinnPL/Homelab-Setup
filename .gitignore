@@ -52,3 +52,7 @@ Desktop.ini
 02-infrastructure/.ansible/
 
 kubeconfig.yaml
+
+# Helm wrapper-chart build artifacts
+charts/*/Chart.lock
+charts/*/charts/

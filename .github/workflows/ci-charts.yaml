@@ -1,0 +1,159 @@
+name: "CI: Charts & Policy"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "charts/**"
+      - "apps/**"
+      - ".github/workflows/ci-charts.yaml"
+  pull_request:
+    paths:
+      - "charts/**"
+      - "apps/**"
+      - ".github/workflows/ci-charts.yaml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-charts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  discover:
+    name: "Discover charts"
+    runs-on: ubuntu-latest
+    outputs:
+      charts: ${{ steps.find.outputs.charts }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - id: find
+        run: |
+          declare -A NS
+          for app in apps/*.yaml; do
+            ns=$(yq e '.spec.destination.namespace // ""' "$app")
+            paths=$(yq e '([.spec.source.path] + (.spec.sources // [] | map(.path))) | .[] | select(. != null)' "$app")
+            for p in $paths; do NS["$(basename "$p")"]="$ns"; done
+          done
+
+          entries=()
+          for dir in charts/*/; do
+            c=$(basename "$dir")
+            ns="${NS[$c]:-$c}"; [ -z "$ns" ] && ns="$c"
+            entries+=("$(jq -nc --arg n "$c" --arg s "$ns" '{name:$n, ns:$s}')")
+          done
+          charts=$(printf '%s\n' "${entries[@]}" | jq -sc '.')
+          echo "charts=$charts" >> "$GITHUB_OUTPUT"
+          echo "$charts" | jq .
+
+  render:
+    name: "Render & schema-check"
+    needs: discover
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        chart: ${{ fromJSON(needs.discover.outputs.charts) }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: azure/setup-helm@v4
+
+      - name: Install kubeconform
+        env:
+          # renovate: datasource=github-releases depName=yannh/kubeconform
+          KUBECONFORM_VERSION: "v0.6.7"
+        run: |
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KUBECONFORM_VERSION}/kubeconform-linux-amd64.tar.gz" \
+            | sudo tar xz -C /usr/local/bin kubeconform
+      - name: Fetch chart dependencies
+        run: |
+          helm dependency build "charts/${{ matrix.chart.name }}" \
+            || helm dependency update "charts/${{ matrix.chart.name }}"
+
+      - name: Helm lint
+        run: helm lint "charts/${{ matrix.chart.name }}"
+
+      # Render into the real destination namespace
+      - name: Helm template
+        run: |
+          helm template "${{ matrix.chart.name }}" "charts/${{ matrix.chart.name }}" \
+            --namespace "${{ matrix.chart.ns }}" \
+            | NS="${{ matrix.chart.ns }}" yq eval '
+                select(.kind != null)
+                | select((.metadata.annotations."helm.sh/hook" // "") | test("test") | not)
+                | .metadata.namespace = (.metadata.namespace // strenv(NS))
+              ' - \
+            > "rendered-${{ matrix.chart.name }}.yaml"
+
+      # -ignore-missing-schemas: own CRDs (e.g. database.lippok.dev)
+      - name: Schema validation (kubeconform)
+        run: |
+          kubeconform \
+            -strict \
+            -ignore-missing-schemas \
+            -summary \
+            -schema-location default \
+            -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+            "rendered-${{ matrix.chart.name }}.yaml"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rendered-${{ matrix.chart.name }}
+          path: rendered-${{ matrix.chart.name }}.yaml
+
+  kyverno:
+    name: "Kyverno policy gate"
+    needs: render
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: azure/setup-helm@v4
+
+      - name: Install Kyverno CLI
+        env:
+          # renovate: datasource=github-releases depName=kyverno/kyverno
+          KYVERNO_VERSION: "v1.18.1"
+        run: |
+          echo "Installing Kyverno CLI ${KYVERNO_VERSION}"
+          curl -fsSL "https://github.com/kyverno/kyverno/releases/download/${KYVERNO_VERSION}/kyverno-cli_${KYVERNO_VERSION}_linux_x86_64.tar.gz" \
+            | sudo tar xz -C /usr/local/bin kyverno
+
+      - name: Download rendered manifests
+        uses: actions/download-artifact@v4
+        with:
+          pattern: rendered-*
+          path: rendered
+          merge-multiple: true
+
+      - name: Render policies & exceptions
+        run: |
+          helm dependency build charts/kyverno || helm dependency update charts/kyverno
+          helm template kyverno charts/kyverno --namespace kyverno > kyverno-rendered.yaml
+          yq eval 'select(.kind == "ClusterPolicy" or .kind == "Policy")' kyverno-rendered.yaml > policies.yaml
+          yq eval 'select(.kind == "PolicyException")' kyverno-rendered.yaml > exceptions.yaml
+          echo "Policies:";   grep -c '^kind:' policies.yaml || true
+          echo "Exceptions:"; grep -c '^kind:' exceptions.yaml || true
+
+      # Every chart except kyverno itself becomes a resource to test
+      - name: Assemble workload resources
+        run: |
+          : > resources.yaml
+          for f in rendered/rendered-*.yaml; do
+            [ "$(basename "$f")" = "rendered-kyverno.yaml" ] && continue
+            cat "$f" >> resources.yaml
+            echo '---' >> resources.yaml
+          done
+
+      # Same policies + exceptions the cluster enforces at admission.
+      # --continue-on-fail so one run reports every violation, not just the first.
+      - name: Kyverno apply
+        run: |
+          kyverno apply policies.yaml \
+            --resource resources.yaml \
+            --exception exceptions.yaml \
+            --continue-on-fail

@@ -56,6 +56,16 @@
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+\\w+\\s*=\\s*\"[^\"]+:(?<currentValue>[^@\"]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\";?"
       ]
+    },
+    {
+      "customType": "regex",
+      "description": "Track CLI tool versions pinned as env vars in GitHub workflows",
+      "managerFilePatterns": [
+        "/(^|/)\\.github/workflows/.+\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+\\w+:\\s*\"?(?<currentValue>[^\"\\n]+)\"?"
+      ]
     }
   ],
   "packageRules": [
