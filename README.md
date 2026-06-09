@@ -32,7 +32,7 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 |:-----|:-----|:---------|:------------|
 | **Vieta** | Primary homelab: Kubernetes cluster, services, storage | Talos K8s on Proxmox | `main-deploy.yaml` |
 | **Minerva** | Secondary site: lightweight services | Docker Compose | `minerva-deploy.yaml` |
-| **Cloud Edge** | Public-facing edge: TLS termination, VPN tunneling, management | NixOS on Oracle Cloud (ARM) | `cloud-edge.yaml` |
+| **Cloud Edge** | Public-facing edge: HAProxy TLS relay, VPN tunneling | NixOS on Oracle Cloud (ARM) | `cloud-edge.yaml` |
 
 ### Technology Stack
 
