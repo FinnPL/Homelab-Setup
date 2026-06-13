@@ -17,7 +17,7 @@
 ![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=flat&logo=cloudflare&logoColor=white)
 
 
-A GitOps-driven multi-site homelab managed by ArgoCD, bootstrapped via Terraform IaC and CI/CD to deploy a Talos Kubernetes cluster on Proxmox with Cilium CNI and a full OTel-based Prometheus/Loki monitoring stack.
+A GitOps-driven multi-site homelab managed by ArgoCD, bootstrapped via Terraform IaC and CI/CD to deploy a Talos Kubernetes cluster on Proxmox with Cilium CNI and a Prometheus/Loki/Alloy observability stack.
 </div>
 
 ---
@@ -128,7 +128,11 @@ Provisions VMs and containers on a Proxmox host (Intel NUC) and bootstraps a Tal
 
 #### NFS Server
 
-Debian 12 LXC container with dual storage (SSD for OS, HDD for data). Exports `/srv/nfs/kubernetes` to the cluster. Proxmox firewall defaults to `DROP`; only K8s nodes and the NUC are whitelisted via IP set.
+Debian 12 LXC container with dual storage (SSD for OS, HDD for data). Exports `/srv/nfs/kubernetes` to the cluster. Proxmox firewall defaults to `DROP`; only K8s nodes and the NUC are whitelisted via IP set. Configured via Ansible.
+
+#### Mesh Router
+
+A Debian LXC running WireGuard as the homelab end of the Cloud Edge tunnel (Ansible-provisioned). It NATs the Oracle edge into the Athena VLAN, letting the cloud HAProxy reach the internal services (for the `*.relay.lippok.dev` path.)
 
 #### Outputs
 
@@ -184,13 +188,13 @@ ArgoCD is deployed via Helm in `03-services`. Everything beyond the platform ser
 
 #### Observability
 
-A unified OTel-based stack for metrics, logs, and alerting.
+A unified Grafana-stack for metrics, logs, and alerting (Prometheus + Alloy + Loki).
 
 | Service | Role |
 |:--------|:-----|
-| **kube-prometheus-stack** | Prometheus + Alertmanager + Grafana for cluster-wide metrics and dashboards |
+| **kube-prometheus-stack** | Prometheus + Alertmanager + Grafana; scrapes cluster metrics plus Proxmox and UniFi via dedicated exporters and Cilium/Hubble |
 | **Loki** | Log aggregation backend (single-binary, filesystem-backed) |
-| **Alloy** | Telemetry collection agent: DaemonSet (node logs/metrics) + StatefulSet (syslog from Talos, Proxmox, UniFi) |
+| **Alloy** | Log/telemetry agent: DaemonSet collects pod logs + Talos/Proxmox/UniFi syslog; StatefulSet ships Kubernetes events |
 
 #### Authentication
 
