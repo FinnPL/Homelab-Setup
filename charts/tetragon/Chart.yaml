@@ -1,0 +1,9 @@
+apiVersion: v2
+name: tetragon
+description: A wrapper chart deploying Tetragon for eBPF runtime security observability
+type: application
+version: 1.0.0
+dependencies:
+  - name: tetragon
+    version: 1.7.0
+    repository: https://helm.cilium.io
