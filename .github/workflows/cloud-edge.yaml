@@ -1,4 +1,4 @@
-name: "Cloud Edge"
+name: "Cloud Edge: deploy"
 
 on:
   pull_request:
@@ -46,8 +46,8 @@ jobs:
       nixos: ${{ steps.filter.outputs.nixos }}
       workflow_logic: ${{ steps.filter.outputs.workflow_logic }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
           filters: |
@@ -92,13 +92,13 @@ jobs:
       REPLACE_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.replace_target || '' }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
-      - uses: hashicorp/setup-terraform@v4
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
         with:
           terraform_version: "1.10.0"
 
-      - uses: aws-actions/configure-aws-credentials@v6
+      - uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -131,7 +131,7 @@ jobs:
 
       - name: Comment Terraform Plan
         if: github.event_name == 'pull_request'
-        uses: borchero/terraform-plan-comment@v2
+        uses: borchero/terraform-plan-comment@2d41e908725447b1677913001dfb92fa7010c025 # v3.1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           planfile: .planfile
@@ -171,13 +171,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Validate workflow helper script syntax
         run: bash -n ./cloud-edge/scripts/gha/cloud-edge-workflow.sh
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
@@ -225,20 +225,20 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
-      - uses: hashicorp/setup-terraform@v4
+      - uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
         with:
           terraform_version: "1.10.0"
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
