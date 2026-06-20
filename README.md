@@ -2,7 +2,7 @@
 
 # Homelab Setup
 
-[![Orchestrator](https://github.com/FinnPL/Homelab-Setup/actions/workflows/main-deploy.yaml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/main-deploy.yaml)
+[![Orchestrator](https://github.com/FinnPL/Homelab-Setup/actions/workflows/vieta-deploy.yaml/badge.svg)](https://github.com/FinnPL/Homelab-Setup/actions/workflows/vieta-deploy.yaml)
 ![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=flat&logo=github-actions&logoColor=white)
 ![Terraform](https://img.shields.io/badge/Terraform-623CE4?style=flat&logo=terraform&logoColor=white)
 ![Ansible](https://img.shields.io/badge/Ansible-EE0000?style=flat&logo=ansible&logoColor=white)

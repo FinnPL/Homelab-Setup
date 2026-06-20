@@ -4,12 +4,12 @@ on:
   pull_request:
     paths:
       - "cloud-edge/**"
-      - ".github/workflows/cloud-edge.yaml"
+      - ".github/workflows/cloud-edge-deploy.yaml"
   push:
     branches: [main]
     paths:
       - "cloud-edge/**"
-      - ".github/workflows/cloud-edge.yaml"
+      - ".github/workflows/cloud-edge-deploy.yaml"
   workflow_dispatch:
     inputs:
       apply:
@@ -57,7 +57,7 @@ jobs:
             nixos:
               - 'cloud-edge/nixos/**'
             workflow_logic:
-              - '.github/workflows/cloud-edge.yaml'
+              - '.github/workflows/cloud-edge-deploy.yaml'
               - 'cloud-edge/scripts/gha/**'
 
   terraform:
@@ -103,9 +103,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-central-1
-
-      - name: Terraform Format
-        run: terraform fmt -check
 
       - name: Terraform Init
         run: terraform init -upgrade

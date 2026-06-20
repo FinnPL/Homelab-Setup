@@ -43,7 +43,7 @@ jobs:
   deploy-global:
     needs: changes
     if: needs.changes.outputs.global == 'true'
-    uses: ./.github/workflows/00-global.yaml
+    uses: ./.github/workflows/terraform-00-global.yaml
     secrets: inherit
 
   deploy-network:
@@ -52,7 +52,7 @@ jobs:
       always() &&
       (needs.changes.outputs.network == 'true') &&
       (needs.deploy-global.result == 'success' || needs.deploy-global.result == 'skipped')
-    uses: ./.github/workflows/01-network.yaml
+    uses: ./.github/workflows/terraform-01-network.yaml
     secrets: inherit
 
   deploy-infra:
@@ -61,7 +61,7 @@ jobs:
       always() &&
       (needs.changes.outputs.infra == 'true') &&
       (needs.deploy-network.result == 'success' || needs.deploy-network.result == 'skipped')
-    uses: ./.github/workflows/02-infrastructure.yaml
+    uses: ./.github/workflows/terraform-02-infrastructure.yaml
     secrets: inherit
 
   deploy-services:
@@ -70,5 +70,5 @@ jobs:
       always() &&
       (needs.changes.outputs.services == 'true') &&
       (needs.deploy-infra.result == 'success' || needs.deploy-infra.result == 'skipped')
-    uses: ./.github/workflows/03-services.yaml
+    uses: ./.github/workflows/terraform-03-services.yaml
     secrets: inherit

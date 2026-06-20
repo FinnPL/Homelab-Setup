@@ -5,7 +5,7 @@ on:
   pull_request:
     paths:
       - "03-services/**"
-      - ".github/workflows/03-services.yaml"
+      - ".github/workflows/terraform-03-services.yaml"
   workflow_dispatch:
     inputs:
       apply:

@@ -1,11 +1,11 @@
-name: "Terraform: 01-network"
+name: "Terraform: 02-infrastructure"
 
 on:
   workflow_call:
   pull_request:
     paths:
-      - "01-network/**"
-      - ".github/workflows/01-network.yaml"
+      - "02-infrastructure/**"
+      - ".github/workflows/terraform-02-infrastructure.yaml"
   workflow_dispatch:
     inputs:
       apply:
@@ -24,18 +24,37 @@ jobs:
     runs-on: ubuntu-latest
     environment: Terraform
     concurrency:
-      group: ${{ github.event_name == 'pull_request' && format('terraform-network-pr-{0}', github.event.pull_request.number) || 'terraform-network' }}
+      group: ${{ github.event_name == 'pull_request' && format('terraform-infrastructure-pr-{0}', github.event.pull_request.number) || 'terraform-infrastructure' }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     defaults:
       run:
-        working-directory: ./01-network
+        working-directory: ./02-infrastructure
     env:
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
-      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-      TF_VAR_unifi_api_key: ${{ secrets.UNIFI_API_KEY }}
-      TF_VAR_unifi_api_url: ${{ vars.UNIFI_API_URL }}
-      TF_VAR_unifi_insecure: ${{ vars.UNIFI_INSECURE }}
+      # Proxmox
+      TF_VAR_proxmox_api_token: ${{ secrets.PROXMOX_API_TOKEN }}
+      TF_VAR_proxmox_ssh_user: ${{ vars.PROXMOX_SSH_USER }}
+      TF_VAR_proxmox_ssh_password: ${{ secrets.PROXMOX_SSH_PASSWORD }}
+      TF_VAR_proxmox_insecure: ${{ vars.PROXMOX_INSECURE }}
+      TF_VAR_proxmox_node: ${{ vars.PROXMOX_NODE }}
+      TF_VAR_proxmox_ssh_private_key: ${{ secrets.PROXMOX_SSH_KEY }}
+      TF_VAR_proxmox_ssh_public_key: ${{ vars.PROXMOX_SSH_PUB_KEY }}
+      # Windows
+      TF_VAR_windows_admin_password: ${{ secrets.WINDOWS_ADMIN_PASSWORD }}
+      TF_VAR_windows_product_key: ${{ secrets.WINDOWS_PRODUCT_KEY }}
+      # Talos
+      TF_VAR_cluster_name: ${{ vars.TALOS_CLUSTER_NAME }}
+      # GitHub Runner
+      TF_VAR_github_pat: ${{ secrets.GH_PAT }}
+      # NFS
+      TF_VAR_nfs_root_password: ${{ secrets.NFS_ROOT_PASSWORD }}
+      TF_VAR_postgres_root_password: ${{ secrets.POSTGRES_ROOT_PASSWORD }}
+      TF_VAR_postgres_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+      # Mesh Router (WireGuard tunnel for clustermesh)
+      TF_VAR_mesh_router_root_password: ${{ secrets.MESH_ROUTER_ROOT_PASSWORD }}
+      TF_VAR_mesh_wg_private_key: ${{ secrets.MESH_ROUTER_WG_PRIVATE_KEY }}
+      TF_VAR_mesh_wg_peer_pubkey: ${{ vars.CLOUD_WG_PUBKEY }}
 
     steps:
       - name: Checkout Code
@@ -56,6 +75,9 @@ jobs:
       - name: Install Dependencies
         run: sudo apt-get update && sudo apt-get install -y unzip
 
+      - name: Install Ansible
+        run: pip install ansible
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
         with:
@@ -69,7 +91,7 @@ jobs:
           aws-region: eu-central-1
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -upgrade
 
       - name: Terraform Validate
         run: terraform validate
@@ -85,8 +107,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           planfile: .planfile
-          working-directory: ./01-network
-          header: "Terraform Plan (01-network)"
+          working-directory: ./02-infrastructure
+          header: "Terraform Plan (02-infrastructure)"
 
       - name: Check Plan Status
         if: steps.plan.outcome == 'failure'

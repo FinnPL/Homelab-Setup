@@ -5,7 +5,7 @@ on:
   pull_request:
     paths:
       - "00-global/**"
-      - ".github/workflows/00-global.yaml"
+      - ".github/workflows/terraform-00-global.yaml"
 
 permissions:
   contents: read
