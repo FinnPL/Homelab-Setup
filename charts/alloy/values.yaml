@@ -61,6 +61,10 @@ alloy-agent:
         - name: varlog
           mountPath: /var/log
           readOnly: true
+        # Tetragon's JSON export in tmpfs
+        - name: tetragon-export
+          mountPath: /var/run/cilium/tetragon
+          readOnly: true
 
     extraPorts:
       - name: syslog-talos
@@ -219,6 +223,36 @@ alloy-agent:
           forward_to = [loki.write.default.receiver]
         }
 
+        // --- Tetragon security events ---
+        // Read Tetragon's JSON export directly from the node's tmpfs (/run, RAM),
+        // bypassing the stdout -> kubelet container-log path so these events never
+        // touch the workers' SD cards. export.stdout is disabled in the tetragon chart.
+        local.file_match "tetragon" {
+          path_targets = [{
+            __path__ = "/var/run/cilium/tetragon/tetragon.log",
+            job      = "tetragon",
+            node     = env("HOSTNAME"),
+          }]
+        }
+
+        loki.source.file "tetragon" {
+          targets    = local.file_match.tetragon.targets
+          forward_to = [loki.process.tetragon.receiver]
+        }
+
+        loki.process "tetragon" {
+          // One JSON object per line with a top-level RFC3339Nano "time" field;
+          // use Tetragon's own event timestamp rather than ingest time.
+          stage.json {
+            expressions = { ts = "time" }
+          }
+          stage.timestamp {
+            source = "ts"
+            format = "RFC3339Nano"
+          }
+          forward_to = [loki.write.default.receiver]
+        }
+
         loki.write "default" {
           endpoint {
             url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
@@ -245,6 +279,10 @@ alloy-agent:
         - name: varlog
           hostPath:
             path: /var/log
+        - name: tetragon-export
+          hostPath:
+            path: /var/run/cilium/tetragon
+            type: DirectoryOrCreate
 
 alloy-receiver:
   enabled: true
