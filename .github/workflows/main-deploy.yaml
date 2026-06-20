@@ -1,4 +1,4 @@
-name: "Orchestrator: Homelab Deploy"
+name: "Vieta: deploy"
 
 on:
   push:
@@ -13,7 +13,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  
+
 jobs:
   changes:
     runs-on: ubuntu-latest
@@ -26,8 +26,8 @@ jobs:
       infra: ${{ steps.filter.outputs.infra }}
       services: ${{ steps.filter.outputs.services }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
           filters: |
@@ -49,8 +49,8 @@ jobs:
   deploy-network:
     needs: [changes, deploy-global]
     if: |
-      always() && 
-      (needs.changes.outputs.network == 'true') && 
+      always() &&
+      (needs.changes.outputs.network == 'true') &&
       (needs.deploy-global.result == 'success' || needs.deploy-global.result == 'skipped')
     uses: ./.github/workflows/01-network.yaml
     secrets: inherit
@@ -58,8 +58,8 @@ jobs:
   deploy-infra:
     needs: [changes, deploy-network]
     if: |
-      always() && 
-      (needs.changes.outputs.infra == 'true') && 
+      always() &&
+      (needs.changes.outputs.infra == 'true') &&
       (needs.deploy-network.result == 'success' || needs.deploy-network.result == 'skipped')
     uses: ./.github/workflows/02-infrastructure.yaml
     secrets: inherit
@@ -67,8 +67,8 @@ jobs:
   deploy-services:
     needs: [changes, deploy-infra]
     if: |
-      always() && 
-      (needs.changes.outputs.services == 'true') && 
+      always() &&
+      (needs.changes.outputs.services == 'true') &&
       (needs.deploy-infra.result == 'success' || needs.deploy-infra.result == 'skipped')
     uses: ./.github/workflows/03-services.yaml
     secrets: inherit
