@@ -40,9 +40,6 @@ jobs:
       TF_VAR_proxmox_node: ${{ vars.PROXMOX_NODE }}
       TF_VAR_proxmox_ssh_private_key: ${{ secrets.PROXMOX_SSH_KEY }}
       TF_VAR_proxmox_ssh_public_key: ${{ vars.PROXMOX_SSH_PUB_KEY }}
-      # Windows
-      TF_VAR_windows_admin_password: ${{ secrets.WINDOWS_ADMIN_PASSWORD }}
-      TF_VAR_windows_product_key: ${{ secrets.WINDOWS_PRODUCT_KEY }}
       # Talos
       TF_VAR_cluster_name: ${{ vars.TALOS_CLUSTER_NAME }}
       # GitHub Runner
