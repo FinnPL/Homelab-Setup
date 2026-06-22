@@ -64,6 +64,8 @@ Push to `main` triggers an orchestrator workflow that detects which layers chang
 
 **Trivy** scans for secrets and IaC misconfigurations across Terraform, Helm charts, Kubernetes manifests, and Docker Compose. Findings are reported as SARIF to the GitHub Security tab.
 
+**Linting** runs on every PR: Terraform (`fmt` + tflint), Nix, and a shared [pre-commit](.pre-commit-config.yaml) suite (shellcheck, actionlint, codespell, YAML/file hygiene).
+
 ---
 
 ## Vieta Site
