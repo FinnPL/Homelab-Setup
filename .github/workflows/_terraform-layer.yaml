@@ -1,16 +1,29 @@
-name: "Terraform: 02-infrastructure"
+name: "Terraform: layer"
+
+# Reusable building block for the four Vieta layers (00-global..03-services).
+# Called only via workflow_call from vieta-deploy.yaml.
 
 on:
   workflow_call:
-  pull_request:
-    paths:
-      - "02-infrastructure/**"
-      - ".github/workflows/terraform-02-infrastructure.yaml"
-  workflow_dispatch:
     inputs:
-      apply:
-        description: "Run terraform apply (dangerous)"
+      layer:
+        description: "Layer directory name (e.g. 01-network)"
         required: true
+        type: string
+      init_upgrade:
+        description: "Pass -upgrade to terraform init"
+        type: boolean
+        default: false
+      needs_homelab:
+        description: "Reach the homelab (Tailscale + Node + unzip)"
+        type: boolean
+        default: false
+      needs_ansible:
+        description: "Install Ansible (provisioners)"
+        type: boolean
+        default: false
+      apply:
+        description: "Apply on manual dispatch (push-to-main applies regardless)"
         type: boolean
         default: false
 
@@ -20,19 +33,24 @@ permissions:
 
 jobs:
   terraform:
-    name: "Terraform"
+    name: "${{ inputs.layer }}"
     runs-on: ubuntu-latest
     environment: Terraform
     concurrency:
-      group: ${{ github.event_name == 'pull_request' && format('terraform-infrastructure-pr-{0}', github.event.pull_request.number) || 'terraform-infrastructure' }}
+      group: ${{ github.event_name == 'pull_request' && format('terraform-{0}-pr-{1}', inputs.layer, github.event.pull_request.number) || format('terraform-{0}', inputs.layer) }}
       cancel-in-progress: ${{ github.event_name == 'pull_request' }}
     defaults:
       run:
-        working-directory: ./02-infrastructure
+        working-directory: ./${{ inputs.layer }}
     env:
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
-      # Proxmox
+      # --- 01-network
+      TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      TF_VAR_unifi_api_key: ${{ secrets.UNIFI_API_KEY }}
+      TF_VAR_unifi_api_url: ${{ vars.UNIFI_API_URL }}
+      TF_VAR_unifi_insecure: ${{ vars.UNIFI_INSECURE }}
+      # --- 02-infrastructure: Proxmox
       TF_VAR_proxmox_api_token: ${{ secrets.PROXMOX_API_TOKEN }}
       TF_VAR_proxmox_ssh_user: ${{ vars.PROXMOX_SSH_USER }}
       TF_VAR_proxmox_ssh_password: ${{ secrets.PROXMOX_SSH_PASSWORD }}
@@ -40,24 +58,35 @@ jobs:
       TF_VAR_proxmox_node: ${{ vars.PROXMOX_NODE }}
       TF_VAR_proxmox_ssh_private_key: ${{ secrets.PROXMOX_SSH_KEY }}
       TF_VAR_proxmox_ssh_public_key: ${{ vars.PROXMOX_SSH_PUB_KEY }}
-      # Talos
+      # --- 02-infrastructure: Talos / runner / NFS / Postgres
       TF_VAR_cluster_name: ${{ vars.TALOS_CLUSTER_NAME }}
-      # GitHub Runner
       TF_VAR_github_pat: ${{ secrets.GH_PAT }}
-      # NFS
       TF_VAR_nfs_root_password: ${{ secrets.NFS_ROOT_PASSWORD }}
       TF_VAR_postgres_root_password: ${{ secrets.POSTGRES_ROOT_PASSWORD }}
       TF_VAR_postgres_admin_password: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
-      # Mesh Router (WireGuard tunnel for clustermesh)
+      # --- 02-infrastructure: Mesh router (WireGuard tunnel for clustermesh)
       TF_VAR_mesh_router_root_password: ${{ secrets.MESH_ROUTER_ROOT_PASSWORD }}
       TF_VAR_mesh_wg_private_key: ${{ secrets.MESH_ROUTER_WG_PRIVATE_KEY }}
       TF_VAR_mesh_wg_peer_pubkey: ${{ vars.CLOUD_WG_PUBKEY }}
+      # --- 03-services
+      TF_VAR_acme_email: ${{ vars.ACME_EMAIL }}
+      TF_VAR_authentik_secret_key: ${{ secrets.AUTHENTIK_SECRET_KEY }}
+      TF_VAR_argocd_oidc_client_secret: ${{ secrets.ARGOCD_OIDC_CLIENT_SECRET }}
+      TF_VAR_grafana_oidc_client_secret: ${{ secrets.GRAFANA_OIDC_CLIENT_SECRET }}
+      TF_VAR_tailscale_oauth_client_id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+      TF_VAR_tailscale_oauth_secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
+      TF_VAR_gatus_discord_webhook_url: ${{ secrets.GATUS_DISCORD_WEBHOOK_URL }}
+      TF_VAR_alertmanager_discord_webhook_url: ${{ secrets.ALERTMANAGER_DISCORD_WEBHOOK_URL }}
+      TF_VAR_unifi_exporter_username: ${{ secrets.UNIFI_EXPORTER_USERNAME }}
+      TF_VAR_unifi_exporter_password: ${{ secrets.UNIFI_EXPORTER_PASSWORD }}
+      TF_VAR_argocd_github_pat: ${{ secrets.ARGOCD_GITHUB_PAT }}
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Tailscale
+        if: inputs.needs_homelab
         uses: tailscale/github-action@306e68a486fd2350f2bfc3b19fcd143891a4a2d8 # v4
         with:
           oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
@@ -65,30 +94,27 @@ jobs:
           tags: tag:ci
 
       - name: Setup Node.js
+        if: inputs.needs_homelab
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: "24"
 
       - name: Install Dependencies
+        if: inputs.needs_homelab
         run: sudo apt-get update && sudo apt-get install -y unzip
 
       - name: Install Ansible
+        if: inputs.needs_ansible
         run: pip install ansible
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
-        with:
-          terraform_version: "1.10.0"
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
+      - name: Setup Terraform + AWS
+        uses: ./.github/actions/tf-aws-setup
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-central-1
 
       - name: Terraform Init
-        run: terraform init -upgrade
+        run: terraform init ${{ inputs.init_upgrade && '-upgrade' || '' }}
 
       - name: Terraform Validate
         run: terraform validate
@@ -96,7 +122,7 @@ jobs:
       - name: Terraform Plan
         id: plan
         run: terraform plan -lock-timeout=10m -out .planfile -input=false
-        continue-on-error: true
+        continue-on-error: true # capture plan failure for the PR comment
 
       - name: Comment Terraform Plan
         if: github.event_name == 'pull_request'
@@ -104,8 +130,8 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           planfile: .planfile
-          working-directory: ./02-infrastructure
-          header: "Terraform Plan (02-infrastructure)"
+          working-directory: ./${{ inputs.layer }}
+          header: "Terraform Plan (${{ inputs.layer }})"
 
       - name: Check Plan Status
         if: steps.plan.outcome == 'failure'
@@ -114,5 +140,5 @@ jobs:
       - name: Terraform Apply
         if: |
           (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
-          (github.event_name == 'workflow_dispatch' && inputs.apply == true)
+          (github.event_name == 'workflow_dispatch' && inputs.apply)
         run: terraform apply -lock-timeout=10m -auto-approve -input=false

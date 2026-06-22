@@ -1,5 +1,10 @@
 name: "Vieta: deploy"
 
+# Single entrypoint for all four Terraform layers.
+#   push to main      -> plan + apply only the changed layers, in order
+#   pull_request      -> plan + comment the changed layers
+#   workflow_dispatch -> manually run/apply a chosen layer (or all)
+
 on:
   push:
     branches:
@@ -9,7 +14,33 @@ on:
       - "01-network/**"
       - "02-infrastructure/**"
       - "03-services/**"
-      - ".github/workflows/**"
+      - ".github/workflows/vieta-deploy.yaml"
+      - ".github/workflows/_terraform-layer.yaml"
+  pull_request:
+    paths:
+      - "00-global/**"
+      - "01-network/**"
+      - "02-infrastructure/**"
+      - "03-services/**"
+      - ".github/workflows/vieta-deploy.yaml"
+      - ".github/workflows/_terraform-layer.yaml"
+  workflow_dispatch:
+    inputs:
+      layer:
+        description: "Layer to run"
+        type: choice
+        default: all
+        options:
+          - all
+          - 00-global
+          - 01-network
+          - 02-infrastructure
+          - 03-services
+      apply:
+        description: "Run terraform apply (dangerous)"
+        type: boolean
+        default: false
+
 permissions:
   contents: read
   pull-requests: write
@@ -42,33 +73,62 @@ jobs:
 
   deploy-global:
     needs: changes
-    if: needs.changes.outputs.global == 'true'
-    uses: ./.github/workflows/terraform-00-global.yaml
+    if: |
+      (github.event_name != 'workflow_dispatch' && needs.changes.outputs.global == 'true') ||
+      (github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == '00-global'))
+    uses: ./.github/workflows/_terraform-layer.yaml
     secrets: inherit
+    with:
+      layer: 00-global
+      apply: ${{ github.event_name == 'workflow_dispatch' && inputs.apply || false }}
 
   deploy-network:
     needs: [changes, deploy-global]
     if: |
       always() &&
-      (needs.changes.outputs.network == 'true') &&
-      (needs.deploy-global.result == 'success' || needs.deploy-global.result == 'skipped')
-    uses: ./.github/workflows/terraform-01-network.yaml
+      (needs.deploy-global.result == 'success' || needs.deploy-global.result == 'skipped') &&
+      (
+        (github.event_name != 'workflow_dispatch' && needs.changes.outputs.network == 'true') ||
+        (github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == '01-network'))
+      )
+    uses: ./.github/workflows/_terraform-layer.yaml
     secrets: inherit
+    with:
+      layer: 01-network
+      needs_homelab: true
+      apply: ${{ github.event_name == 'workflow_dispatch' && inputs.apply || false }}
 
   deploy-infra:
     needs: [changes, deploy-network]
     if: |
       always() &&
-      (needs.changes.outputs.infra == 'true') &&
-      (needs.deploy-network.result == 'success' || needs.deploy-network.result == 'skipped')
-    uses: ./.github/workflows/terraform-02-infrastructure.yaml
+      (needs.deploy-network.result == 'success' || needs.deploy-network.result == 'skipped') &&
+      (
+        (github.event_name != 'workflow_dispatch' && needs.changes.outputs.infra == 'true') ||
+        (github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == '02-infrastructure'))
+      )
+    uses: ./.github/workflows/_terraform-layer.yaml
     secrets: inherit
+    with:
+      layer: 02-infrastructure
+      needs_homelab: true
+      needs_ansible: true
+      init_upgrade: true
+      apply: ${{ github.event_name == 'workflow_dispatch' && inputs.apply || false }}
 
   deploy-services:
     needs: [changes, deploy-infra]
     if: |
       always() &&
-      (needs.changes.outputs.services == 'true') &&
-      (needs.deploy-infra.result == 'success' || needs.deploy-infra.result == 'skipped')
-    uses: ./.github/workflows/terraform-03-services.yaml
+      (needs.deploy-infra.result == 'success' || needs.deploy-infra.result == 'skipped') &&
+      (
+        (github.event_name != 'workflow_dispatch' && needs.changes.outputs.services == 'true') ||
+        (github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == '03-services'))
+      )
+    uses: ./.github/workflows/_terraform-layer.yaml
     secrets: inherit
+    with:
+      layer: 03-services
+      needs_homelab: true
+      init_upgrade: true
+      apply: ${{ github.event_name == 'workflow_dispatch' && inputs.apply || false }}

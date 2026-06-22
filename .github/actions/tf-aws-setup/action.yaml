@@ -1,0 +1,31 @@
+name: "Terraform + AWS setup"
+description: "Install a pinned Terraform and configure AWS credentials for the S3 state backend"
+
+inputs:
+  terraform_version:
+    description: "Terraform version to install"
+    default: "1.10.0"
+  aws-access-key-id:
+    description: "AWS access key id for the state backend"
+    required: true
+  aws-secret-access-key:
+    description: "AWS secret access key for the state backend"
+    required: true
+  aws-region:
+    description: "AWS region of the state bucket"
+    default: "eu-central-1"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4
+      with:
+        terraform_version: ${{ inputs.terraform_version }}
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
+      with:
+        aws-access-key-id: ${{ inputs.aws-access-key-id }}
+        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
+        aws-region: ${{ inputs.aws-region }}
