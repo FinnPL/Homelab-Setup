@@ -25,6 +25,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   TFLINT_CONFIG_FILE: ${{ github.workspace }}/.tflint.hcl
 
