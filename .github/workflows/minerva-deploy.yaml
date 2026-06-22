@@ -1,34 +1,39 @@
 name: "Minerva: deploy"
+
 on:
-    push:
-        branches:
-            - main
-        paths:
-            - "minerva/**"
-            - ".github/workflows/minerva-deploy.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "minerva/**"
+      - ".github/workflows/minerva-deploy.yaml"
+
+concurrency:
+  group: minerva-deploy
+  cancel-in-progress: false
 
 jobs:
-    deploy:
-        runs-on: pi3
-        environment: Pi3
-        permissions:
-            contents: read
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+  deploy:
+    runs-on: pi3
+    environment: Pi3
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
-            - name: Clear Env File
-              run: echo "" > minerva/.env
+      - name: Clear Env File
+        run: echo "" > minerva/.env
 
-            - name: Set up Env File
-              run: |
-                  echo 'TAILSCALE_AUTHKEY=${{ secrets.TAILSCALE_AUTHKEY }}' >> minerva/.env
+      - name: Set up Env File
+        run: |
+          echo 'TAILSCALE_AUTHKEY=${{ secrets.TAILSCALE_AUTHKEY }}' >> minerva/.env
 
-            - name: Pull latest images
-              run: docker compose --env-file minerva/.env -f minerva/docker-compose.yml pull
+      - name: Pull latest images
+        run: docker compose --env-file minerva/.env -f minerva/docker-compose.yml pull
 
-            - name: Stop existing containers
-              run: docker compose --env-file minerva/.env -f minerva/docker-compose.yml down || true
+      - name: Stop existing containers
+        run: docker compose --env-file minerva/.env -f minerva/docker-compose.yml down || true
 
-            - name: Start containers
-              run: docker compose --env-file minerva/.env -f minerva/docker-compose.yml up -d
+      - name: Start containers
+        run: docker compose --env-file minerva/.env -f minerva/docker-compose.yml up -d
