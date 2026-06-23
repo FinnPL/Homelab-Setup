@@ -3,6 +3,10 @@
 vars: {
   d2-config: {
     layout-engine: elk
+    pad: 20
+    # Single SVG adapts GitHub light/dark via a prefers-color-scheme media
+    theme-id: 0
+    dark-theme-id: 200
   }
 }
 
@@ -54,7 +58,7 @@ topbar: "" {
     shape: cloud
     width: 170
     height: 150
-    icon: https://api.iconify.design/mdi/web.svg
+    icon: https://api.iconify.design/mdi/web.svg?color=%23808080
   }
   rspacer: "" { class: invisible; width: 4; height: 4 }
 }
@@ -93,8 +97,8 @@ sites: "" {
       pmox: "" { class: brand; icon: https://api.iconify.design/devicon/proxmox-wordmark.svg }
       cp: "Talos CP (VM)" { class: dev; icon: https://api.iconify.design/devicon/kubernetes.svg }
       dbw: "DB worker\nTalos (VM)" { class: dev; icon: https://api.iconify.design/devicon/postgresql.svg }
-      win: "Windows Server (VM)" { class: dev; icon: https://api.iconify.design/mdi/microsoft-windows.svg }
-      nfs: "NFS (LXC)" { class: dev; icon: https://api.iconify.design/mdi/folder-network.svg }
+      win: "Windows Server (VM)" { class: dev; icon: https://api.iconify.design/mdi/microsoft-windows.svg?color=%23808080 }
+      nfs: "NFS (LXC)" { class: dev; icon: https://api.iconify.design/mdi/folder-network.svg?color=%23808080 }
       mesh: "mesh-router (LXC)" { class: dev; icon: https://api.iconify.design/devicon/wireguard.svg }
     }
 
@@ -102,14 +106,14 @@ sites: "" {
     net: "" {
       class: invisible
       direction: down
-      gw: "UCG-Ultra" { class: dev; icon: https://api.iconify.design/carbon/router.svg }
-      flex: "USW Flex 2.5G 8 PoE" { class: dev; icon: https://api.iconify.design/carbon/switch-layer-2.svg }
-      ultra: "USW Ultra" { class: dev; icon: https://api.iconify.design/carbon/switch-layer-2.svg }
-      nas: "NAS" { class: dev; icon: https://api.iconify.design/mdi/nas.svg }
+      gw: "UCG-Ultra" { class: dev; icon: https://api.iconify.design/carbon/router.svg?color=%23808080 }
+      flex: "USW Flex 2.5G 8 PoE" { class: dev; icon: https://api.iconify.design/carbon/switch-layer-2.svg?color=%23808080 }
+      ultra: "USW Ultra" { class: dev; icon: https://api.iconify.design/carbon/switch-layer-2.svg?color=%23808080 }
+      nas: "NAS" { class: dev; icon: https://api.iconify.design/mdi/nas.svg?color=%23808080 }
       w61: "Pi4 Worker 61" { class: dev; icon: https://api.iconify.design/devicon/talos.svg }
       w62: "Pi4 Worker 62" { class: dev; icon: https://api.iconify.design/devicon/talos.svg }
       w63: "Pi4 Worker 63" { class: dev; icon: https://api.iconify.design/devicon/talos.svg }
-      oob1: "Pi 3: OOB" { class: dev; icon: https://api.iconify.design/simple-icons/tailscale.svg }
+      oob1: "Pi 3: OOB" { class: dev; icon: https://api.iconify.design/simple-icons/tailscale.svg?color=%23808080 }
       oob2: "Pi 3: OOB" { class: dev; icon: https://api.iconify.design/devicon/raspberrypi.svg }
 
       gw -> flex
@@ -133,9 +137,9 @@ sites: "" {
 
     minerva: "Minerva: Secondary Site" {
       direction: down
-      gw: "UCG-Ultra" { class: dev; icon: https://api.iconify.design/carbon/router.svg }
+      gw: "UCG-Ultra" { class: dev; icon: https://api.iconify.design/carbon/router.svg?color=%23808080 }
       host: "Pi 3 Compose" { class: dev; icon: https://api.iconify.design/material-icon-theme/docker.svg }
-      nas: "NAS" { class: dev; icon: https://api.iconify.design/mdi/nas.svg }
+      nas: "NAS" { class: dev; icon: https://api.iconify.design/mdi/nas.svg?color=%23808080 }
       gw -> host
       gw -> nas
     }
