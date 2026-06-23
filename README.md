@@ -24,6 +24,8 @@ A GitOps-driven multi-site homelab managed by ArgoCD, bootstrapped via Terraform
 
 ## Overview
 
+![Multi-site network topology](docs/diagrams/multi-site-topology.svg)
+
 ### Sites
 
 Three sites with distinct roles, each deployed by its own GitHub Actions workflow:
