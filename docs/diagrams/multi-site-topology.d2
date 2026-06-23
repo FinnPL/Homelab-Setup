@@ -1,0 +1,167 @@
+# Multi-site network topology
+
+vars: {
+  d2-config: {
+    layout-engine: elk
+  }
+}
+
+direction: down
+
+classes: {
+  dev: {
+    width: 180
+    height: 150
+  }
+  brand: {
+    width: 180
+    height: 150
+    style: {
+      stroke-width: 0
+      fill: transparent
+    }
+  }
+  invisible: {
+    style: {
+      stroke-width: 0
+      fill: transparent
+    }
+  }
+  poe: {
+    style: {
+      stroke: "#e57024"
+      stroke-width: 3
+    }
+  }
+  vpn: {
+    style: {
+      stroke-dash: 4
+      stroke-width: 2
+    }
+  }
+}
+
+# Internet centered, with an invisible DNS-egress target a controlled distance
+# (grid-gap) to its left; the right spacer keeps Internet centered.
+topbar: "" {
+  class: invisible
+  near: top-center
+  grid-columns: 3
+  grid-gap: 120
+
+  vpn_egress: "" { class: invisible; width: 4; height: 4 }
+  internet: "Internet" {
+    shape: cloud
+    width: 170
+    height: 150
+    icon: https://api.iconify.design/mdi/web.svg
+  }
+  rspacer: "" { class: invisible; width: 4; height: 4 }
+}
+
+sites: "" {
+  class: invisible
+  grid-columns: 3
+  grid-gap: 70
+
+  # Left column: Cloud Edge (sized to content) with the Terraform state bucket below.
+  col1: "" {
+    class: invisible
+    grid-columns: 1
+    grid-gap: 40
+
+    cloud_edge: "Cloud Edge: Oracle" {
+      grid-columns: 1
+      grid-gap: 20
+      nixflake: "" { class: brand; icon: https://api.iconify.design/material-icon-theme/nix.svg }
+      haproxy: "HAProxy\nSNI / TLS relay" { class: dev; icon: https://api.iconify.design/devicon/haproxy-wordmark.svg }
+      wg: "WireGuard" { class: dev; icon: https://api.iconify.design/devicon/wireguard.svg }
+      haproxy -> wg
+    }
+
+    s3: "AWS: Terraform State" { class: dev; icon: https://api.iconify.design/logos/aws-s3.svg }
+  }
+
+  vieta: "Vieta: Primary Site" {
+    grid-columns: 2
+    grid-gap: 60
+
+    # Left column: the NUC / Proxmox host
+    nuc: "Intel NUC" {
+      grid-columns: 1
+      grid-gap: 20
+      pmox: "" { class: brand; icon: https://api.iconify.design/devicon/proxmox-wordmark.svg }
+      cp: "Talos CP (VM)" { class: dev; icon: https://api.iconify.design/devicon/kubernetes.svg }
+      dbw: "DB worker\nTalos (VM)" { class: dev; icon: https://api.iconify.design/devicon/postgresql.svg }
+      win: "Windows Server (VM)" { class: dev; icon: https://api.iconify.design/mdi/microsoft-windows.svg }
+      nfs: "NFS (LXC)" { class: dev; icon: https://api.iconify.design/mdi/folder-network.svg }
+      mesh: "mesh-router (LXC)" { class: dev; icon: https://api.iconify.design/devicon/wireguard.svg }
+    }
+
+    # Right column: the UniFi network stack + cluster workers
+    net: "" {
+      class: invisible
+      direction: down
+      gw: "UCG-Ultra" { class: dev; icon: https://api.iconify.design/carbon/router.svg }
+      flex: "USW Flex 2.5G 8 PoE" { class: dev; icon: https://api.iconify.design/carbon/switch-layer-2.svg }
+      ultra: "USW Ultra" { class: dev; icon: https://api.iconify.design/carbon/switch-layer-2.svg }
+      nas: "NAS" { class: dev; icon: https://api.iconify.design/mdi/nas.svg }
+      w61: "Pi4 Worker 61" { class: dev; icon: https://api.iconify.design/devicon/talos.svg }
+      w62: "Pi4 Worker 62" { class: dev; icon: https://api.iconify.design/devicon/talos.svg }
+      w63: "Pi4 Worker 63" { class: dev; icon: https://api.iconify.design/devicon/talos.svg }
+      oob1: "Pi 3: OOB" { class: dev; icon: https://api.iconify.design/simple-icons/tailscale.svg }
+      oob2: "Pi 3: OOB" { class: dev; icon: https://api.iconify.design/devicon/raspberrypi.svg }
+
+      gw -> flex
+      flex -> ultra: "" { class: poe }
+      flex -> nas
+      ultra -> w61: "" { class: poe }
+      ultra -> w62: "" { class: poe }
+      ultra -> w63: "" { class: poe }
+      ultra -> oob1: "" { class: poe }
+      ultra -> oob2: "" { class: poe }
+    }
+
+    net.flex -> nuc
+  }
+
+  # Third column: Minerva with the legend dropped to the bottom (centered).
+  col3: "" {
+    class: invisible
+    grid-columns: 1
+    grid-gap: 0
+
+    minerva: "Minerva: Secondary Site" {
+      direction: down
+      gw: "UCG-Ultra" { class: dev; icon: https://api.iconify.design/carbon/router.svg }
+      host: "Pi 3 Compose" { class: dev; icon: https://api.iconify.design/material-icon-theme/docker.svg }
+      nas: "NAS" { class: dev; icon: https://api.iconify.design/mdi/nas.svg }
+      gw -> host
+      gw -> nas
+    }
+
+    spacer: "" { class: invisible; width: 10; height: 382 }
+
+    legend: "Legend" {
+      poe_a: "" { shape: circle; width: 14 }
+      poe_b: "" { shape: circle; width: 14 }
+      poe_a -> poe_b: "PoE power" { class: poe }
+      vpn_a: "" { shape: circle; width: 14 }
+      vpn_b: "" { shape: circle; width: 14 }
+      vpn_a -> vpn_b: "VPN / tunnel" { class: vpn }
+    }
+  }
+}
+
+# --- Public WAN uplinks ---
+topbar.internet -> sites.col1.cloud_edge.haproxy: "*.cloud, *.relay"
+topbar.internet -> sites.vieta.net.gw: "WAN"
+topbar.internet -> sites.col3.minerva.gw: "WAN"
+
+# --- Outbound DNS: DoT to 1.1.1.1 relayed over a commercial VPN (≈ Oblivious DNS) ---
+sites.vieta.net.gw -> topbar.vpn_egress: "DoT → 1.1.1.1\nover VPN (≈ Oblivious DNS)" { class: vpn }
+
+# --- Cross-site tunnels ---
+sites.col1.cloud_edge.wg <-> sites.vieta.nuc.mesh: "WireGuard mesh\n(*.relay path)" { class: vpn }
+sites.vieta.net.gw <-> sites.col3.minerva.gw: "UniFi site-to-site VPN" { class: vpn }
+sites.vieta.net.nas <-> sites.col3.minerva.nas: "NAS → NAS backup\n(over site-to-site VPN)" { class: vpn }
