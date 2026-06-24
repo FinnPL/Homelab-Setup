@@ -1,0 +1,184 @@
+# CI/CD flow 
+vars: {
+  d2-config: {
+    layout-engine: elk
+    pad: 0
+    # Single SVG adapts to GitHub light/dark via a prefers-color-scheme query.
+    theme-id: 0
+    dark-theme-id: 200
+  }
+}
+
+direction: right
+
+# Edge encoding:
+#   gray dashed = pull request   → plan / render / scan, comment on the PR (no deploy)
+#   green solid = push to main   → terraform apply / deploy
+#   orange      = ArgoCD continuous GitOps sync (git → cluster)
+classes: {
+  # Action boxes keep the theme fill; grouping containers are made transparent
+  # (below) so the actions stand out. Steps inside an action are transparent
+  # outlines (class step) so they read as sub-items, not separate actions.
+  dev: { width: 300; height: 170; style: { font-size: 22 } }
+  chip: { width: 200; height: 84; style: { font-size: 28 } }
+  deploybox: { height: 140; style: { font-size: 24 } }
+  # Action boxes (the jobs + the PR checks): the SAME fill the theme already gives
+  # the infra boxes (fill-B6) + the theme's light text — bigger action names.
+  act: { width: 300; height: 170; style: { font-size: 22; fill: "#313244"; font-color: "#CDD6F4" } }
+  actfill: { style: { fill: "#313244"; font-color: "#CDD6F4"; font-size: 30 } }
+  invisible: { style: { stroke-width: 0; fill: transparent } }
+  pr:   { style: { stroke: "#808080"; stroke-dash: 4; stroke-width: 2 } }
+  main: { style: { stroke: "#2ea043"; stroke-width: 3 } }
+  step: { style: { stroke: "#2ea043"; stroke-width: 4 } }
+  sync: { style: { stroke: "#e57024"; stroke-width: 3 } }
+}
+
+# Macro layout is an explicit grid (source+Actions | infra) so columns stay
+# left-to-right; edges just route between cells. (A grid on a spine container
+# otherwise makes ELK stack the whole diagram vertically.)
+board: "" {
+  class: invisible
+  grid-columns: 2
+  grid-gap: 80
+
+  # --- Column 1: source header (triggers + repo) stacked above the Actions box ---
+  maincol: "" {
+    class: invisible
+    grid-rows: 2
+    grid-gap: 40
+
+    # 2x2 header:  Dev  Renovate  /  Repo  SARIF  (row-major fill).
+    header: "" {
+      class: invisible
+      grid-columns: 2
+      grid-gap: 30
+      dev: "Developer" { class: dev; icon: https://api.iconify.design/mdi/laptop.svg?color=%23808080 }
+      repo: "GitHub monorepo\nsource of truth" { class: dev; icon: https://api.iconify.design/mdi/github.svg?color=%23808080 }
+      renovate: "Renovate\ndependency PRs" { class: dev; icon: https://api.iconify.design/simple-icons/renovate.svg?color=%23308BEC }
+      sarif: "GitHub Security\nSARIF" { class: dev; icon: https://api.iconify.design/mdi/shield-lock.svg?color=%23808080 }
+      dev -> repo: "push / open PR"
+      renovate -> repo: "dependency PRs"
+    }
+
+  # GitHub Actions — PR row on top, deploy row below. grid-rows keeps the two
+  # rows the same width.
+  ci: "GitHub Actions" {
+    icon: https://api.iconify.design/devicon/githubactions.svg
+    style: { font-size: 30 }
+    direction: down
+
+    pr: "Pull request: validate & comment" {
+      style: { font-size: 32 }
+      grid-rows: 1
+      grid-gap: 20
+      plan: "Terraform plan" { class: act; icon: https://api.iconify.design/devicon/terraform.svg }
+      charts: "Kubeconform · Kyverno" { class: act; icon: https://api.iconify.design/mdi/shield-check.svg?color=%23FFFFFF }
+      trivy: "Trivy\nsecret + IaC scan" { class: act; icon: https://api.iconify.design/mdi/shield-search.svg?color=%23FFFFFF }
+      docs: "docs-diagrams\nD2 render check" { class: act; icon: https://api.iconify.design/mdi/file-document-outline.svg?color=%23FFFFFF }
+    }
+
+    # Three stacked jobs, each in one row sized to fill the deploy width.
+    # direction (not grid): jobs are content-sized (no stretch → steps fill with
+    # no gap) and centered. Each job is sized to ~the same content width so they
+    # line up.
+    deploy: "Push to main: deploy" {
+      style: { font-size: 32 }
+      direction: down
+      orch: "Orchestrator: main-deploy.yaml" {
+        class: actfill
+        icon: https://api.iconify.design/devicon/terraform.svg
+        grid-rows: 1
+        grid-gap: 56
+        g: "00-global" { class: chip }
+        n: "01-network" { class: chip }
+        i: "02-infra" { class: chip }
+        s: "03-services" { class: chip }
+        g -> n -> i -> s: "" { class: step }
+      }
+      cloudedge: "cloud-edge" {
+        class: actfill
+        grid-columns: 2
+        grid-gap: 56
+        octf: "OCI apply" { class: deploybox; width: 470; icon: https://api.iconify.design/devicon/terraform.svg }
+        nix: "nixos-anywhere" { class: deploybox; width: 470; icon: https://api.iconify.design/material-icon-theme/nix.svg }
+        octf -> nix: "" { class: step }
+      }
+      minerva: "minerva-deploy\ndocker compose up" { class: actfill; width: 1116; height: 170; icon: https://api.iconify.design/material-icon-theme/docker.svg }
+      orch -> cloudedge: "" { style: { opacity: 0 } }
+      cloudedge -> minerva: "" { style: { opacity: 0 } }
+    }
+
+    pr -> deploy: "" { style: { opacity: 0 } }
+  }
+  }
+
+  # --- Column 2: managed infrastructure (top-aligned with the source header) ---
+  targets: "Managed infrastructure" {
+    style: { font-size: 30 }
+    grid-columns: 1
+    grid-gap: 25
+
+    aws: "AWS S3\nTerraform state" { class: dev; icon: https://api.iconify.design/logos/aws-s3.svg }
+    cloudflare: "Cloudflare DNS" { class: dev; icon: https://api.iconify.design/devicon-plain/cloudflare.svg?color=%23F38020 }
+    unifi: "UniFi network" { class: dev; icon: https://api.iconify.design/simple-icons/ubiquiti.svg?color=%230559C9 }
+    proxmox: "Proxmox" { class: dev; icon: https://api.iconify.design/devicon/proxmox-wordmark.svg }
+    talos: "Talos Linux" { class: dev; icon: https://api.iconify.design/devicon/talos.svg }
+
+    cluster: "Kubernetes" {
+      icon: https://api.iconify.design/devicon/kubernetes.svg
+      argocd: "ArgoCD\nApp of Apps" { class: dev; icon: https://api.iconify.design/devicon/argocd.svg }
+      workloads: "Workloads\napps/ + charts/" { class: dev; icon: https://api.iconify.design/mdi/apps.svg?color=%23808080 }
+      argocd -> workloads: "syncs from git" { class: sync }
+    }
+
+    edgehost: "Cloud Edge\nOracle NixOS" { class: dev; icon: https://api.iconify.design/material-icon-theme/nix.svg }
+    minervahost: "Minerva\nDocker host" { class: dev; icon: https://api.iconify.design/material-icon-theme/docker.svg }
+  }
+}
+
+# --- Cross-column edges ---
+board.maincol.header.repo -> board.maincol.ci.pr: "on pull_request" { class: pr }
+board.maincol.header.repo -> board.maincol.ci.deploy: "on push to main" { class: main }
+board.maincol.ci.pr.trivy -> board.maincol.header.sarif: "" { class: pr }
+
+board.maincol.ci.deploy.orch.g -> board.targets.aws: "" { class: main }
+board.maincol.ci.deploy.orch.n -> board.targets.unifi: "" { class: main }
+board.maincol.ci.deploy.orch.n -> board.targets.cloudflare: "" { class: main }
+board.maincol.ci.deploy.orch.i -> board.targets.proxmox: "" { class: main }
+board.maincol.ci.deploy.orch.i -> board.targets.talos: "" { class: main }
+board.maincol.ci.deploy.orch.s -> board.targets.cluster.argocd: "bootstraps cluster" { class: main }
+board.targets.talos -> board.targets.cluster: "hosts cluster"
+board.maincol.ci.deploy.cloudedge.nix -> board.targets.edgehost: "" { class: main }
+board.maincol.ci.deploy.minerva -> board.targets.minervahost: "self-hosted pi3 runner" { class: main }
+
+# --- Footnote legend: the three edge styles in one row ---
+legend: "" {
+  near: bottom-center
+  class: invisible
+  grid-rows: 1
+  grid-gap: 26
+
+  cap: "Legend:" { class: invisible; width: 84; height: 44 }
+
+  i_pr: "" {
+    class: invisible
+    direction: right
+    a: "" { class: invisible; width: 8; height: 8 }
+    b: "" { class: invisible; width: 8; height: 8 }
+    a -> b: "Pull request (validate)" { class: pr }
+  }
+  i_main: "" {
+    class: invisible
+    direction: right
+    a: "" { class: invisible; width: 8; height: 8 }
+    b: "" { class: invisible; width: 8; height: 8 }
+    a -> b: "Push to main (deploy)" { class: main }
+  }
+  i_sync: "" {
+    class: invisible
+    direction: right
+    a: "" { class: invisible; width: 8; height: 8 }
+    b: "" { class: invisible; width: 8; height: 8 }
+    a -> b: "ArgoCD GitOps sync" { class: sync }
+  }
+}
