@@ -1,0 +1,91 @@
+# DNS resolution flow
+
+vars: {
+  d2-config: {
+    layout-engine: elk
+    pad: 0
+    # Single SVG adapts to GitHub light/dark via a prefers-color-scheme query.
+    theme-id: 0
+    dark-theme-id: 200
+  }
+}
+
+direction: right
+
+# Edge encoding is orthogonal: colour = encryption, dash = tunnel.
+#   green  = encrypted (DoH/DoT)      gray  = cleartext
+#   dashed = tunnelled (VPN)          solid = not tunnelled
+#   green + dashed = both
+classes: {
+  dev: {
+    width: 165
+    height: 135
+  }
+  enc: {
+    style: { stroke: "#2ea043"; stroke-width: 2 }
+  }
+  tun: {
+    style: { stroke: "#808080"; stroke-dash: 4; stroke-width: 2 }
+  }
+  both: {
+    style: { stroke: "#2ea043"; stroke-dash: 4; stroke-width: 2 }
+  }
+  clear: {
+    style: { stroke: "#808080"; stroke-width: 2 }
+  }
+  invisible: {
+    style: { stroke-width: 0; fill: transparent }
+  }
+}
+
+enddev: "End devices\n.mobileconfig" { class: dev; icon: https://api.iconify.design/mdi/cellphone.svg?color=%23808080 }
+relay: "Cloud Edge\nTLS passthrough" { class: dev; icon: https://api.iconify.design/devicon/haproxy-wordmark.svg }
+blocky: "Blocky (homelab)\nfilter / adblock" { class: dev; icon: https://api.iconify.design/mdi/filter.svg?color=%23808080 }
+unbound: "Unbound (homelab)\nrecursive + DNSSEC" { class: dev; icon: https://api.iconify.design/mdi/dns.svg?color=%23808080 }
+proton: "ProtonVPN\ntunnel" { class: dev; icon: https://api.iconify.design/simple-icons/protonvpn.svg?color=%236D4AFF }
+cf: "Cloudflare\n1.1.1.1" { class: dev; icon: https://api.iconify.design/devicon-plain/cloudflare.svg?color=%23F38020 }
+
+enddev -> relay: "DoH :443" { class: enc }
+relay -> blocky: "WireGuard passthrough" { class: both }
+blocky -> unbound: ":53 cleartext" { class: clear }
+unbound -> proton: "DoT :853" { class: both }
+proton -> cf: "≈ Oblivious DNS" { class: enc }
+
+# Low-profile footnote legend: "Legend:" then the four arrow styles, one row.
+legend: "" {
+  near: bottom-center
+  class: invisible
+  grid-rows: 1
+  grid-gap: 26
+
+  cap: "Legend:" { class: invisible; width: 84; height: 44 }
+
+  i_enc: "" {
+    class: invisible
+    direction: right
+    a: "" { class: invisible; width: 8; height: 8 }
+    b: "" { class: invisible; width: 8; height: 8 }
+    a -> b: "Encrypted" { class: enc }
+  }
+  i_tun: "" {
+    class: invisible
+    direction: right
+    a: "" { class: invisible; width: 8; height: 8 }
+    b: "" { class: invisible; width: 8; height: 8 }
+    a -> b: "Tunnelled" { class: tun }
+  }
+  i_both: "" {
+    class: invisible
+    direction: right
+    a: "" { class: invisible; width: 8; height: 8 }
+    b: "" { class: invisible; width: 8; height: 8 }
+    a -> b: "Both" { class: both }
+  }
+  i_clear: "" {
+    class: invisible
+    direction: right
+    a: "" { class: invisible; width: 8; height: 8 }
+    b: "" { class: invisible; width: 8; height: 8 }
+    a -> b: "Cleartext" { class: clear }
+  }
+}

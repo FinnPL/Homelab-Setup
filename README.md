@@ -53,6 +53,8 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 
 ### CI/CD Pipeline
 
+![CI/CD flow](docs/diagrams/cicd-flow.svg)
+
 Push to `main` triggers an orchestrator workflow that detects which layers changed and runs them in order. PRs get a Terraform plan comment for review, and changes under `charts/`/`apps/` are gated by a chart-and-policy workflow that renders every wrapper chart, schema-checks it with kubeconform, and runs the cluster's real Kyverno policies against the output before it can reach ArgoCD. Tailscale connects the GitHub runner to the homelab network. Renovate keeps dependencies (Helm charts, container images, Terraform providers, Action versions, Nix flake refs, and more) up to date by opening PRs against the repo.
 
 **Trivy** scans for secrets and IaC misconfigurations across Terraform, Helm charts, Kubernetes manifests, and Docker Compose. Findings are reported as SARIF to the GitHub Security tab.
@@ -62,6 +64,8 @@ Push to `main` triggers an orchestrator workflow that detects which layers chang
 ## Vieta Site
 
 The primary site, structured as four Terraform layers plus the applications deployed by ArgoCD. State flows forward via remote state outputs.
+
+> For the physical build the (10" mini-rack, hardware, and 3D-printed mounts) see the [Vieta physical setup](Vieta-Physical-Setup.md).
 
 | Layer | Scope |
 |:------|:------|
@@ -108,6 +112,8 @@ Cloudflare manages the `lippok.dev` zone. A wildcard and root A record are creat
 2. **Tunnel:** TLS relay over WireGuard to homelab (E2EE).
 3. **Homelab:** Terminates TLS and resolves through Blocky (filtering) then Unbound (DNSSEC).
 4. **Upstream:** ODoH-style via VPN + DoT to 1.1.1.1.
+
+![DNS resolution flow](docs/diagrams/dns-resolution.svg)
 
 **Validation:** `dns-check.cloud.lippok.dev` only resolves to `oci.cloud.lippok.dev` behind Blocky.
 
