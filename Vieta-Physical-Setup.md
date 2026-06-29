@@ -8,6 +8,17 @@ For the logical architecture (Talos, ArgoCD, networking, GitOps), see the [main 
 A **Tecmojo 10" 9U**, with the logo covered over with vinyl for a cleaner look (idea borrowed from
 [u/traviss8 on r/minilab](https://www.reddit.com/r/minilab/comments/1tzhg7l/oh_yeah_its_all_comin_together/)).
 
+<table>
+  <tr>
+    <td><img src="docs/Vieta-Front.png" alt="Vieta rack, front" height="480" /></td>
+    <td><img src="docs/Vieta-Back.png" alt="Vieta rack, back" height="480" /></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Front</em></td>
+    <td align="center"><em>Back</em></td>
+  </tr>
+</table>
+
 ---
 
 ## Bill of materials
