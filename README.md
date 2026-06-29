@@ -24,7 +24,12 @@ A GitOps-driven multi-site homelab managed by ArgoCD, bootstrapped via Terraform
 
 ## Overview
 
-![Multi-site network topology](docs/diagrams/multi-site-topology.svg)
+<table>
+  <tr>
+    <td><img src="./docs/Vieta-Front.png" alt="Vieta rack, front" height="480" /></td>
+    <td><img src="./docs/diagrams/multi-site-topology.svg" alt="Topology Diagram" height="480" width="850" /></td>
+  </tr>
+</table>
 
 ### Sites
 
