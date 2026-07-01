@@ -1,8 +1,5 @@
 # nixos-anywhere will generate a more complete version on first install
 {
-  config,
-  lib,
-  pkgs,
   modulesPath,
   ...
 }: {
