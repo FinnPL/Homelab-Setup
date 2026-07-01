@@ -69,12 +69,14 @@ board: "" {
 
     pr: "Pull request: validate & comment" {
       style: { font-size: 32 }
-      grid-rows: 1
+      grid-columns: 3
       grid-gap: 20
-      plan: "Terraform plan" { class: act; icon: https://api.iconify.design/devicon/terraform.svg }
-      charts: "Kubeconform · Kyverno" { class: act; icon: https://api.iconify.design/mdi/shield-check.svg?color=%23FFFFFF }
-      trivy: "Trivy\nsecret + IaC scan" { class: act; icon: https://api.iconify.design/mdi/shield-search.svg?color=%23FFFFFF }
-      docs: "docs-diagrams\nD2 render check" { class: act; icon: https://api.iconify.design/mdi/file-document-outline.svg?color=%23FFFFFF }
+      plan: "Terraform plan\nvieta-deploy.yaml" { class: act; icon: https://api.iconify.design/devicon/terraform.svg }
+      tflint: "Terraform lint\nterraform-lint.yaml" { class: act; icon: https://api.iconify.design/devicon/terraform.svg }
+      trivy: "Security scan\nsecurity-trivy.yaml" { class: act; icon: https://api.iconify.design/mdi/shield-search.svg?color=%23FFFFFF }
+      charts: "Charts validate\ncharts-validate.yaml" { class: act; icon: https://api.iconify.design/mdi/shield-check.svg?color=%23FFFFFF }
+      lint: "Repo lint\nrepo-lint.yaml" { class: act; icon: https://api.iconify.design/mdi/check-all.svg?color=%23FFFFFF }
+      docs: "D2 render check\ndocs-diagrams.yaml" { class: act; icon: https://api.iconify.design/mdi/file-document-outline.svg?color=%23FFFFFF }
     }
 
     # Three stacked jobs, each in one row sized to fill the deploy width.
@@ -84,7 +86,7 @@ board: "" {
     deploy: "Push to main: deploy" {
       style: { font-size: 32 }
       direction: down
-      orch: "Orchestrator: main-deploy.yaml" {
+      orch: "Vieta: Orchestrator: vieta-deploy.yaml" {
         class: actfill
         icon: https://api.iconify.design/devicon/terraform.svg
         grid-rows: 1
@@ -95,7 +97,7 @@ board: "" {
         s: "03-services" { class: chip }
         g -> n -> i -> s: "" { class: step }
       }
-      cloudedge: "cloud-edge" {
+      cloudedge: "Cloud Edge: cloud-edge-deploy.yaml" {
         class: actfill
         grid-columns: 2
         grid-gap: 56
@@ -103,7 +105,7 @@ board: "" {
         nix: "nixos-anywhere" { class: deploybox; width: 470; icon: https://api.iconify.design/material-icon-theme/nix.svg }
         octf -> nix: "" { class: step }
       }
-      minerva: "minerva-deploy\ndocker compose up" { class: actfill; width: 1116; height: 170; icon: https://api.iconify.design/material-icon-theme/docker.svg }
+      minerva: "Minerva: minerva-deploy.yaml\ndocker compose up" { class: actfill; width: 1116; height: 170; icon: https://api.iconify.design/material-icon-theme/docker.svg }
       orch -> cloudedge: "" { style: { opacity: 0 } }
       cloudedge -> minerva: "" { style: { opacity: 0 } }
     }

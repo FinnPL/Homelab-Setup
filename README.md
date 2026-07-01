@@ -60,11 +60,11 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 
 ![CI/CD flow](docs/diagrams/cicd-flow.svg)
 
-Push to `main` triggers an orchestrator workflow that detects which layers changed and runs them in order. PRs get a Terraform plan comment for review, and changes under `charts/`/`apps/` are gated by a chart-and-policy workflow that renders every wrapper chart, schema-checks it with kubeconform, and runs the cluster's real Kyverno policies against the output before it can reach ArgoCD. Tailscale connects the GitHub runner to the homelab network. Renovate keeps dependencies (Helm charts, container images, Terraform providers, Action versions, Nix flake refs, and more) up to date by opening PRs against the repo.
+Push to `main` triggers an orchestrator workflow that detects which layers changed and runs them in order. PRs get a Terraform plan comment for review, and changes under `charts/`/`apps/` are gated by a chart-and-policy workflow that renders the affected wrapper charts (every chart on push to main, only the changed ones on a PR), schema-checks them with kubeconform, and runs the cluster's real Kyverno policies against the output before they can reach ArgoCD. Tailscale connects the GitHub runner to the homelab network. Renovate keeps dependencies (Helm charts, container images, Terraform providers, Action versions, Nix flake refs, and more) up to date by opening PRs against the repo.
 
 **Trivy** scans for secrets and IaC misconfigurations across Terraform, Helm charts, Kubernetes manifests, and Docker Compose. Findings are reported as SARIF to the GitHub Security tab.
 
-**Linting** runs on every PR: Terraform (`fmt` + tflint), Nix, and a shared [pre-commit](.pre-commit-config.yaml) suite (shellcheck, actionlint, codespell, YAML/file hygiene).
+**Linting**: a shared [pre-commit](.pre-commit-config.yaml) suite (shellcheck, actionlint, codespell, YAML/file hygiene) runs on every PR, plus dedicated Terraform (`fmt` + tflint) and Nix (alejandra/statix/deadnix) checks on PRs that touch those files.
 
 ---
 
