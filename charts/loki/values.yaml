@@ -70,7 +70,7 @@ loki:
         memory: 1Gi
     persistence:
       enabled: true
-      storageClass: "local-path" 
+      storageClass: "local-path"
       size: 10Gi
 
   read:
@@ -79,7 +79,7 @@ loki:
     replicas: 0
   backend:
     replicas: 0
-  
+
   gateway:
     enabled: false
   minio:

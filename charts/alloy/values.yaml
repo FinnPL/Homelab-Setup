@@ -392,6 +392,6 @@ alloy-receiver:
 
   ingress:
     enabled: false
-  
+
   service:
     type: ClusterIP

@@ -180,7 +180,7 @@ kube-prometheus-stack:
                 storage: 2Gi
 
       externalUrl: https://alerts.lippok.dev
-      
+
       secrets:
         - alertmanager-discord
 
@@ -210,7 +210,7 @@ kube-prometheus-stack:
                 {{- range .Alerts }}
                 **Severity:** `{{ .Labels.severity | toUpper }}`
                 **Description:** {{ or .Annotations.description .Annotations.summary "N/A" }}
-                
+
                 **Target Details:**
                 {{- if .Labels.namespace }}
                 - **Namespace:** `{{ .Labels.namespace }}`{{ end }}
@@ -220,10 +220,10 @@ kube-prometheus-stack:
                 - **Node:** `{{ .Labels.node }}`{{ end }}
                 {{- if .Labels.job }}
                 - **Job:** `{{ .Labels.job }}`{{ end }}
-                
+
                 **Links:**
                 [Prometheus Graph]({{ .GeneratorURL }}) {{- if .Annotations.runbook_url }} | [Runbook]({{ .Annotations.runbook_url }}){{ end }}
-                
+
                 ---
                 {{- end }}
 
