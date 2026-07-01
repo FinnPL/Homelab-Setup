@@ -39,7 +39,7 @@ spec:
 
       initContainers:
         - name: generate-root-key
-          image: alpine:3.23
+          image: alpine:3.24
           command:
             - sh
             - -c
