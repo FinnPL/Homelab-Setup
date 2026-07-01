@@ -1,4 +1,4 @@
-name: "CI: Charts & Policy"
+name: "Charts: validate"
 
 on:
   push:
@@ -7,31 +7,53 @@ on:
     paths:
       - "charts/**"
       - "apps/**"
-      - ".github/workflows/ci-charts.yaml"
+      - ".github/workflows/charts-validate.yaml"
   pull_request:
     paths:
       - "charts/**"
       - "apps/**"
-      - ".github/workflows/ci-charts.yaml"
+      - ".github/workflows/charts-validate.yaml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-charts-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   discover:
-    name: "Discover charts"
+    name: "discover"
     runs-on: ubuntu-latest
     outputs:
       charts: ${{ steps.find.outputs.charts }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          fetch-depth: 0 # need history to diff against the PR base
 
       - id: find
+        shell: bash
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
+          # On a PR, render only charts whose own files (or matching apps/<name>.yaml)
+          # changed. On push to main — or when this workflow itself changes — render all.
+          render_all=0
+          declare -A WANT
+          if [ "$EVENT" = "pull_request" ]; then
+            while IFS= read -r f; do
+              case "$f" in
+                .github/workflows/charts-validate.yaml) render_all=1 ;;
+                charts/*/*) WANT["$(echo "$f" | cut -d/ -f2)"]=1 ;;
+                apps/*.yaml) WANT["$(basename "$f" .yaml)"]=1 ;;
+              esac
+            done < <(git diff --name-only "$BASE_SHA" HEAD)
+          else
+            render_all=1
+          fi
+
           declare -A NS
           for app in apps/*.yaml; do
             ns=$(yq e '.spec.destination.namespace // ""' "$app")
@@ -42,25 +64,31 @@ jobs:
           entries=()
           for dir in charts/*/; do
             c=$(basename "$dir")
+            if [ "$render_all" = "0" ] && [ -z "${WANT[$c]:-}" ]; then continue; fi
             ns="${NS[$c]:-$c}"; [ -z "$ns" ] && ns="$c"
             entries+=("$(jq -nc --arg n "$c" --arg s "$ns" '{name:$n, ns:$s}')")
           done
-          charts=$(printf '%s\n' "${entries[@]}" | jq -sc '.')
+          if [ ${#entries[@]} -eq 0 ]; then
+            charts='[]'
+          else
+            charts=$(printf '%s\n' "${entries[@]}" | jq -sc '.')
+          fi
           echo "charts=$charts" >> "$GITHUB_OUTPUT"
           echo "$charts" | jq .
 
   render:
-    name: "Render & schema-check"
+    name: "render: ${{ matrix.chart.name }}"
     needs: discover
+    if: needs.discover.outputs.charts != '[]'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         chart: ${{ fromJSON(needs.discover.outputs.charts) }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
 
       - name: Install kubeconform
         env:
@@ -109,19 +137,19 @@ jobs:
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
             "rendered-${{ matrix.chart.name }}.yaml"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: rendered-${{ matrix.chart.name }}
           path: rendered-${{ matrix.chart.name }}.yaml
 
   kyverno:
-    name: "Kyverno policy gate"
+    name: "kyverno"
     needs: render
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
 
       - name: Install Kyverno CLI
         env:
@@ -133,7 +161,7 @@ jobs:
             | sudo tar xz -C /usr/local/bin kyverno
 
       - name: Download rendered manifests
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           pattern: rendered-*
           path: rendered

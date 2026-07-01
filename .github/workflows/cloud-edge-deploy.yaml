@@ -1,15 +1,15 @@
-name: "Cloud Edge"
+name: "Cloud Edge: deploy"
 
 on:
   pull_request:
     paths:
       - "cloud-edge/**"
-      - ".github/workflows/cloud-edge.yaml"
+      - ".github/workflows/cloud-edge-deploy.yaml"
   push:
     branches: [main]
     paths:
       - "cloud-edge/**"
-      - ".github/workflows/cloud-edge.yaml"
+      - ".github/workflows/cloud-edge-deploy.yaml"
   workflow_dispatch:
     inputs:
       apply:
@@ -46,8 +46,8 @@ jobs:
       nixos: ${{ steps.filter.outputs.nixos }}
       workflow_logic: ${{ steps.filter.outputs.workflow_logic }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
           filters: |
@@ -57,7 +57,7 @@ jobs:
             nixos:
               - 'cloud-edge/nixos/**'
             workflow_logic:
-              - '.github/workflows/cloud-edge.yaml'
+              - '.github/workflows/cloud-edge-deploy.yaml'
               - 'cloud-edge/scripts/gha/**'
 
   terraform:
@@ -92,20 +92,13 @@ jobs:
       REPLACE_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.replace_target || '' }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
-      - uses: hashicorp/setup-terraform@v4
-        with:
-          terraform_version: "1.10.0"
-
-      - uses: aws-actions/configure-aws-credentials@v6
+      - name: Setup Terraform + AWS
+        uses: ./.github/actions/tf-aws-setup
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-central-1
-
-      - name: Terraform Format
-        run: terraform fmt -check
 
       - name: Terraform Init
         run: terraform init -upgrade
@@ -131,7 +124,7 @@ jobs:
 
       - name: Comment Terraform Plan
         if: github.event_name == 'pull_request'
-        uses: borchero/terraform-plan-comment@v2
+        uses: borchero/terraform-plan-comment@2d41e908725447b1677913001dfb92fa7010c025 # v3.1.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           planfile: .planfile
@@ -171,16 +164,28 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Validate workflow helper script syntax
         run: bash -n ./cloud-edge/scripts/gha/cloud-edge-workflow.sh
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
+
+      - name: alejandra (format check)
+        working-directory: cloud-edge/nixos
+        run: nix run nixpkgs#alejandra -- --check .
+
+      - name: statix (lint)
+        working-directory: cloud-edge/nixos
+        run: nix run nixpkgs#statix -- check .
+
+      - name: deadnix (dead code)
+        working-directory: cloud-edge/nixos
+        run: nix run nixpkgs#deadnix -- --fail .
 
       - name: Validate Nix flake
         run: nix flake show ./cloud-edge/nixos --no-write-lock-file >/dev/null
@@ -225,24 +230,19 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v31
+        uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31
         with:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
-      - uses: hashicorp/setup-terraform@v4
-        with:
-          terraform_version: "1.10.0"
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v6
+      - name: Setup Terraform + AWS
+        uses: ./.github/actions/tf-aws-setup
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: eu-central-1
 
       - name: Validate dispatch mode
         if: github.event_name == 'workflow_dispatch'
@@ -272,6 +272,55 @@ jobs:
           OCI_SSH_PRIVATE_KEY: ${{ secrets.OCI_SSH_PRIVATE_KEY }}
         run: bash ./scripts/gha/cloud-edge-workflow.sh prepare-edge-host
 
+      - name: Resolve run mode
+        id: mode
+        env:
+          EVENT: ${{ github.event_name }}
+          REF: ${{ github.ref }}
+          APPLY: ${{ inputs.apply }}
+          DEPLOY_NIXOS: ${{ inputs.deploy_nixos }}
+          FORCE_INSTALL: ${{ inputs.force_install_nixos }}
+          NIXOS_CHANGED: ${{ needs.changes.outputs.nixos }}
+          INSTANCE_NEW: ${{ needs.terraform.outputs.instance_new }}
+          NIXOS_STATE: ${{ steps.edge.outputs.nixos_state }}
+        run: |
+          set -uo pipefail
+
+          push_main=false
+          [ "$EVENT" = "push" ] && [ "$REF" = "refs/heads/main" ] && push_main=true
+
+          apply=false; deploy_in=false; force=false
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            [ "$APPLY" = "true" ] && apply=true
+            [ "$DEPLOY_NIXOS" = "true" ] && deploy_in=true
+            [ "$FORCE_INSTALL" = "true" ] && force=true
+          fi
+
+          new=false
+          [ "$INSTANCE_NEW" = "true" ] && new=true
+
+          applypush_new=false
+          { [ "$push_main" = true ] || [ "$apply" = true ]; } && [ "$new" = true ] && applypush_new=true
+
+          install_requested=false
+          { [ "$applypush_new" = true ] || [ "$force" = true ]; } && install_requested=true
+
+          do_install=false
+          { [ "$applypush_new" = true ] && [ "$NIXOS_STATE" = "absent" ]; } && do_install=true
+          { [ "$force" = true ] && [ "$NIXOS_STATE" != "installed" ]; } && do_install=true
+
+          deploy_requested=false
+          { [ "$NIXOS_CHANGED" = "true" ] && [ "$REF" = "refs/heads/main" ] && [ "$new" = false ]; } && deploy_requested=true
+          [ "$deploy_in" = true ] && deploy_requested=true
+
+          {
+            echo "applypush_new=$applypush_new"
+            echo "install_requested=$install_requested"
+            echo "do_install=$do_install"
+            echo "deploy_requested=$deploy_requested"
+          } >> "$GITHUB_OUTPUT"
+          echo "mode: applypush_new=$applypush_new install_requested=$install_requested do_install=$do_install deploy_requested=$deploy_requested (state=$NIXOS_STATE new=$new)"
+
       - name: Write SSH keys for NixOS
         env:
           OCI_SSH_PUBLIC_KEY: ${{ vars.OCI_SSH_PUBLIC_KEY }}
@@ -284,53 +333,21 @@ jobs:
 
       # First-time install (nixos-anywhere) when Terraform proved a new VM
       - name: Guard install when target already has NixOS
-        if: |
-          (
-            (
-              (
-                (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-                (github.event_name == 'workflow_dispatch' && inputs.apply)
-              ) &&
-              needs.terraform.outputs.instance_new == 'true'
-            ) ||
-            (github.event_name == 'workflow_dispatch' && inputs.force_install_nixos)
-          ) &&
-          steps.edge.outputs.nixos_state == 'installed'
+        if: steps.mode.outputs.install_requested == 'true' && steps.edge.outputs.nixos_state == 'installed'
         run: |
           echo "::error::Terraform reported a new VM, but target already reports NixOS installed."
           echo "::error::Aborting to avoid acting on the wrong host."
           exit 1
 
       - name: Guard install when target state is unknown
-        if: |
-          (
-            (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-            (github.event_name == 'workflow_dispatch' && inputs.apply)
-          ) &&
-          needs.terraform.outputs.instance_new == 'true' &&
-          steps.edge.outputs.nixos_state == 'unknown'
+        if: steps.mode.outputs.applypush_new == 'true' && steps.edge.outputs.nixos_state == 'unknown'
         run: |
           echo "::error::Terraform reported a new VM, but SSH state verification is unknown."
           echo "::error::Fix SSH/host reachability and rerun."
           exit 1
 
       - name: "Install NixOS On New VM"
-        if: |
-          (
-            (
-              (
-                (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-                (github.event_name == 'workflow_dispatch' && inputs.apply)
-              ) &&
-              needs.terraform.outputs.instance_new == 'true' &&
-              steps.edge.outputs.nixos_state == 'absent'
-            ) ||
-            (
-              github.event_name == 'workflow_dispatch' &&
-              inputs.force_install_nixos &&
-              steps.edge.outputs.nixos_state != 'installed'
-            )
-          )
+        if: steps.mode.outputs.do_install == 'true'
         run: |
           echo "Running nixos-anywhere on ${{ steps.edge.outputs.ip }}..."
           # renovate: datasource=github-tags depName=nix-community/nixos-anywhere versioning=semver
@@ -341,10 +358,7 @@ jobs:
             root@${{ steps.edge.outputs.ip }}
 
       - name: Guard deploy when NixOS is missing
-        if: |
-          ((needs.changes.outputs.nixos == 'true' && github.ref == 'refs/heads/main' && needs.terraform.outputs.instance_new != 'true') ||
-          (github.event_name == 'workflow_dispatch' && inputs.deploy_nixos)) &&
-          steps.edge.outputs.nixos_state != 'installed'
+        if: steps.mode.outputs.deploy_requested == 'true' && steps.edge.outputs.nixos_state != 'installed'
         run: |
           if [ "${{ steps.edge.outputs.nixos_state }}" = "unknown" ]; then
             echo "::error::deploy_nixos path selected, but target state is unknown (SSH verification failed)."
@@ -355,22 +369,7 @@ jobs:
           exit 1
 
       - name: Refresh SSH after NixOS install
-        if: |
-          (
-            (
-              (
-                (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-                (github.event_name == 'workflow_dispatch' && inputs.apply)
-              ) &&
-              needs.terraform.outputs.instance_new == 'true' &&
-              steps.edge.outputs.nixos_state == 'absent'
-            ) ||
-            (
-              github.event_name == 'workflow_dispatch' &&
-              inputs.force_install_nixos &&
-              steps.edge.outputs.nixos_state != 'installed'
-            )
-          )
+        if: steps.mode.outputs.do_install == 'true'
         env:
           IP: ${{ steps.edge.outputs.ip }}
         run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh refresh-ssh-after-install
@@ -417,9 +416,7 @@ jobs:
 
       # Config update (nixos-rebuild)
       - name: "Update NixOS (nixos-rebuild)"
-        if: |
-          (needs.changes.outputs.nixos == 'true' && github.ref == 'refs/heads/main' && needs.terraform.outputs.instance_new != 'true') ||
-          (github.event_name == 'workflow_dispatch' && inputs.deploy_nixos)
+        if: steps.mode.outputs.deploy_requested == 'true'
         env:
           IP: ${{ steps.edge.outputs.ip }}
         run: |
@@ -432,8 +429,8 @@ jobs:
           nix run github:NixOS/nixpkgs/f37d14db4e7f801872506a2dee5cce5da36ea512#nixos-rebuild -- \
             switch \
             --flake ./cloud-edge/nixos#oracle-edge \
-            --build-host root@$IP \
-            --target-host root@$IP \
+            --build-host "root@$IP" \
+            --target-host "root@$IP" \
             --fast
 
       - name: Wait for Tailscale to connect

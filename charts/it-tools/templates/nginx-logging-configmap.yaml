@@ -13,7 +13,7 @@ data:
         server_name localhost;
         root /usr/share/nginx/html;
         index index.html;
-        
+
         error_log /dev/stderr {{ default "warn" .Values.nginx.errorLogLevel }};
 {{- if eq (lower (toString $accessLog)) "off" }}
         access_log off;

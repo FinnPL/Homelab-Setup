@@ -399,6 +399,10 @@ deploy_myip_secrets() {
   )
 
   echo "Deploying MyIP API key env file..."
+  # Local (client-side) expansion is intended: these secrets live in the runner env
+  # and must be interpolated here, then streamed to the remote `cat`. Quoting EOF would
+  # ship literal ${VAR} text to a host that has no such vars.
+  # shellcheck disable=SC2087
   ssh "${ssh_opts[@]}" "root@$IP" '
     install -d -m 0700 /etc/myip
     umask 077
@@ -433,6 +437,9 @@ deploy_cloudflare_credentials() {
   )
 
   echo "Deploying Cloudflare credentials for ACME DNS-01..."
+  # Local expansion is intended (see deploy_myip_secrets): $CLOUDFLARE_API_TOKEN is a
+  # runner env secret interpolated here, then streamed to the remote `cat`.
+  # shellcheck disable=SC2087
   ssh "${ssh_opts[@]}" "root@$IP" '
     install -d -m 0700 /etc/cloudflare
     umask 077

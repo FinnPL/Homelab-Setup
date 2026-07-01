@@ -105,19 +105,6 @@ variable "windows_vm_config" {
   }
 }
 
-variable "windows_admin_password" {
-  description = "Windows Server administrator password"
-  type        = string
-  sensitive   = true
-}
-
-variable "windows_product_key" {
-  description = "Windows Server 2025 product key"
-  type        = string
-  sensitive   = true
-  default     = ""
-}
-
 # =============================================================================
 # Talos Kubernetes Configuration
 # =============================================================================
@@ -264,4 +251,3 @@ variable "cloud_vcn_cidr" {
   type        = string
   default     = "10.80.1.0/24"
 }
-

@@ -87,4 +87,3 @@ All 10" rack prints from MakerWorld, printed in ASA:
 - [2U 80 mm fan blank panel (bridged remix)](https://makerworld.com/en/models/2062371-10-inch-2u-80mm-fan-blank-panel-bridged-remix)
 - [Keystone patch panel ("Bonanza")](https://makerworld.com/en/models/2875409-10-inch-rack-patch-panel-keystone-bonanza)
 - [USB labels for the Pis](https://makerworld.com/en/models/2408572-usb-label)
-

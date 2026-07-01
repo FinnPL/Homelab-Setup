@@ -1,6 +1,8 @@
-{ pkgs, inputs, ... }:
-
 {
+  pkgs,
+  inputs,
+  ...
+}: {
   imports = [
     ./disk-config.nix
     ./hardware.nix
@@ -28,7 +30,7 @@
     firewall = {
       enable = true;
       allowedTCPPorts = [
-        22  # SSH
+        22 # SSH
         443 # HTTPS (HAProxy TLS passthrough)
       ];
       allowedUDPPorts = [
@@ -59,7 +61,7 @@
   };
 
   nix = {
-    settings.experimental-features = [ "nix-command" "flakes" ];
+    settings.experimental-features = ["nix-command" "flakes"];
     registry.nixpkgs.flake = inputs.nixpkgs;
   };
 

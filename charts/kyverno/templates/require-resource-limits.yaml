@@ -6,7 +6,7 @@ metadata:
     policies.kyverno.io/title: Require Resource Requests and Memory Limit
     policies.kyverno.io/severity: medium
     policies.kyverno.io/description: >-
-      Every container must declare CPU and memory requests and a memory limit. 
+      Every container must declare CPU and memory requests and a memory limit.
       CPU limits are intentionally NOT required.
 spec:
   validationFailureAction: Enforce
