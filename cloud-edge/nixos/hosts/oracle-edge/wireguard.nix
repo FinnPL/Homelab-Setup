@@ -1,23 +1,21 @@
-{ pkgs, ... }:
-
-{
-  environment.systemPackages = [ pkgs.wireguard-tools ];
+{pkgs, ...}: {
+  environment.systemPackages = [pkgs.wireguard-tools];
 
   # CI writes WG private key to /etc/wireguard/private.key
   # CI writes LXC peer pubkey to /etc/wireguard/peer-pubkey
   # CI then runs: systemctl restart homelab-wg
   systemd.services.homelab-wg = {
     description = "WireGuard tunnel to the homelab mesh-router";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
+    after = ["network-online.target"];
+    wants = ["network-online.target"];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
       ExecStop = "${pkgs.iproute2}/bin/ip link del wg0";
     };
-    path = [ pkgs.wireguard-tools pkgs.iproute2 pkgs.gnugrep ];
+    path = [pkgs.wireguard-tools pkgs.iproute2 pkgs.gnugrep];
     unitConfig = {
-      ConditionPathExists = [ "/etc/wireguard/private.key" "/etc/wireguard/peer-pubkey" ];
+      ConditionPathExists = ["/etc/wireguard/private.key" "/etc/wireguard/peer-pubkey"];
     };
     script = ''
       set -e
@@ -54,7 +52,7 @@
   # On boot, start the WG service if key files already exist (persisted from prior CI deploy).
   systemd.paths.homelab-wg = {
     description = "Start homelab WG tunnel when key files exist";
-    wantedBy = [ "multi-user.target" ];
+    wantedBy = ["multi-user.target"];
     pathConfig = {
       # Triggers when the file exists at boot or appears later.
       PathExists = "/etc/wireguard/private.key";
@@ -62,10 +60,10 @@
   };
 
   # WireGuard listen port
-  networking.firewall.allowedUDPPorts = [ 51820 ];
+  networking.firewall.allowedUDPPorts = [51820];
 
   # Trust the WG interface for forwarded traffic
-  networking.firewall.trustedInterfaces = [ "wg0" ];
+  networking.firewall.trustedInterfaces = ["wg0"];
 
   # Ensure the key directory exists
   systemd.tmpfiles.rules = [

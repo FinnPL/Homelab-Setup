@@ -5,7 +5,6 @@
     content = {
       type = "gpt";
       partitions = {
-
         # EFI System Partition
         esp = {
           size = "512M";
@@ -14,7 +13,7 @@
             type = "filesystem";
             format = "vfat";
             mountpoint = "/boot";
-            mountOptions = [ "umask=0077" ];
+            mountOptions = ["umask=0077"];
           };
         };
 
@@ -27,7 +26,6 @@
             mountpoint = "/";
           };
         };
-
       };
     };
   };

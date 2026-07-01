@@ -1,6 +1,4 @@
-{ pkgs, ... }:
-
-{
+{pkgs, ...}: {
   systemd.tmpfiles.rules = [
     "d /etc/myip 0700 root root -"
     "f /etc/myip/secrets.env 0600 root root -"
@@ -18,11 +16,11 @@
       # renovate: datasource=docker depName=jason5ng32/myip
       image = "jason5ng32/myip:v6.1.0";
       autoStart = true;
-      ports = [ "127.0.0.1:18966:18966" ];
+      ports = ["127.0.0.1:18966:18966"];
       environment = {
         ALLOWED_DOMAINS = "dns-check.cloud.lippok.dev";
       };
-      environmentFiles = [ "/etc/myip/secrets.env" ];
+      environmentFiles = ["/etc/myip/secrets.env"];
       extraOptions = [
         "--network=myip-net"
         "--dns=1.1.1.1"
@@ -42,15 +40,15 @@
 
   systemd.services.myip-network = {
     description = "Create dedicated podman bridge for the MyIP container";
-    after = [ "network-online.target" ];
-    wants = [ "network-online.target" ];
-    wantedBy = [ "podman-myip.service" ];
-    before = [ "podman-myip.service" ];
+    after = ["network-online.target"];
+    wants = ["network-online.target"];
+    wantedBy = ["podman-myip.service"];
+    before = ["podman-myip.service"];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
     };
-    path = [ pkgs.podman ];
+    path = [pkgs.podman];
     script = ''
       podman network exists myip-net || podman network create \
         --driver bridge \

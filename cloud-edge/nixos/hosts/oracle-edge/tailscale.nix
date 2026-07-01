@@ -1,6 +1,4 @@
-{ pkgs, ... }:
-
-{
+{pkgs, ...}: {
   services.tailscale = {
     enable = true;
     # CI writes the OAuth client secret (tskey-client-...) to this file.
@@ -15,14 +13,14 @@
   # CI writes subnet CIDR to /etc/tailscale/subnet-cidr
   systemd.services.tailscale-advertise-routes = {
     description = "Advertise VCN subnet route via Tailscale";
-    after = [ "tailscaled.service" "tailscaled-autoconnect.service" ];
-    wants = [ "tailscaled.service" "tailscaled-autoconnect.service" ];
-    wantedBy = [ "multi-user.target" ];
+    after = ["tailscaled.service" "tailscaled-autoconnect.service"];
+    wants = ["tailscaled.service" "tailscaled-autoconnect.service"];
+    wantedBy = ["multi-user.target"];
     serviceConfig = {
       Type = "oneshot";
       RemainAfterExit = true;
     };
-    path = [ pkgs.tailscale ];
+    path = [pkgs.tailscale];
     script = ''
       for i in $(seq 1 30); do
         if tailscale status >/dev/null 2>&1; then break; fi

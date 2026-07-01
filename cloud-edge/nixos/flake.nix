@@ -10,19 +10,22 @@
     };
   };
 
-  outputs = { self, nixpkgs, disko, ... }@inputs: {
+  outputs = {
+    self,
+    nixpkgs,
+    disko,
+    ...
+  } @ inputs: {
     nixosConfigurations = {
-
       # Oracle Cloud Always Free ARM edge node
       oracle-edge = nixpkgs.lib.nixosSystem {
         system = "aarch64-linux";
-        specialArgs = { inherit inputs; };
+        specialArgs = {inherit inputs;};
         modules = [
           disko.nixosModules.disko
           ./hosts/oracle-edge
         ];
       };
-
     };
   };
 }
