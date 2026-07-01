@@ -46,7 +46,7 @@ jobs:
       nixos: ${{ steps.filter.outputs.nixos }}
       workflow_logic: ${{ steps.filter.outputs.workflow_logic }}
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
       - uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d # v4
         id: filter
         with:
@@ -92,7 +92,7 @@ jobs:
       REPLACE_TARGET: ${{ github.event_name == 'workflow_dispatch' && inputs.replace_target || '' }}
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Setup Terraform + AWS
         uses: ./.github/actions/tf-aws-setup
@@ -164,7 +164,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Validate workflow helper script syntax
         run: bash -n ./cloud-edge/scripts/gha/cloud-edge-workflow.sh
@@ -230,7 +230,7 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
 
       - name: Install Nix
         uses: cachix/install-nix-action@8aa03977d8d733052d78f4e008a241fd1dbf36b3 # v31
