@@ -1,4 +1,4 @@
-{...}:
+_:
 # Egress firewall for the MyIP container's bridge (10.89.0.0/24).
 {
   networking.nftables.tables.container-egress = {

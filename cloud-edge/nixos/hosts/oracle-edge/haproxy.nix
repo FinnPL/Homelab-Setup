@@ -1,4 +1,4 @@
-{...}:
+_:
 #   *.relay.lippok.dev:   SNI passthrough to homelab (E2E TLS preserved)
 #   *.cloud.lippok.dev:   terminate locally, host-route to a cloud-edge backend
 {
