@@ -429,8 +429,8 @@ jobs:
           nix run github:NixOS/nixpkgs/f37d14db4e7f801872506a2dee5cce5da36ea512#nixos-rebuild -- \
             switch \
             --flake ./cloud-edge/nixos#oracle-edge \
-            --build-host root@$IP \
-            --target-host root@$IP \
+            --build-host "root@$IP" \
+            --target-host "root@$IP" \
             --fast
 
       - name: Wait for Tailscale to connect
