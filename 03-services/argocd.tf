@@ -85,6 +85,13 @@ resource "helm_release" "argocd" {
         ]
       }
 
+      redisSecretInit = {
+        resources = {
+          requests = { cpu = "10m", memory = "32Mi" }
+          limits   = { memory = "64Mi" }
+        }
+      }
+
       "redis-ha" = {
         enabled = false
       }
