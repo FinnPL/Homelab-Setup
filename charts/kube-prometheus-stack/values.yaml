@@ -378,7 +378,7 @@ unifiExporter:
   image:
     repository: ghcr.io/unpoller/unpoller
     # renovate: datasource=docker depName=ghcr.io/unpoller/unpoller
-    tag: v2.39.0
+    tag: v3.3.1
     pullPolicy: IfNotPresent
 
   verifySsl: false
