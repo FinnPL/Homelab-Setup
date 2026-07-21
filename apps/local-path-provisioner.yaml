@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: ghcr.io/rancher/local-path-provisioner/charts
     chart: local-path-provisioner
-    targetRevision: 0.0.35
+    targetRevision: 0.0.36
     helm:
       valuesObject:
         storageClass:
