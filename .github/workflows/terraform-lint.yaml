@@ -8,6 +8,7 @@ on:
       - "02-infrastructure/**"
       - "03-services/**"
       - "cloud-edge/**"
+      - "vault/**"
       - ".tflint.hcl"
       - ".github/workflows/terraform-lint.yaml"
   push:
@@ -19,6 +20,7 @@ on:
       - "02-infrastructure/**"
       - "03-services/**"
       - "cloud-edge/**"
+      - "vault/**"
       - ".tflint.hcl"
       - ".github/workflows/terraform-lint.yaml"
 
@@ -45,7 +47,7 @@ jobs:
 
       - name: Terraform fmt
         run: |
-          for d in 00-global 01-network 02-infrastructure 03-services cloud-edge; do
+          for d in 00-global 01-network 02-infrastructure 03-services cloud-edge vault; do
             terraform fmt -check -recursive "$d"
           done
 
@@ -61,6 +63,7 @@ jobs:
           - 02-infrastructure
           - 03-services
           - cloud-edge
+          - vault
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
