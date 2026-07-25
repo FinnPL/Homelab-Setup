@@ -16,6 +16,15 @@ resource "vault_quota_rate_limit" "userpass_login" {
   group_by       = "ip"
 }
 
+resource "vault_quota_rate_limit" "github_actions_login" {
+  name       = "github-actions-login"
+  path       = "auth/github-actions/"
+  rate       = 30
+  interval   = 60
+  group_by   = "ip"
+  depends_on = [vault_jwt_auth_backend.github_actions]
+}
+
 resource "vault_generic_endpoint" "userpass_lockout" {
   path                 = "sys/auth/userpass/tune"
   disable_read         = true

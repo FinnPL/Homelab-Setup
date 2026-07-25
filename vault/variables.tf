@@ -3,3 +3,9 @@ variable "vault_address" {
   type        = string
   default     = "https://vault.cloud.lippok.dev"
 }
+
+variable "github_repository" {
+  description = "owner/repo for GitHub Actions OIDC claim binding"
+  type        = string
+  default     = "FinnPL/Homelab-Setup"
+}
