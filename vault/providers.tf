@@ -11,4 +11,7 @@ terraform {
 
 provider "vault" {
   address = var.vault_address
+
+  # The OIDC-minted token is already ephemeral
+  skip_child_token = true
 }
