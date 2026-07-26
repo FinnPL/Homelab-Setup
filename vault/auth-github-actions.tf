@@ -16,6 +16,7 @@ resource "vault_jwt_auth_backend_role" "vault_deploy" {
   bound_claims = {
     repository       = var.github_repository
     job_workflow_ref = "${var.github_repository}/.github/workflows/vault-deploy.yaml@refs/heads/main"
+    environment      = "vault"
   }
 
   token_policies = [vault_policy.vault_deploy.name]
