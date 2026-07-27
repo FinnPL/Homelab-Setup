@@ -30,6 +30,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  id-token: write
 
 jobs:
   terraform:
@@ -110,8 +111,7 @@ jobs:
       - name: Setup Terraform + AWS
         uses: ./.github/actions/tf-aws-setup
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          vault-role: vieta-layers
 
       - name: Terraform Init
         run: terraform init ${{ inputs.init_upgrade && '-upgrade' || '' }}

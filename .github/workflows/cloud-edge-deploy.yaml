@@ -36,6 +36,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  id-token: write
 
 # Terraform: provisions OCI infrastructure + Cloudflare DNS
 jobs:
@@ -97,8 +98,7 @@ jobs:
       - name: Setup Terraform + AWS
         uses: ./.github/actions/tf-aws-setup
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          vault-role: cloud-edge
 
       - name: Terraform Init
         run: terraform init -upgrade
@@ -241,8 +241,7 @@ jobs:
       - name: Setup Terraform + AWS
         uses: ./.github/actions/tf-aws-setup
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          vault-role: cloud-edge
 
       - name: Validate dispatch mode
         if: github.event_name == 'workflow_dispatch'
