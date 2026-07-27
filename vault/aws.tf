@@ -12,7 +12,7 @@ resource "vault_aws_secret_backend_role" "tfstate" {
   credential_type = "assumed_role"
   role_arns       = [var.aws_tfstate_role_arn]
 
-  default_sts_ttl = 1800
+  default_sts_ttl = 3600
   max_sts_ttl     = 3600
 }
 

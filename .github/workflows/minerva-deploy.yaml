@@ -15,19 +15,31 @@ concurrency:
 jobs:
   deploy:
     runs-on: pi3
-    environment: Pi3
+    environment: minerva
     permissions:
       contents: read
+      id-token: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Read secrets from Vault
+        uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
+        with:
+          url: https://vault.cloud.lippok.dev
+          method: jwt
+          path: github-actions
+          role: minerva
+          jwtGithubAudience: https://vault.cloud.lippok.dev
+          secrets: |
+            kv/data/minerva/tailscale authkey | TAILSCALE_AUTHKEY
 
       - name: Clear Env File
         run: echo "" > minerva/.env
 
       - name: Set up Env File
         run: |
-          echo 'TAILSCALE_AUTHKEY=${{ secrets.TAILSCALE_AUTHKEY }}' >> minerva/.env
+          echo "TAILSCALE_AUTHKEY=${TAILSCALE_AUTHKEY}" >> minerva/.env
 
       - name: Pull latest images
         run: docker compose --env-file minerva/.env -f minerva/docker-compose.yml pull

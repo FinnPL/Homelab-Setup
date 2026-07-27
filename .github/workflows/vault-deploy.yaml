@@ -42,24 +42,14 @@ jobs:
       - name: Setup Terraform + AWS
         uses: ./.github/actions/tf-aws-setup
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          vault-role: vault-deploy
+          export-token: true
 
       - name: Terraform Init
         run: terraform init
 
       - name: Terraform Validate
         run: terraform validate
-
-      - name: Vault Login (GitHub OIDC)
-        uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
-        with:
-          url: ${{ vars.VAULT_ADDR }}
-          method: jwt
-          path: github-actions
-          role: vault-deploy
-          jwtGithubAudience: ${{ vars.VAULT_ADDR }}
-          exportToken: true
 
       - name: Terraform Plan
         run: terraform plan -lock-timeout=10m -out .planfile -input=false

@@ -1,19 +1,22 @@
 name: "Terraform + AWS setup"
-description: "Install a pinned Terraform and configure AWS credentials for the S3 state backend"
+description: "Install a pinned Terraform and mint short-lived S3 state-backend credentials from Vault"
 
 inputs:
   terraform_version:
     description: "Terraform version to install"
     default: "1.10.0"
-  aws-access-key-id:
-    description: "AWS access key id for the state backend"
-    required: true
-  aws-secret-access-key:
-    description: "AWS secret access key for the state backend"
-    required: true
   aws-region:
     description: "AWS region of the state bucket"
     default: "eu-central-1"
+  vault-addr:
+    description: "Vault server URL"
+    default: "https://vault.cloud.lippok.dev"
+  vault-role:
+    description: "Vault jwt role to mint state-backend credentials from. Requires id-token: write on the caller."
+    required: true
+  export-token:
+    description: "Also export VAULT_TOKEN, for callers whose Terraform uses the vault provider."
+    default: "false"
 
 runs:
   using: composite
@@ -23,9 +26,20 @@ runs:
       with:
         terraform_version: ${{ inputs.terraform_version }}
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@e7f100cf4c008499ea8adda475de1042d6975c7b # v6
+    - name: Mint state-backend credentials (Vault, GitHub OIDC)
+      uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
       with:
-        aws-access-key-id: ${{ inputs.aws-access-key-id }}
-        aws-secret-access-key: ${{ inputs.aws-secret-access-key }}
-        aws-region: ${{ inputs.aws-region }}
+        url: ${{ inputs.vault-addr }}
+        method: jwt
+        path: github-actions
+        role: ${{ inputs.vault-role }}
+        jwtGithubAudience: ${{ inputs.vault-addr }}
+        exportToken: ${{ inputs.export-token }}
+        secrets: |
+          aws/creds/tfstate access_key | AWS_ACCESS_KEY_ID ;
+          aws/creds/tfstate secret_key | AWS_SECRET_ACCESS_KEY ;
+          aws/creds/tfstate security_token | AWS_SESSION_TOKEN
+
+    - name: Set AWS region
+      shell: bash
+      run: echo "AWS_REGION=${{ inputs.aws-region }}" >> "$GITHUB_ENV"
