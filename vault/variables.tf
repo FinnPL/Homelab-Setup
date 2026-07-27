@@ -9,3 +9,9 @@ variable "github_repository" {
   type        = string
   default     = "FinnPL/Homelab-Setup"
 }
+
+variable "aws_tfstate_role_arn" {
+  description = "IAM role the aws/ engine assumes for S3 state access"
+  type        = string
+  default     = "arn:aws:iam::367283415772:role/homelab-tfstate"
+}

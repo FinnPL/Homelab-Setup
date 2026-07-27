@@ -21,6 +21,9 @@ resource "vault_policy" "vault_deploy" {
     # JWT auth backend config + roles
     path "auth/github-actions/*" { capabilities = ["create", "read", "update", "delete", "list"] }
 
+    # AWS secrets engine roles (config/root is seeded out-of-band, not readable here)
+    path "aws/roles/*" { capabilities = ["create", "read", "update", "delete", "list"] }
+
     path "auth/token/lookup-self" { capabilities = ["read"] }
   EOT
 }
