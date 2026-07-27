@@ -6,10 +6,6 @@ terraform {
       source  = "bpg/proxmox"
       version = "0.111.0"
     }
-    github = {
-      source  = "integrations/github"
-      version = "6.11"
-    }
     talos = {
       source  = "siderolabs/talos"
       version = "0.10.1"
@@ -22,8 +18,3 @@ terraform {
 }
 
 provider "talos" {}
-
-provider "github" {
-  token = var.github_pat
-  owner = var.github_owner
-}

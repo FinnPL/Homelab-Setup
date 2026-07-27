@@ -36,10 +36,10 @@ resource "vault_jwt_auth_backend_role" "vieta_layers" {
   bound_claims = {
     repository       = var.github_repository
     job_workflow_ref = "${var.github_repository}/.github/workflows/_terraform-layer.yaml@*"
-    environment      = "Terraform"
+    environment      = "vieta"
   }
 
-  token_policies = [vault_policy.aws_tfstate.name]
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.vieta.name]
   token_type     = "service"
   token_ttl      = 1200
   token_max_ttl  = 1200
@@ -56,10 +56,29 @@ resource "vault_jwt_auth_backend_role" "cloud_edge" {
   bound_claims = {
     repository       = var.github_repository
     job_workflow_ref = "${var.github_repository}/.github/workflows/cloud-edge-deploy.yaml@*"
-    environment      = "Terraform"
+    environment      = "cloud-edge"
   }
 
-  token_policies = [vault_policy.aws_tfstate.name]
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.cloud_edge.name]
+  token_type     = "service"
+  token_ttl      = 1200
+  token_max_ttl  = 1200
+}
+
+resource "vault_jwt_auth_backend_role" "minerva" {
+  backend         = vault_jwt_auth_backend.github_actions.path
+  role_name       = "minerva"
+  role_type       = "jwt"
+  user_claim      = "job_workflow_ref"
+  bound_audiences = [var.vault_address]
+
+  bound_claims = {
+    repository       = var.github_repository
+    job_workflow_ref = "${var.github_repository}/.github/workflows/minerva-deploy.yaml@refs/heads/main"
+    environment      = "minerva"
+  }
+
+  token_policies = [vault_policy.minerva.name]
   token_type     = "service"
   token_ttl      = 1200
   token_max_ttl  = 1200
