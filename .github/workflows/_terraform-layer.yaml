@@ -79,16 +79,6 @@ jobs:
             kv/data/vieta/postgres admin-password | TF_VAR_postgres_admin_password ;
             kv/data/vieta/mesh-router root-password | TF_VAR_mesh_router_root_password ;
             kv/data/vieta/mesh-router wg-private-key | TF_VAR_mesh_wg_private_key ;
-            kv/data/apps/authentik secret-key | TF_VAR_authentik_secret_key ;
-            kv/data/apps/argocd oidc-client-secret | TF_VAR_argocd_oidc_client_secret ;
-            kv/data/apps/argocd github-pat | TF_VAR_argocd_github_pat ;
-            kv/data/apps/grafana oidc-client-secret | TF_VAR_grafana_oidc_client_secret ;
-            kv/data/apps/tailscale oauth-client-id | TF_VAR_tailscale_oauth_client_id ;
-            kv/data/apps/tailscale oauth-secret | TF_VAR_tailscale_oauth_secret ;
-            kv/data/apps/gatus discord-webhook-url | TF_VAR_gatus_discord_webhook_url ;
-            kv/data/apps/alertmanager discord-webhook-url | TF_VAR_alertmanager_discord_webhook_url ;
-            kv/data/apps/unifi-exporter username | TF_VAR_unifi_exporter_username ;
-            kv/data/apps/unifi-exporter password | TF_VAR_unifi_exporter_password ;
             kv/data/ci/tailscale oauth-client-id | TS_OAUTH_CLIENT_ID ;
             kv/data/ci/tailscale oauth-secret | TS_OAUTH_SECRET
 

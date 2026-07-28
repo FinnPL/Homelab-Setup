@@ -16,67 +16,6 @@ variable "gateway_api_version" {
   default = "v1.4.1"
 }
 
-# Temporary Secrets until Vault is deployed:
-
-variable "authentik_secret_key" {
-  description = "Authentik secret key for session signing"
-  type        = string
-  sensitive   = true
-}
-
-variable "argocd_oidc_client_secret" {
-  description = "OIDC client secret shared between Authentik and ArgoCD"
-  type        = string
-  sensitive   = true
-}
-
-variable "grafana_oidc_client_secret" {
-  description = "OIDC client secret shared between Authentik and Grafana"
-  type        = string
-  sensitive   = true
-}
-
-variable "tailscale_oauth_client_id" {
-  description = "Tailscale OAuth Client ID"
-  type        = string
-  sensitive   = true
-}
-
-variable "tailscale_oauth_secret" {
-  description = "Tailscale OAuth Client Secret"
-  type        = string
-  sensitive   = true
-}
-
-variable "gatus_discord_webhook_url" {
-  description = "Discord webhook URL for Gatus uptime alerts"
-  type        = string
-  sensitive   = true
-}
-
-variable "alertmanager_discord_webhook_url" {
-  description = "Discord webhook URL for Alertmanager metrics and logs alerts"
-  type        = string
-  sensitive   = true
-}
-
-variable "unifi_exporter_username" {
-  description = "UniFi exporter API username"
-  type        = string
-  sensitive   = true
-}
-
-variable "unifi_exporter_password" {
-  description = "UniFi exporter API password"
-  type        = string
-  sensitive   = true
-}
-
-variable "argocd_github_pat" {
-  description = "GitHub PAT (repo:status scope) for ArgoCD Notifications commit status updates"
-  type        = string
-  sensitive   = true
-}
 
 variable "vault_address" {
   description = "URL of the Vault server backing vault-secret-store"
