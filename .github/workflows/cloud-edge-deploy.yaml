@@ -257,7 +257,6 @@ jobs:
           role: cloud-edge
           jwtGithubAudience: https://vault.cloud.lippok.dev
           secrets: |
-            kv/data/cloud-edge/oci ssh-private-key | OCI_SSH_PRIVATE_KEY ;
             kv/data/cloud-edge/wg private-key | WG_PRIVATE_KEY ;
             kv/data/cloud-edge/wg mesh-peer-pubkey | WG_PEER_PUBKEY ;
             kv/data/cloud-edge/myip cloudflare-api | MYIP_CLOUDFLARE_API ;
@@ -270,6 +269,7 @@ jobs:
         uses: ./.github/actions/tf-aws-setup
         with:
           vault-role: cloud-edge
+          export-token: true
 
       - name: Validate dispatch mode
         if: github.event_name == 'workflow_dispatch'
