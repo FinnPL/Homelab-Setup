@@ -179,18 +179,42 @@ prepare_edge_host() {
   IP="$ip" detect_nixos_state
 }
 
+# Mints a throwaway keypair and have Vault sign it
+mint_ssh_cert() {
+  require_var VAULT_TOKEN
+
+  local vault_addr="${VAULT_ADDR:-https://vault.cloud.lippok.dev}"
+  local role="${VAULT_SSH_ROLE:-oci-edge}"
+
+  mkdir -p ~/.ssh
+  rm -f ~/.ssh/edge_key ~/.ssh/edge_key.pub ~/.ssh/edge_key-cert.pub
+  ssh-keygen -q -t ed25519 -N "" -C "gha-${GITHUB_RUN_ID:-local}" -f ~/.ssh/edge_key
+
+  local signed
+  signed=$(jq -n --rawfile pk ~/.ssh/edge_key.pub '{public_key: $pk}' \
+    | curl -sS -f -X PUT \
+        -H "X-Vault-Token: $VAULT_TOKEN" \
+        --data-binary @- \
+        "${vault_addr}/v1/ssh-client-signer/sign/${role}" \
+    | jq -r '.data.signed_key')
+
+  if [ -z "$signed" ] || [ "$signed" = "null" ]; then
+    error "Vault did not return a signed certificate for role $role"
+  fi
+
+  printf '%s\n' "$signed" > ~/.ssh/edge_key-cert.pub
+  ssh-keygen -Lf ~/.ssh/edge_key-cert.pub | grep -E 'Key ID|Valid:|^ *root$'
+}
+
 setup_ssh() {
   require_var IP
-  require_var OCI_SSH_PRIVATE_KEY
 
   local expected_fp="${EXPECTED_FP:-}"
   local attempts="${HOSTKEY_SCAN_ATTEMPTS:-10}"
   local delay_seconds="${HOSTKEY_SCAN_DELAY_SECONDS:-5}"
   local host_file="/tmp/edge_known_host"
 
-  mkdir -p ~/.ssh
-  printf '%s\n' "$OCI_SSH_PRIVATE_KEY" > ~/.ssh/edge_key
-  chmod 600 ~/.ssh/edge_key
+  mint_ssh_cert
 
   : > "$host_file"
   local i
@@ -296,6 +320,9 @@ refresh_ssh_after_install() {
   local host_file="/tmp/edge_known_host"
 
   echo "Waiting for SSH to come back after NixOS install (host key will have changed)..."
+
+  # The install is the long step; re-sign so the rest of the job has a full cert lifetime.
+  mint_ssh_cert
 
   # Clear old known_hosts entries for this IP — NixOS generated new host keys
   ssh-keygen -R "$IP" -f ~/.ssh/known_hosts 2>/dev/null || true
