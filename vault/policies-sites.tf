@@ -4,7 +4,6 @@ resource "vault_policy" "vieta" {
 
   policy = <<-EOT
     path "kv/data/vieta/*" { capabilities = ["read"] }
-    path "kv/data/apps/*" { capabilities = ["read"] }
     path "kv/data/cloudflare" { capabilities = ["read"] }
     path "kv/data/ci/tailscale" { capabilities = ["read"] }
   EOT
