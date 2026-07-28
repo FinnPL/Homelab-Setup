@@ -57,7 +57,7 @@
         "/\\.nix$/"
       ],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+\\w+\\s*=\\s*\"[^\"]+:(?<currentValue>[^@\"]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\";?"
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+\\w+\\s*=\\s*\"[^\"]+?:(?<currentValue>[^@\":/]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\";?"
       ]
     },
     {
