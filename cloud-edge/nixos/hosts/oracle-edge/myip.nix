@@ -14,7 +14,7 @@
     backend = "podman";
     containers.myip = {
       # renovate: datasource=docker depName=jason5ng32/myip
-      image = "jason5ng32/myip:v6.6.0";
+      image = "jason5ng32/myip:v6.6.0@sha256:2408cdd2ea5b1fa8f5a016e2b0cd03c805f222054a3a3a6be9532c4e843a162c";
       autoStart = true;
       ports = ["127.0.0.1:18966:18966"];
       environment = {
