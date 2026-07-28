@@ -73,7 +73,6 @@ jobs:
             kv/data/vieta/unifi api-key | TF_VAR_unifi_api_key ;
             kv/data/vieta/proxmox api-token | TF_VAR_proxmox_api_token ;
             kv/data/vieta/proxmox ssh-password | TF_VAR_proxmox_ssh_password ;
-            kv/data/vieta/proxmox ssh-private-key | TF_VAR_proxmox_ssh_private_key ;
             kv/data/vieta/nfs root-password | TF_VAR_nfs_root_password ;
             kv/data/vieta/postgres root-password | TF_VAR_postgres_root_password ;
             kv/data/vieta/postgres admin-password | TF_VAR_postgres_admin_password ;
@@ -108,6 +107,27 @@ jobs:
         uses: ./.github/actions/tf-aws-setup
         with:
           vault-role: vieta-layers
+          export-token: ${{ inputs.needs_ansible }}
+
+      # Throwaway keypair signed by the Vault user CA the LXCs trust.
+      - name: Mint Ansible SSH certificate
+        if: inputs.needs_ansible
+        working-directory: ${{ runner.temp }}
+        run: |
+          ssh-keygen -q -t ed25519 -N "" -C "gha-${GITHUB_RUN_ID}" -f ansible_key
+          signed=$(jq -n --rawfile pk ansible_key.pub '{public_key: $pk}' \
+            | curl -sS -f -X PUT \
+                -H "X-Vault-Token: ${VAULT_TOKEN}" \
+                --data-binary @- \
+                https://vault.cloud.lippok.dev/v1/ssh-client-signer/sign/homelab \
+            | jq -r '.data.signed_key')
+          if [ -z "$signed" ] || [ "$signed" = "null" ]; then
+            echo "::error::Vault did not return a signed certificate"
+            exit 1
+          fi
+          printf '%s\n' "$signed" > ansible_key-cert.pub
+          ssh-keygen -Lf ansible_key-cert.pub | grep -E 'Key ID|Valid:'
+          echo "TF_VAR_ansible_ssh_key_file=${{ runner.temp }}/ansible_key" >> "$GITHUB_ENV"
 
       - name: Terraform Init
         run: terraform init ${{ inputs.init_upgrade && '-upgrade' || '' }}

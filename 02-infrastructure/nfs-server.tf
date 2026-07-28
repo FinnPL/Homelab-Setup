@@ -75,7 +75,7 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
     command = <<-EOT
       ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook \
         -i '${local.nfs_server_ip},' \
-        --private-key '${local_sensitive_file.ansible_ssh_key.filename}' \
+        --private-key '${var.ansible_ssh_key_file}' \
         --user root \
         --extra-vars 'nfs_export_subnet=${local.athena_subnet}' \
         '${path.module}/ansible/nfs-server.yml'

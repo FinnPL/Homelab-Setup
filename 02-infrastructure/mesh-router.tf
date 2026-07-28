@@ -80,7 +80,7 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
     command = <<-EOT
       ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook \
         -i '${local.mesh_router_ip},' \
-        --private-key '${local_sensitive_file.ansible_ssh_key.filename}' \
+        --private-key '${var.ansible_ssh_key_file}' \
         --user root \
         --extra-vars '{"wg_private_key":"${var.mesh_wg_private_key}","wg_peer_pubkey":"${var.mesh_wg_peer_pubkey}","wg_peer_endpoint":"${local.mesh_wg_peer_endpoint}","cloud_vcn_cidr":"${var.cloud_vcn_cidr}"}' \
         '${path.module}/ansible/mesh-router.yml'

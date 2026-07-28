@@ -1,0 +1,26 @@
+# Lets CI authenticate with a short-lived certificate from the Vault
+# ssh-client-signer 'homelab' role instead of a stored private key.
+- name: Install the Vault SSH user CA
+  copy:
+    src: files/vault_user_ca.pub
+    dest: /etc/ssh/vault_user_ca.pub
+    mode: "0644"
+  register: vault_ssh_ca_key
+
+- name: Trust the Vault user CA for SSH logins
+  copy:
+    content: "TrustedUserCAKeys /etc/ssh/vault_user_ca.pub\n"
+    dest: /etc/ssh/sshd_config.d/10-vault-user-ca.conf
+    mode: "0644"
+  register: vault_ssh_ca_conf
+
+- name: Verify sshd config before reloading
+  command: sshd -t
+  changed_when: false
+  when: vault_ssh_ca_key.changed or vault_ssh_ca_conf.changed
+
+- name: Reload sshd
+  systemd:
+    name: ssh
+    state: reloaded
+  when: vault_ssh_ca_key.changed or vault_ssh_ca_conf.changed
