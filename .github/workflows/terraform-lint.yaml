@@ -71,7 +71,7 @@ jobs:
         uses: terraform-linters/setup-tflint@6e1e0642c0289bd619021bf6b34e3c08ed1e005a # v6.3.0
         with:
           # renovate: datasource=github-releases depName=terraform-linters/tflint
-          tflint_version: v0.63.1
+          tflint_version: v0.64.0
 
       - name: Init TFLint plugins
         env:
