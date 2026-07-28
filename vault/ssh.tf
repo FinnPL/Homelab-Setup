@@ -1,0 +1,62 @@
+resource "vault_mount" "ssh_client_signer" {
+  path        = "ssh-client-signer"
+  type        = "ssh"
+  description = "User CA — signs ephemeral CI keys so no long-lived SSH private key is stored"
+}
+
+# Vault generates and keeps the private half; only the public key ever leaves.
+resource "vault_ssh_secret_backend_ca" "client_signer" {
+  backend              = vault_mount.ssh_client_signer.path
+  generate_signing_key = true
+  key_type             = "ed25519"
+}
+
+locals {
+  ssh_cert_ttl = "3600"
+
+  ssh_cert_extensions = {
+    permit-pty = ""
+  }
+
+  ssh_cert_key_id = "{{role_name}}-{{token_display_name}}-{{public_key_hash}}"
+}
+
+resource "vault_ssh_secret_backend_role" "oci_edge" {
+  backend = vault_mount.ssh_client_signer.path
+  name    = "oci-edge"
+
+  key_type                = "ca"
+  allow_user_certificates = true
+  allowed_users           = "root"
+  default_user            = "root"
+
+  default_extensions = local.ssh_cert_extensions
+  allowed_extensions = join(",", keys(local.ssh_cert_extensions))
+
+  ttl     = local.ssh_cert_ttl
+  max_ttl = local.ssh_cert_ttl
+
+  key_id_format = local.ssh_cert_key_id
+}
+
+resource "vault_ssh_secret_backend_role" "homelab" {
+  backend = vault_mount.ssh_client_signer.path
+  name    = "homelab"
+
+  key_type                = "ca"
+  allow_user_certificates = true
+  allowed_users           = "root"
+  default_user            = "root"
+
+  default_extensions = local.ssh_cert_extensions
+  allowed_extensions = join(",", keys(local.ssh_cert_extensions))
+
+  ttl     = local.ssh_cert_ttl
+  max_ttl = local.ssh_cert_ttl
+
+  key_id_format = local.ssh_cert_key_id
+}
+
+output "ssh_client_ca_public_key" {
+  value = vault_ssh_secret_backend_ca.client_signer.public_key
+}

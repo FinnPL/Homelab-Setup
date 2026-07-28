@@ -32,10 +32,9 @@ variable "proxmox_bridge" {
   default     = "vmbr0"
 }
 
-variable "proxmox_ssh_private_key" {
-  description = "Raw SSH private key content for remote-exec"
+variable "ansible_ssh_key_file" {
+  description = "Path to the SSH private key Ansible authenticates with"
   type        = string
-  sensitive   = true
 }
 
 variable "proxmox_ssh_public_key" {

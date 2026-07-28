@@ -25,6 +25,10 @@ resource "vault_policy" "vault_deploy" {
     # AWS secrets engine roles (config/root is seeded out-of-band, not readable here)
     path "aws/roles/*" { capabilities = ["create", "read", "update", "delete", "list"] }
 
+    # SSH user CA: the signing key is generated in-place and never read back
+    path "ssh-client-signer/config/ca" { capabilities = ["create", "read", "update", "delete"] }
+    path "ssh-client-signer/roles/*" { capabilities = ["create", "read", "update", "delete", "list"] }
+
     path "auth/token/lookup-self" { capabilities = ["read"] }
   EOT
 }

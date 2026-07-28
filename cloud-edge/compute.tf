@@ -49,8 +49,10 @@ resource "oci_core_instance" "edge" {
       mkdir -p /root/.ssh
       cp /home/ubuntu/.ssh/authorized_keys /root/.ssh/authorized_keys
       chmod 600 /root/.ssh/authorized_keys
+      printf '%s\n' '${trimspace(file("${path.module}/nixos/hosts/oracle-edge/vault_user_ca.pub"))}' > /etc/ssh/vault_user_ca.pub
+      chmod 644 /etc/ssh/vault_user_ca.pub
       install -d -m 0755 /etc/ssh/sshd_config.d
-      printf '%s\n' 'PermitRootLogin prohibit-password' > /etc/ssh/sshd_config.d/00-cloud-init-root-login.conf
+      printf '%s\n' 'PermitRootLogin prohibit-password' 'TrustedUserCAKeys /etc/ssh/vault_user_ca.pub' > /etc/ssh/sshd_config.d/00-cloud-init-root-login.conf
       chmod 644 /etc/ssh/sshd_config.d/00-cloud-init-root-login.conf
       systemctl restart sshd
     EOF
