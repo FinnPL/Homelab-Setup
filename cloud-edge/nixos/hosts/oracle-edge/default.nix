@@ -7,6 +7,7 @@
     ./disk-config.nix
     ./hardware.nix
     ./ssh-keys.nix
+    ./ssh-ca.nix
     ./tailscale.nix
     ./wireguard.nix
     ./haproxy.nix
