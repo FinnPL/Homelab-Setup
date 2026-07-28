@@ -371,7 +371,7 @@ proxmoxExporter:
 
   secret:
     name: proxmox-exporter-secrets
-    remoteKey: proxmox-exporter
+    remoteKey: apps/proxmox-exporter
 
 unifiExporter:
   enabled: true
@@ -415,4 +415,4 @@ unifiExporter:
 
   secret:
     name: unifi-exporter-secrets
-    remoteKey: unifi-exporter
+    remoteKey: apps/unifi-exporter
