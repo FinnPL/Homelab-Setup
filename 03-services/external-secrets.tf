@@ -1,10 +1,4 @@
-# Temporary backend: Kubernetes namespace "secret-store"
-# Future backend:    HashiCorp Vault
-#
-# Migration to Vault requires:
-#   1. Update ClusterSecretStore provider block (kubernetes -> vault)
-#   2. Update remoteRef.key in ExternalSecrets to Vault paths e.g., "authentik-config" -> "apps/authentik/config"
-#   3. Remove secret-store namespace, RBAC, and seed secrets below
+# Two stores run in parallel during the Vault migration
 
 resource "kubernetes_namespace_v1" "external_secrets" {
   metadata {
@@ -156,6 +150,42 @@ resource "kubectl_manifest" "cluster_secret_store" {
             serviceAccount = {
               name      = kubernetes_service_account_v1.eso_store_reader.metadata[0].name
               namespace = kubernetes_namespace_v1.secret_store.metadata[0].name
+            }
+          }
+        }
+      }
+    }
+  })
+
+  depends_on = [helm_release.external_secrets]
+}
+
+# Vault-backed store
+resource "kubectl_manifest" "vault_secret_store" {
+  yaml_body = yamlencode({
+    apiVersion = "external-secrets.io/v1"
+    kind       = "ClusterSecretStore"
+    metadata = {
+      name = "vault-secret-store"
+    }
+    spec = {
+      provider = {
+        vault = {
+          server  = var.vault_address
+          path    = "kv"
+          version = "v2"
+          auth = {
+            jwt = {
+              path = "vieta-cluster"
+              role = "eso"
+              kubernetesServiceAccountToken = {
+                serviceAccountRef = {
+                  name      = "external-secrets"
+                  namespace = kubernetes_namespace_v1.external_secrets.metadata[0].name
+                }
+                audiences         = ["vault"]
+                expirationSeconds = 600
+              }
             }
           }
         }

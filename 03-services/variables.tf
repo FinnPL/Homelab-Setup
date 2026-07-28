@@ -77,3 +77,9 @@ variable "argocd_github_pat" {
   type        = string
   sensitive   = true
 }
+
+variable "vault_address" {
+  description = "URL of the Vault server backing vault-secret-store"
+  type        = string
+  default     = "https://vault.cloud.lippok.dev"
+}
