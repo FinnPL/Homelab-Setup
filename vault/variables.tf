@@ -10,6 +10,12 @@ variable "github_repository" {
   default     = "FinnPL/Homelab-Setup"
 }
 
+variable "vieta_apiserver_issuer" {
+  description = "iss claim on Vieta service-account tokens"
+  type        = string
+  default     = "https://10.10.1.60:6443"
+}
+
 variable "aws_tfstate_role_arn" {
   description = "IAM role the aws/ engine assumes for S3 state access"
   type        = string
