@@ -6,7 +6,7 @@ metadata:
 spec:
   refreshInterval: 1h
   secretStoreRef:
-    name: cluster-secret-store
+    name: vault-secret-store
     kind: ClusterSecretStore
   target:
     name: {{ .Values.unifiExporter.secret.name }}
