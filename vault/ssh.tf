@@ -60,3 +60,66 @@ resource "vault_ssh_secret_backend_role" "homelab" {
 output "ssh_client_ca_public_key" {
   value = vault_ssh_secret_backend_ca.client_signer.public_key
 }
+
+resource "vault_mount" "ssh_host_signer" {
+  path        = "ssh-host-signer"
+  type        = "ssh"
+  description = "Host CA — signs host keys so CI verifies hosts by certificate instead of trust-on-first-use"
+}
+
+resource "vault_ssh_secret_backend_ca" "host_signer" {
+  backend              = vault_mount.ssh_host_signer.path
+  generate_signing_key = true
+  key_type             = "ed25519"
+}
+
+locals {
+  # One year, in seconds
+  ssh_host_cert_ttl = "31536000"
+
+  # Mirrors the DHCP reservations in 01-network/static_hosts.tf
+  homelab_host_principals = [
+    "10.10.1.80", "nfs.athena",
+    "10.10.1.90", "mesh-router.athena",
+  ]
+}
+
+resource "vault_ssh_secret_backend_role" "oci_edge_host" {
+  backend = vault_mount.ssh_host_signer.path
+  name    = "oci-edge-host"
+
+  key_type                = "ca"
+  allow_host_certificates = true
+  allow_user_certificates = false
+
+  # The edge public IP is ephemeral the client instead pins @cert-authority to the single IP
+  allowed_domains    = "*"
+  allow_bare_domains = true
+  allow_subdomains   = true
+
+  ttl     = local.ssh_host_cert_ttl
+  max_ttl = local.ssh_host_cert_ttl
+
+  key_id_format = local.ssh_cert_key_id
+}
+
+resource "vault_ssh_secret_backend_role" "homelab_host" {
+  backend = vault_mount.ssh_host_signer.path
+  name    = "homelab-host"
+
+  key_type                = "ca"
+  allow_host_certificates = true
+  allow_user_certificates = false
+
+  allowed_domains    = join(",", local.homelab_host_principals)
+  allow_bare_domains = true
+
+  ttl     = local.ssh_host_cert_ttl
+  max_ttl = local.ssh_host_cert_ttl
+
+  key_id_format = local.ssh_cert_key_id
+}
+
+output "ssh_host_ca_public_key" {
+  value = vault_ssh_secret_backend_ca.host_signer.public_key
+}

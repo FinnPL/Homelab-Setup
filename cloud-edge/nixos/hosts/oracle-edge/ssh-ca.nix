@@ -4,5 +4,10 @@
 {
   environment.etc."ssh/vault_user_ca.pub".source = ./vault_user_ca.pub;
 
-  services.openssh.settings.TrustedUserCAKeys = "/etc/ssh/vault_user_ca.pub";
+  services.openssh.settings = {
+    TrustedUserCAKeys = "/etc/ssh/vault_user_ca.pub";
+
+    # CI writes the file at runtime, it is absent on a fresh host.
+    HostCertificate = "/etc/ssh/ssh_host_ed25519_key-cert.pub";
+  };
 }

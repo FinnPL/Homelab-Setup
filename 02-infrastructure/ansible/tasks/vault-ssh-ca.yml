@@ -1,5 +1,9 @@
-# Lets CI authenticate with a short-lived certificate from the Vault
-# ssh-client-signer 'homelab' role instead of a stored private key.
+# user CA:
+#   CI authenticates with a short-lived certificate from the
+#   ssh-client-signer 'homelab' role instead of a stored private key.
+# host CA:
+#   this host gets a certificate from the
+#   ssh-host-signer 'homelab-host' role so clients CAN verify it by CA.
 - name: Install the Vault SSH user CA
   copy:
     src: files/vault_user_ca.pub
@@ -14,13 +18,69 @@
     mode: "0644"
   register: vault_ssh_ca_conf
 
+- name: Stat the existing host certificate
+  stat:
+    path: /etc/ssh/ssh_host_ed25519_key-cert.pub
+  register: vault_ssh_host_cert_stat
+
+- name: Decide whether the host certificate needs renewing
+  set_fact:
+    vault_ssh_host_cert_renew: >-
+      {{ (not vault_ssh_host_cert_stat.stat.exists)
+         or ((ansible_date_time.epoch | int) - (vault_ssh_host_cert_stat.stat.mtime | int) > 2592000) }}
+
+- name: Read the host SSH public key
+  slurp:
+    src: /etc/ssh/ssh_host_ed25519_key.pub
+  register: vault_ssh_host_pubkey
+  when: vault_ssh_host_cert_renew | bool
+
+- name: Have Vault sign the host key
+  delegate_to: localhost
+  become: false
+  no_log: true
+  when: vault_ssh_host_cert_renew | bool
+  uri:
+    url: "{{ vault_addr | default('https://vault.cloud.lippok.dev') }}/v1/ssh-host-signer/sign/homelab-host"
+    method: PUT
+    headers:
+      X-Vault-Token: "{{ lookup('env', 'VAULT_TOKEN') }}"
+    body_format: json
+    body:
+      public_key: "{{ vault_ssh_host_pubkey.content | b64decode }}"
+      cert_type: host
+      valid_principals: "{{ inventory_hostname }},{{ vault_ssh_host_dns_name }}"
+    status_code: 200
+  register: vault_ssh_host_cert
+
+- name: Install the Vault-signed host certificate
+  copy:
+    content: "{{ vault_ssh_host_cert.json.data.signed_key }}\n"
+    dest: /etc/ssh/ssh_host_ed25519_key-cert.pub
+    mode: "0644"
+  register: vault_ssh_host_cert_key
+  when: vault_ssh_host_cert_renew | bool
+
+- name: Present the host certificate to SSH clients
+  copy:
+    content: "HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub\n"
+    dest: /etc/ssh/sshd_config.d/20-vault-host-cert.conf
+    mode: "0644"
+  register: vault_ssh_host_cert_conf
+
 - name: Verify sshd config before reloading
   command: sshd -t
   changed_when: false
-  when: vault_ssh_ca_key.changed or vault_ssh_ca_conf.changed
+  when: >-
+    vault_ssh_ca_key.changed or vault_ssh_ca_conf.changed
+    or (vault_ssh_host_cert_key.changed | default(false))
+    or vault_ssh_host_cert_conf.changed
 
 - name: Reload sshd
   systemd:
     name: ssh
     state: reloaded
-  when: vault_ssh_ca_key.changed or vault_ssh_ca_conf.changed
+  when: >-
+    vault_ssh_ca_key.changed or vault_ssh_ca_conf.changed
+    or (vault_ssh_host_cert_key.changed | default(false))
+    or vault_ssh_host_cert_conf.changed

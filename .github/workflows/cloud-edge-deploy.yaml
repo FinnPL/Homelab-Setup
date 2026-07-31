@@ -24,6 +24,10 @@ on:
         description: "Force nixos-anywhere install (manual, bypasses fresh-VM proof)"
         type: boolean
         default: false
+      allow_host_tofu:
+        description: "Accept the edge host key without a Vault host certificate (recovery / first adoption)"
+        type: boolean
+        default: false
       instance_availability_domain:
         description: "Optional OCI availability domain override (example: kIdk:EU-FRANKFURT-1-AD-2)"
         type: string
@@ -295,7 +299,8 @@ jobs:
         env:
           TF_IN_AUTOMATION: "true"
           TF_INPUT: "false"
-          EXPECTED_FP: ${{ secrets.OCI_EDGE_SSH_HOSTKEY_SHA256 }}
+          # A fresh VM cannot hold a certificate yet
+          ALLOW_HOST_TOFU: ${{ needs.terraform.outputs.instance_new == 'true' || inputs.allow_host_tofu }}
         run: bash ./scripts/gha/cloud-edge-workflow.sh prepare-edge-host
 
       - name: Resolve run mode

@@ -114,6 +114,11 @@ jobs:
         if: inputs.needs_ansible
         working-directory: ${{ runner.temp }}
         run: |
+          mkdir -p ~/.ssh
+          printf '@cert-authority %s,%s %s\n' '10.10.1.*' '*.athena' \
+            "$(cat "${GITHUB_WORKSPACE}/02-infrastructure/ansible/files/vault_host_ca.pub")" \
+            >> ~/.ssh/known_hosts
+
           ssh-keygen -q -t ed25519 -N "" -C "gha-${GITHUB_RUN_ID}" -f ansible_key
           signed=$(jq -n --rawfile pk ansible_key.pub '{public_key: $pk}' \
             | curl -sS -f -X PUT \

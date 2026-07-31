@@ -9,6 +9,9 @@ resource "vault_policy" "vieta" {
     path "ssh-client-signer/sign/${vault_ssh_secret_backend_role.homelab.name}" {
       capabilities = ["create", "update"]
     }
+    path "ssh-host-signer/sign/${vault_ssh_secret_backend_role.homelab_host.name}" {
+      capabilities = ["create", "update"]
+    }
   EOT
 }
 
@@ -21,6 +24,9 @@ resource "vault_policy" "cloud_edge" {
     # The edge node joins the same tailnet as the cluster operator.
     path "kv/data/apps/tailscale" { capabilities = ["read"] }
     path "ssh-client-signer/sign/${vault_ssh_secret_backend_role.oci_edge.name}" {
+      capabilities = ["create", "update"]
+    }
+    path "ssh-host-signer/sign/${vault_ssh_secret_backend_role.oci_edge_host.name}" {
       capabilities = ["create", "update"]
     }
   EOT
