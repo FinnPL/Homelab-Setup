@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLOUD_EDGE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+HOST_CA_FILE="$CLOUD_EDGE_DIR/vault_host_ca.pub"
 
 error() {
   echo "::error::$*"
@@ -177,6 +178,7 @@ prepare_edge_host() {
 
   IP="$ip" setup_ssh
   IP="$ip" detect_nixos_state
+  IP="$ip" sign_host_cert
 }
 
 # Mints a throwaway keypair and have Vault sign it
@@ -206,15 +208,110 @@ mint_ssh_cert() {
   ssh-keygen -Lf ~/.ssh/edge_key-cert.pub | grep -E 'Key ID|Valid:|^ *root$'
 }
 
+# Pins the host CA to this one address.
+trust_host_ca() {
+  require_var IP
+
+  mkdir -p ~/.ssh
+  touch ~/.ssh/known_hosts
+
+  local ca_line
+  ca_line="@cert-authority $IP $(cat "$HOST_CA_FILE")"
+
+  if ! grep -qxF "$ca_line" ~/.ssh/known_hosts; then
+    printf '%s\n' "$ca_line" >> ~/.ssh/known_hosts
+  fi
+}
+
+# Succeeds only when the host proves itself with a Vault-signed certificate.
+host_cert_verifies() {
+  require_var IP
+
+  local ca_only="/tmp/edge_cert_only_known_hosts"
+  printf '@cert-authority %s %s\n' "$IP" "$(cat "$HOST_CA_FILE")" > "$ca_only"
+
+  ssh -i ~/.ssh/edge_key \
+    -o BatchMode=yes \
+    -o ConnectTimeout=10 \
+    -o IdentitiesOnly=yes \
+    -o UserKnownHostsFile="$ca_only" \
+    -o StrictHostKeyChecking=yes \
+    "root@$IP" true > /dev/null 2>&1
+}
+
+# Has Vault certify the host's own key, so later runs verify by certificate instead of TOFU.
+sign_host_cert() {
+  require_var IP
+  require_var VAULT_TOKEN
+
+  local vault_addr="${VAULT_ADDR:-https://vault.cloud.lippok.dev}"
+  local role="${VAULT_SSH_HOST_ROLE:-oci-edge-host}"
+
+  local ssh_opts=(
+    -i ~/.ssh/edge_key
+    -o BatchMode=yes
+    -o ConnectTimeout=10
+    -o UserKnownHostsFile=~/.ssh/known_hosts
+    -o StrictHostKeyChecking=yes
+  )
+
+  local host_pubkey
+  if ! host_pubkey=$(ssh "${ssh_opts[@]}" "root@$IP" 'cat /etc/ssh/ssh_host_ed25519_key.pub'); then
+    warn "Could not read the host key from $IP; leaving its host certificate unchanged."
+    return 0
+  fi
+
+  local signed
+  if ! signed=$(jq -n --arg pk "$host_pubkey" --arg p "$IP,oracle-edge" \
+        '{public_key: $pk, cert_type: "host", valid_principals: $p}' \
+      | curl -sS -f -X PUT \
+          -H "X-Vault-Token: $VAULT_TOKEN" \
+          --data-binary @- \
+          "${vault_addr}/v1/ssh-host-signer/sign/${role}" \
+      | jq -r '.data.signed_key'); then
+    warn "Vault did not sign the host key for role $role; leaving current trust in place."
+    return 0
+  fi
+
+  if [ -z "$signed" ] || [ "$signed" = "null" ]; then
+    warn "Vault returned no host certificate for role $role; leaving current trust in place."
+    return 0
+  fi
+
+  # KillMode=process and Type=notify-reload mean this cannot drop the session
+  # we are issuing it over.
+  ssh "${ssh_opts[@]}" "root@$IP" '
+    cat > /etc/ssh/ssh_host_ed25519_key-cert.pub
+    chmod 644 /etc/ssh/ssh_host_ed25519_key-cert.pub
+    systemctl reload sshd 2>/dev/null || systemctl reload ssh
+  ' <<< "$signed"
+
+  if host_cert_verifies; then
+    echo "Host certificate installed; $IP now verifies against the Vault host CA."
+  else
+    warn "Installed a host certificate but $IP still does not verify against the host CA."
+  fi
+}
+
 setup_ssh() {
   require_var IP
 
-  local expected_fp="${EXPECTED_FP:-}"
   local attempts="${HOSTKEY_SCAN_ATTEMPTS:-10}"
   local delay_seconds="${HOSTKEY_SCAN_DELAY_SECONDS:-5}"
   local host_file="/tmp/edge_known_host"
 
   mint_ssh_cert
+  trust_host_ca
+
+  if host_cert_verifies; then
+    echo "Host $IP verified by its Vault host certificate."
+    return 0
+  fi
+
+  if [ "${ALLOW_HOST_TOFU:-false}" != "true" ]; then
+    error "$IP presented no valid Vault host certificate and this is not a fresh VM. \
+Re-run with workflow_dispatch allow_host_tofu=true to adopt the current host key."
+  fi
 
   : > "$host_file"
   local i
@@ -233,19 +330,7 @@ setup_ssh() {
     error "Could not fetch SSH host key from $IP after $attempts attempts"
   fi
 
-  if [ -n "$expected_fp" ]; then
-    local actual_fp
-    actual_fp=$(ssh-keygen -lf "$host_file" -E sha256 | awk 'NR==1 {print $2}')
-    if [ "$actual_fp" != "$expected_fp" ]; then
-      echo "Expected: $expected_fp"
-      echo "Actual:   $actual_fp"
-      error "SSH host key fingerprint mismatch."
-    fi
-  else
-    warn "OCI_EDGE_SSH_HOSTKEY_SHA256 is not set; using TOFU host key trust."
-  fi
-
-  touch ~/.ssh/known_hosts
+  warn "Adopting $IP on trust-on-first-use; it will be certified before this run ends."
   cat "$host_file" >> ~/.ssh/known_hosts
 }
 
@@ -324,8 +409,10 @@ refresh_ssh_after_install() {
   # The install is the long step; re-sign so the rest of the job has a full cert lifetime.
   mint_ssh_cert
 
-  # Clear old known_hosts entries for this IP — NixOS generated new host keys
+  # Clear old known_hosts entries for this IP — NixOS generated new host keys.
+  # -R leaves @cert-authority lines alone, so CA trust survives.
   ssh-keygen -R "$IP" -f ~/.ssh/known_hosts 2>/dev/null || true
+  trust_host_ca
 
   : > "$host_file"
   local i
@@ -351,6 +438,9 @@ refresh_ssh_after_install() {
 
   cat "$host_file" >> ~/.ssh/known_hosts
   echo "Known hosts updated with new NixOS host key."
+
+  # The install replaced the host key, so the old certificate no longer matches.
+  sign_host_cert
 }
 
 deploy_wireguard_keys() {
@@ -571,6 +661,7 @@ Commands:
   terraform-apply-with-ad-fallback
   prepare-edge-host
   setup-ssh
+  sign-host-cert
   detect-nixos-state
   write-ssh-keys-nix
   write-acme-email-nix
@@ -602,6 +693,9 @@ main() {
       ;;
     setup-ssh)
       setup_ssh
+      ;;
+    sign-host-cert)
+      sign_host_cert
       ;;
     detect-nixos-state)
       detect_nixos_state

@@ -73,7 +73,9 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
 
   provisioner "local-exec" {
     command = <<-EOT
-      ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook \
+      ANSIBLE_HOST_KEY_CHECKING=True \
+      ANSIBLE_SSH_EXTRA_ARGS='-o StrictHostKeyChecking=accept-new' \
+      ansible-playbook \
         -i '${local.nfs_server_ip},' \
         --private-key '${var.ansible_ssh_key_file}' \
         --user root \

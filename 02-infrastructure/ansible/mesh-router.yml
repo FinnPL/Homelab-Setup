@@ -5,13 +5,14 @@
     wg_peer_pubkey: ""
     wg_peer_endpoint: ""
     cloud_vcn_cidr: ""
+    vault_ssh_host_dns_name: "mesh-router.athena"
   pre_tasks:
     - name: Wait for SSH to become available
       wait_for_connection:
         delay: 5
         timeout: 300
   tasks:
-    - name: Trust the Vault SSH user CA
+    - name: Configure Vault SSH CA trust
       import_tasks: tasks/vault-ssh-ca.yml
 
     - name: Enable IP forwarding

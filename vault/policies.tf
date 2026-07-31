@@ -29,6 +29,10 @@ resource "vault_policy" "vault_deploy" {
     path "ssh-client-signer/config/ca" { capabilities = ["create", "read", "update", "delete"] }
     path "ssh-client-signer/roles/*" { capabilities = ["create", "read", "update", "delete", "list"] }
 
+    # SSH host CA: same shape as the user CA above
+    path "ssh-host-signer/config/ca" { capabilities = ["create", "read", "update", "delete"] }
+    path "ssh-host-signer/roles/*" { capabilities = ["create", "read", "update", "delete", "list"] }
+
     path "auth/token/lookup-self" { capabilities = ["read"] }
   EOT
 }
