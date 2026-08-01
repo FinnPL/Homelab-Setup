@@ -211,7 +211,7 @@ The cluster mounts persistent volumes via `csi-driver-nfs`, talking to the NFS s
 Distributes secrets from Vault into the namespaces that need them.
 
 - **Backend:** Vault `kv` v2; charts read individual keys under `apps/*` with an `ExternalSecret`
-- **ClusterSecretStore** `vault-secret-store` authenticates with a projected ServiceAccount token (10 min) against Vault's `vieta-cluster` JWT mount — no static token lives in the cluster
+- **ClusterSecretStore** `vault-secret-store` authenticates with a projected ServiceAccount token (10 min) against Vault's `vieta-cluster` JWT mount, no static token lives in the cluster
 - See [Secrets & Identity](#secrets--identity) for the Vault side
 
 ### ArgoCD & Applications
@@ -275,7 +275,7 @@ Public-facing edge node on Oracle Cloud's Always Free ARM tier. Provides:
 - **HAProxy:** SNI routing for `*.cloud` and `*.relay` subdomains
 - **WireGuard:** encrypted tunnel back to the homelab
 - **Tailscale:** out-of-band management
-- **SSH:** certificate-only, both directions — the NixOS host trusts the Vault user CA and presents its own host certificate
+- **SSH:** certificate-only, both directions; the NixOS host trusts the Vault user CA and presents its own host certificate
 
 | Layer | Scope |
 |:------|:------|
