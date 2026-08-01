@@ -1,0 +1,31 @@
+# Sets vault_ssh_host_cert_days_left from the certificate's own validity window, or -1 when there is no readable certificate.
+- name: Clear the previous host certificate reading
+  set_fact:
+    vault_ssh_host_cert_valid_to: ""
+
+- name: Stat the host certificate
+  stat:
+    path: /etc/ssh/ssh_host_ed25519_key-cert.pub
+  register: vault_ssh_host_cert_stat
+
+- name: Decode the host certificate
+  command: ssh-keygen -L -f /etc/ssh/ssh_host_ed25519_key-cert.pub
+  register: vault_ssh_host_cert_info
+  changed_when: false
+  failed_when: false
+  when: vault_ssh_host_cert_stat.stat.exists
+
+- name: Read the expiry out of the certificate
+  set_fact:
+    vault_ssh_host_cert_valid_to: >-
+      {{ vault_ssh_host_cert_info.stdout | regex_search('Valid: from \S+ to (\S+)', '\1') | first }}
+  when:
+    - vault_ssh_host_cert_stat.stat.exists
+    - (vault_ssh_host_cert_info.rc | default(1)) == 0
+    - 'vault_ssh_host_cert_info.stdout is search("Valid: from \S+ to \S+")'
+
+- name: Work out how much life the host certificate has left
+  set_fact:
+    vault_ssh_host_cert_days_left: >-
+      {{ ((vault_ssh_host_cert_valid_to | to_datetime('%Y-%m-%dT%H:%M:%S')) - now(utc=True)).days
+         if vault_ssh_host_cert_valid_to else -1 }}

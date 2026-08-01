@@ -11,9 +11,11 @@
       wait_for_connection:
         delay: 5
         timeout: 300
+      tags: [always]
   tasks:
     - name: Configure Vault SSH CA trust
       import_tasks: tasks/vault-ssh-ca.yml
+      tags: [ssh-ca]
 
     - name: Enable IP forwarding
       sysctl:

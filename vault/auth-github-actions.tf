@@ -45,6 +45,47 @@ resource "vault_jwt_auth_backend_role" "vieta_layers" {
   token_max_ttl  = 1200
 }
 
+# Weekly host-certificate renewal
+resource "vault_jwt_auth_backend_role" "vieta_ssh_converge" {
+  backend         = vault_jwt_auth_backend.github_actions.path
+  role_name       = "vieta-ssh-converge"
+  role_type       = "jwt"
+  user_claim      = "job_workflow_ref"
+  bound_audiences = [var.vault_address]
+
+  bound_claims_type = "glob"
+  bound_claims = {
+    repository       = var.github_repository
+    job_workflow_ref = "${var.github_repository}/.github/workflows/ssh-cert-converge.yaml@*"
+    environment      = "vieta"
+  }
+
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.vieta.name]
+  token_type     = "service"
+  token_ttl      = 1200
+  token_max_ttl  = 1200
+}
+
+resource "vault_jwt_auth_backend_role" "edge_ssh_converge" {
+  backend         = vault_jwt_auth_backend.github_actions.path
+  role_name       = "edge-ssh-converge"
+  role_type       = "jwt"
+  user_claim      = "job_workflow_ref"
+  bound_audiences = [var.vault_address]
+
+  bound_claims_type = "glob"
+  bound_claims = {
+    repository       = var.github_repository
+    job_workflow_ref = "${var.github_repository}/.github/workflows/ssh-cert-converge.yaml@*"
+    environment      = "cloud-edge"
+  }
+
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.cloud_edge.name]
+  token_type     = "service"
+  token_ttl      = 1200
+  token_max_ttl  = 1200
+}
+
 resource "vault_jwt_auth_backend_role" "cloud_edge" {
   backend         = vault_jwt_auth_backend.github_actions.path
   role_name       = "cloud-edge"
