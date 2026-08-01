@@ -63,7 +63,7 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 
 Push to `main` triggers an orchestrator workflow that detects which layers changed and runs them in order. PRs get a Terraform plan comment for review, and changes under `charts/`/`apps/` are gated by a chart-and-policy workflow that renders the affected wrapper charts (every chart on push to main, only the changed ones on a PR), schema-checks them with kubeconform, and runs the cluster's real Kyverno policies against the output before they can reach ArgoCD. Tailscale connects the GitHub runner to the homelab network. Renovate keeps dependencies (Helm charts, container images, Terraform providers, Action versions, Nix flake refs, and more) up to date by opening PRs against the repo.
 
-**Secrets**: no infrastructure credentials are stored in GitHub. Every workflow logs in to Vault with its GitHub OIDC token and receives a 20-minute token scoped to that workflow and enviroment alone.
+**Secrets**: no infrastructure credentials are stored in GitHub. Every workflow logs in to Vault with its GitHub OIDC token and receives a 20-minute token scoped to that workflow and environment alone.
 
 **Trivy** scans for secrets and IaC misconfigurations across Terraform, Helm charts, Kubernetes manifests, and Docker Compose. Findings are reported as SARIF to the GitHub Security tab.
 
@@ -90,7 +90,7 @@ Vault has no network path into the homelab (_yet_), so it cannot fetch the clust
 |:-------|:--------|
 | `kv` (v2) | Static secrets: per-site deploy credentials and the `apps/*` tree consumed by ESO |
 | `aws` | Assumed-role STS credentials for the S3 Terraform state backend |
-| `ssh-client-signer` | **User CA:** signs a throwaway keypair per CI run, so no SSH private key is stored anywhere | 
+| `ssh-client-signer` | **User CA:** signs a throwaway keypair per CI run, so no SSH private key is stored anywhere |
 | `ssh-host-signer` | **Host CA:** signs host keys, so CI verifies hosts by certificate instead of TOFU |
 
 ---
