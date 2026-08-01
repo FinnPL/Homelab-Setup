@@ -1,0 +1,213 @@
+name: "SSH certs: converge"
+
+# Renews the Vault SSH host certificates on both sites
+
+on:
+  schedule:
+    - cron: "20 4 * * 1"
+  workflow_dispatch:
+    inputs:
+      renew_days:
+        description: "Vieta: renew the host certificate below this many days remaining (default 30)"
+        type: string
+        default: ""
+      allow_host_tofu:
+        description: "Both sites: adopt the host key without a valid certificate (recovery after a lapse)"
+        type: boolean
+        default: false
+  push:
+    branches:
+      - main
+    paths:
+      - "02-infrastructure/ansible/**"
+      - "cloud-edge/scripts/gha/cloud-edge-workflow.sh"
+      - ".github/workflows/ssh-cert-converge.yaml"
+      - ".github/actions/vault-ssh-client-cert/**"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  vieta:
+    name: "Vieta LXCs"
+    runs-on: ubuntu-latest
+    environment: vieta
+    timeout-minutes: 20
+    concurrency:
+      group: ssh-cert-converge-vieta
+    env:
+      AWS_REGION: eu-central-1
+      TFSTATE_BUCKET: finnpl-homelab-tfstate-1766068376
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Read secrets from Vault
+        uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
+        with:
+          url: https://vault.cloud.lippok.dev
+          method: jwt
+          path: github-actions
+          role: vieta-ssh-converge
+          jwtGithubAudience: https://vault.cloud.lippok.dev
+          exportToken: true # the playbook signs host keys with it
+          secrets: |
+            aws/creds/tfstate access_key | AWS_ACCESS_KEY_ID ;
+            aws/creds/tfstate secret_key | AWS_SECRET_ACCESS_KEY ;
+            aws/creds/tfstate security_token | AWS_SESSION_TOKEN ;
+            kv/data/ci/tailscale oauth-client-id | TS_OAUTH_CLIENT_ID ;
+            kv/data/ci/tailscale oauth-secret | TS_OAUTH_SECRET
+
+      - name: Tailscale
+        uses: tailscale/github-action@306e68a486fd2350f2bfc3b19fcd143891a4a2d8 # v4
+        with:
+          oauth-client-id: ${{ env.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ env.TS_OAUTH_SECRET }}
+          tags: tag:ci
+
+      - name: Install Ansible
+        run: pip install ansible
+
+      - name: Mint Ansible SSH certificate
+        id: ssh_cert
+        uses: ./.github/actions/vault-ssh-client-cert
+        with:
+          role: homelab
+          host-ca-file: 02-infrastructure/ansible/files/vault_host_ca.pub
+          host-patterns: "10.10.1.*,*.athena"
+
+      - name: Resolve targets from the 01-network state
+        id: targets
+        env:
+          PLAYBOOKS: |
+            nfs-server.yml nfs_server
+            mesh-router.yml mesh_router
+        run: |
+          set -euo pipefail
+          state=$(aws s3 cp "s3://${TFSTATE_BUCKET}/01-network/terraform.tfstate" -)
+          targets=""
+          while read -r playbook key; do
+            [ -n "$playbook" ] || continue
+            if ! ip=$(jq -er --arg k "$key" '.outputs.host_ips.value[$k]' <<< "$state"); then
+              echo "::error::01-network state has no host_ips entry for $key"
+              exit 1
+            fi
+            targets+="$playbook $ip"$'\n'
+          done <<< "$PLAYBOOKS"
+          targets=${targets%$'\n'}
+          echo "$targets"
+          {
+            echo "list<<EOF"
+            echo "$targets"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Converge
+        env:
+          SSH_KEY: ${{ steps.ssh_cert.outputs.key-path }}
+          TARGETS: ${{ steps.targets.outputs.list }}
+          RENEW_DAYS: ${{ inputs.renew_days }}
+          ALLOW_HOST_TOFU: ${{ inputs.allow_host_tofu }}
+        run: |
+          set -euo pipefail
+
+          extra_vars=()
+          if [ -n "$RENEW_DAYS" ]; then
+            extra_vars=(--extra-vars "vault_ssh_host_cert_renew_days=$RENEW_DAYS")
+          fi
+
+          mapfile -t entries <<< "$TARGETS"
+          for entry in "${entries[@]}"; do
+            read -r playbook ip <<< "$entry"
+
+            ssh_args=""
+            if ssh -i "$SSH_KEY" -o BatchMode=yes -o ConnectTimeout=10 \
+                   -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+                   "root@$ip" true; then
+              echo "$ip verifies against the Vault host CA"
+            elif ! ssh-keyscan -T 5 -t ed25519 "$ip" > /dev/null 2>&1; then
+              echo "::error::$ip is unreachable; cannot renew its host certificate"
+              exit 1
+            elif [ "${ALLOW_HOST_TOFU:-false}" = "true" ]; then
+              echo "::warning::$ip presented no valid host certificate; adopting its plain host key to reinstall one"
+              ssh_args="-o HostKeyAlgorithms=ssh-ed25519 -o StrictHostKeyChecking=accept-new"
+            else
+              echo "::error::$ip is reachable but presented no valid Vault host certificate. Re-run with workflow_dispatch allow_host_tofu=true to adopt its current host key."
+              exit 1
+            fi
+
+            ANSIBLE_HOST_KEY_CHECKING=True \
+            ANSIBLE_SSH_EXTRA_ARGS="$ssh_args" \
+            ansible-playbook \
+              -i "$ip," \
+              --private-key "$SSH_KEY" \
+              --user root \
+              --tags ssh-ca \
+              "${extra_vars[@]}" \
+              "02-infrastructure/ansible/$playbook"
+          done
+
+  edge:
+    name: "Cloud Edge"
+    runs-on: ubuntu-latest
+    environment: cloud-edge
+    timeout-minutes: 15
+    concurrency:
+      group: ssh-cert-converge-edge
+    env:
+      AWS_REGION: eu-central-1
+      TFSTATE_BUCKET: finnpl-homelab-tfstate-1766068376
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Read secrets from Vault
+        uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
+        with:
+          url: https://vault.cloud.lippok.dev
+          method: jwt
+          path: github-actions
+          role: edge-ssh-converge
+          jwtGithubAudience: https://vault.cloud.lippok.dev
+          exportToken: true # the script signs with it
+          secrets: |
+            aws/creds/tfstate access_key | AWS_ACCESS_KEY_ID ;
+            aws/creds/tfstate secret_key | AWS_SECRET_ACCESS_KEY ;
+            aws/creds/tfstate security_token | AWS_SESSION_TOKEN
+
+      - name: Resolve the edge address from the cloud-edge state
+        id: edge
+        run: |
+          set -euo pipefail
+          state=$(aws s3 cp "s3://${TFSTATE_BUCKET}/cloud-edge/terraform.tfstate" -)
+          if ! ip=$(jq -er '.outputs.instance_public_ip.value' <<< "$state"); then
+            echo "::error::cloud-edge state has no instance_public_ip output"
+            exit 1
+          fi
+          echo "Edge node public IP: $ip"
+          echo "ip=$ip" >> "$GITHUB_OUTPUT"
+
+      - name: Mint edge SSH certificate
+        uses: ./.github/actions/vault-ssh-client-cert
+        with:
+          role: oci-edge
+          key-path: "~/.ssh/edge_key"
+
+      - name: Verify the edge still proves itself by certificate
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+          ALLOW_HOST_TOFU: ${{ inputs.allow_host_tofu }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh setup-ssh
+
+      - name: Renew the edge host certificate
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh sign-host-cert
+
+      - name: Confirm the renewal took
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh check-host-cert-expiry

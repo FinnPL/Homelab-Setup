@@ -293,6 +293,12 @@ jobs:
             exit 1
           fi
 
+      - name: Mint edge SSH certificate
+        uses: ./.github/actions/vault-ssh-client-cert
+        with:
+          role: oci-edge
+          key-path: "~/.ssh/edge_key"
+
       - name: Prepare edge host context
         id: edge
         working-directory: ./cloud-edge
@@ -398,6 +404,14 @@ jobs:
             echo "::error::deploy_nixos path selected, but NixOS was not detected on target."
           fi
           exit 1
+
+      # The install might be long enough to outlive the 1h client certificate.
+      - name: Re-mint edge SSH certificate
+        if: steps.mode.outputs.do_install == 'true'
+        uses: ./.github/actions/vault-ssh-client-cert
+        with:
+          role: oci-edge
+          key-path: "~/.ssh/edge_key"
 
       - name: Refresh SSH after NixOS install
         if: steps.mode.outputs.do_install == 'true'

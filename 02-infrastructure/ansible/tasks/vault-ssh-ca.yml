@@ -4,6 +4,9 @@
 # host CA:
 #   this host gets a certificate from the
 #   ssh-host-signer 'homelab-host' role so clients CAN verify it by CA.
+#
+# The host certificate is renewed once it drops below
+# vault_ssh_host_cert_renew_days of remaining life.
 - name: Install the Vault SSH user CA
   copy:
     src: files/vault_user_ca.pub
@@ -18,16 +21,21 @@
     mode: "0644"
   register: vault_ssh_ca_conf
 
-- name: Stat the existing host certificate
-  stat:
-    path: /etc/ssh/ssh_host_ed25519_key-cert.pub
-  register: vault_ssh_host_cert_stat
+- name: Read the current host certificate
+  include_tasks: ssh-host-cert-validity.yml
 
 - name: Decide whether the host certificate needs renewing
   set_fact:
     vault_ssh_host_cert_renew: >-
-      {{ (not vault_ssh_host_cert_stat.stat.exists)
-         or ((ansible_date_time.epoch | int) - (vault_ssh_host_cert_stat.stat.mtime | int) > 2592000) }}
+      {{ (vault_ssh_host_cert_days_left | int) < (vault_ssh_host_cert_renew_days | default(30) | int) }}
+
+- name: Report the host certificate state
+  debug:
+    msg: >-
+      {{ ((vault_ssh_host_cert_days_left | int) < 0)
+         | ternary('no usable host certificate',
+                   'host certificate expires in ' ~ vault_ssh_host_cert_days_left ~ ' days') }};
+      {{ (vault_ssh_host_cert_renew | bool) | ternary('renewing', 'leaving it in place') }}
 
 - name: Read the host SSH public key
   slurp:
@@ -84,3 +92,18 @@
     vault_ssh_ca_key.changed or vault_ssh_ca_conf.changed
     or (vault_ssh_host_cert_key.changed | default(false))
     or vault_ssh_host_cert_conf.changed
+
+- name: Re-read the host certificate after renewal
+  include_tasks: ssh-host-cert-validity.yml
+  when: vault_ssh_host_cert_renew | bool
+
+- name: Fail while the host certificate can still be renewed remotely
+  assert:
+    that:
+      - (vault_ssh_host_cert_days_left | int) >= (vault_ssh_host_cert_min_days | default(14) | int)
+    fail_msg: >-
+      {{ inventory_hostname }} has {{ vault_ssh_host_cert_days_left }} days of host certificate
+      left and renewal is not taking. Fix it before it expires — afterwards the converge fails
+      closed and recovery needs a dispatch with allow_host_tofu=true.
+    success_msg: >-
+      Host certificate valid for another {{ vault_ssh_host_cert_days_left }} days.

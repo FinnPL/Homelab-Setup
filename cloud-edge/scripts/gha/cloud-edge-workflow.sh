@@ -178,34 +178,22 @@ prepare_edge_host() {
 
   IP="$ip" setup_ssh
   IP="$ip" detect_nixos_state
-  IP="$ip" sign_host_cert
+
+  # a run may issue that host a certificate, exactly when it is a fresh VM or a deliberate dispatch.
+  if [ "${ALLOW_HOST_TOFU:-false}" = "true" ]; then
+    IP="$ip" sign_host_cert
+  fi
 }
 
-# Mints a throwaway keypair and have Vault sign it
-mint_ssh_cert() {
-  require_var VAULT_TOKEN
-
-  local vault_addr="${VAULT_ADDR:-https://vault.cloud.lippok.dev}"
-  local role="${VAULT_SSH_ROLE:-oci-edge}"
-
-  mkdir -p ~/.ssh
-  rm -f ~/.ssh/edge_key ~/.ssh/edge_key.pub ~/.ssh/edge_key-cert.pub
-  ssh-keygen -q -t ed25519 -N "" -C "gha-${GITHUB_RUN_ID:-local}" -f ~/.ssh/edge_key
-
-  local signed
-  signed=$(jq -n --rawfile pk ~/.ssh/edge_key.pub '{public_key: $pk}' \
-    | curl -sS -f -X PUT \
-        -H "X-Vault-Token: $VAULT_TOKEN" \
-        --data-binary @- \
-        "${vault_addr}/v1/ssh-client-signer/sign/${role}" \
-    | jq -r '.data.signed_key')
-
-  if [ -z "$signed" ] || [ "$signed" = "null" ]; then
-    error "Vault did not return a signed certificate for role $role"
+require_ssh_cert() {
+  if [ ! -s ~/.ssh/edge_key ] || [ ! -s ~/.ssh/edge_key-cert.pub ]; then
+    error "No signed key at ~/.ssh/edge_key. Run the vault-ssh-cert action \
+(role: oci-edge, key-path: ~/.ssh/edge_key) before this step."
   fi
 
-  printf '%s\n' "$signed" > ~/.ssh/edge_key-cert.pub
-  ssh-keygen -Lf ~/.ssh/edge_key-cert.pub | grep -E 'Key ID|Valid:|^ *root$'
+  if ! ssh-keygen -Lf ~/.ssh/edge_key-cert.pub | grep -E 'Key ID|Valid:|^ *root$'; then
+    error "The file at ~/.ssh/edge_key-cert.pub is not a readable certificate."
+  fi
 }
 
 # Pins the host CA to this one address.
@@ -293,6 +281,47 @@ sign_host_cert() {
   fi
 }
 
+# sign_host_cert only warns when Vault or the host is unreachable would let the scheduled renewal go green having renewed nothing.
+check_host_cert_expiry() {
+  require_var IP
+
+  local min_days="${HOST_CERT_MIN_DAYS:-14}"
+  local cert_file="/tmp/edge_host_cert.pub"
+
+  local ssh_opts=(
+    -i ~/.ssh/edge_key
+    -o BatchMode=yes
+    -o ConnectTimeout=10
+    -o UserKnownHostsFile=~/.ssh/known_hosts
+    -o StrictHostKeyChecking=yes
+  )
+
+  if ! ssh "${ssh_opts[@]}" "root@$IP" 'cat /etc/ssh/ssh_host_ed25519_key-cert.pub' > "$cert_file"; then
+    error "Could not read the host certificate from $IP"
+  fi
+
+  local valid_to
+  valid_to=$(ssh-keygen -L -f "$cert_file" | sed -n 's/.*Valid: from [^ ]* to \([^ ]*\).*/\1/p')
+  if [ -z "$valid_to" ]; then
+    error "No validity window in the host certificate on $IP"
+  fi
+
+  local valid_to_epoch
+  if ! valid_to_epoch=$(date -u -d "${valid_to/T/ }" +%s 2>/dev/null); then
+    valid_to_epoch=$(date -u -j -f "%Y-%m-%dT%H:%M:%S" "$valid_to" +%s)
+  fi
+
+  local days
+  days=$(((valid_to_epoch - $(date -u +%s)) / 86400))
+  echo "Host certificate on $IP expires $valid_to (${days} days left)."
+
+  if [ "$days" -lt "$min_days" ]; then
+    error "Host certificate on $IP has ${days} days left and renewal is not taking. \
+Fix it before it expires — afterwards setup_ssh fails closed and recovery needs a \
+workflow_dispatch with allow_host_tofu=true."
+  fi
+}
+
 setup_ssh() {
   require_var IP
 
@@ -300,7 +329,7 @@ setup_ssh() {
   local delay_seconds="${HOSTKEY_SCAN_DELAY_SECONDS:-5}"
   local host_file="/tmp/edge_known_host"
 
-  mint_ssh_cert
+  require_ssh_cert
   trust_host_ca
 
   if host_cert_verifies; then
@@ -406,8 +435,7 @@ refresh_ssh_after_install() {
 
   echo "Waiting for SSH to come back after NixOS install (host key will have changed)..."
 
-  # The install is the long step; re-sign so the rest of the job has a full cert lifetime.
-  mint_ssh_cert
+  require_ssh_cert
 
   # Clear old known_hosts entries for this IP — NixOS generated new host keys.
   # -R leaves @cert-authority lines alone, so CA trust survives.
@@ -662,6 +690,7 @@ Commands:
   prepare-edge-host
   setup-ssh
   sign-host-cert
+  check-host-cert-expiry
   detect-nixos-state
   write-ssh-keys-nix
   write-acme-email-nix
@@ -696,6 +725,9 @@ main() {
       ;;
     sign-host-cert)
       sign_host_cert
+      ;;
+    check-host-cert-expiry)
+      check_host_cert_expiry
       ;;
     detect-nixos-state)
       detect_nixos_state
