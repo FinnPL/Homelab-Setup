@@ -13,6 +13,7 @@
 ![NixOS](https://img.shields.io/badge/NixOS-5277C3?style=flat&logo=nixos&logoColor=white)
 ![Proxmox](https://img.shields.io/badge/Proxmox-E57024?style=flat&logo=proxmox&logoColor=white)
 ![Cilium](https://img.shields.io/badge/Cilium-20B2AA?style=flat&logo=cilium&logoColor=white)
+![Vault](https://img.shields.io/badge/HashiCorp_Vault-FFEC6E?style=flat&logo=vault&logoColor=black)
 ![UniFi](https://img.shields.io/badge/Ubiquiti_UniFi-0559C9?style=flat&logo=ubiquiti&logoColor=white)
 ![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=flat&logo=cloudflare&logoColor=white)
 
@@ -52,7 +53,7 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 | **Storage** | NFS CSI, local-path-provisioner *(planned: Democratic CSI on TrueNAS)* |
 | **Data** | CloudNativePG, Crossplane (DBaaS) |
 | **Observability** | Prometheus, Alertmanager, Grafana, Loki, Alloy |
-| **Identity & Secrets** | Authentik (SSO), External Secrets Operator, cert-manager *(planned: Vault)* |
+| **Identity & Secrets** | HashiCorp Vault (OIDC/JWT auth, SSH CAs, dynamic AWS creds), External Secrets Operator, Authentik (SSO), cert-manager |
 | **Security** | Kyverno (admission policy), Tetragon (eBPF runtime security), Trivy (CI scanning) |
 | **DNS** | Blocky (filtering), Unbound (DNSSEC + DoT upstream), Cloudflare |
 
@@ -62,9 +63,35 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 
 Push to `main` triggers an orchestrator workflow that detects which layers changed and runs them in order. PRs get a Terraform plan comment for review, and changes under `charts/`/`apps/` are gated by a chart-and-policy workflow that renders the affected wrapper charts (every chart on push to main, only the changed ones on a PR), schema-checks them with kubeconform, and runs the cluster's real Kyverno policies against the output before they can reach ArgoCD. Tailscale connects the GitHub runner to the homelab network. Renovate keeps dependencies (Helm charts, container images, Terraform providers, Action versions, Nix flake refs, and more) up to date by opening PRs against the repo.
 
+**Secrets**: no infrastructure credentials are stored in GitHub. Every workflow logs in to Vault with its GitHub OIDC token and receives a 20-minute token scoped to that workflow and enviroment alone.
+
 **Trivy** scans for secrets and IaC misconfigurations across Terraform, Helm charts, Kubernetes manifests, and Docker Compose. Findings are reported as SARIF to the GitHub Security tab.
 
-**Linting**: a shared [pre-commit](.pre-commit-config.yaml) suite (shellcheck, actionlint, codespell, YAML/file hygiene) runs on every PR, plus dedicated Terraform (`fmt` + tflint) and Nix (alejandra/statix/deadnix) checks on PRs that touch those files.
+**Linting**: a shared pre-commit suite (shellcheck, actionlint, codespell, YAML/file hygiene) runs on every PR, plus dedicated Terraform (`fmt` + tflint) and Nix (alejandra/statix/deadnix) checks on PRs that touch those files.
+
+---
+
+## Secrets & Identity
+
+HashiCorp Vault is the credential source for every deploy workflow across all three sites, and for the applications in the cluster. The server itself lives is managed in the [Vault-Deployment](https://github.com/FinnPL/Vault-Deployment) repo. The Homelabs auth methods, roles, policies, secret engines, quotas are managed in this repos `vault/` dir and applied by `vault-deploy.yaml`.
+
+### Authentication
+
+| Consumer | Mount | Identity is bound to |
+|:---------|:------|:---------------------|
+| GitHub Actions | `github-actions` (JWT/OIDC) | `repository` + `job_workflow_ref` + deployment `environment` |
+| External Secrets Operator | `vieta-cluster` (JWT) | The cluster's service-account issuer, with `sub` pinned to the ESO ServiceAccount |
+
+Vault has no network path into the homelab (_yet_), so it cannot fetch the cluster's JWKS. The service-account signing key is pinned in the repo instead (`vault/vieta-sa-pubkey.pem`) and has to be re-synced if the cluster is rebuilt.
+
+### What Vault Issues
+
+| Engine | Purpose |
+|:-------|:--------|
+| `kv` (v2) | Static secrets: per-site deploy credentials and the `apps/*` tree consumed by ESO |
+| `aws` | Assumed-role STS credentials for the S3 Terraform state backend |
+| `ssh-client-signer` | **User CA:** signs a throwaway keypair per CI run, so no SSH private key is stored anywhere | 
+| `ssh-host-signer` | **Host CA:** signs host keys, so CI verifies hosts by certificate instead of TOFU |
 
 ---
 
@@ -181,11 +208,11 @@ The cluster mounts persistent volumes via `csi-driver-nfs`, talking to the NFS s
 
 #### External Secrets Operator
 
-Manages secret distribution across namespaces.
+Distributes secrets from Vault into the namespaces that need them.
 
-- **Backend (current):** Kubernetes secrets in a dedicated `secret-store` namespace, seeded by Terraform.
-- **Backend (planned):** HashiCorp Vault
-- **ClusterSecretStore** reads from the temporary backend via a dedicated ServiceAccount + RBAC
+- **Backend:** Vault `kv` v2; charts read individual keys under `apps/*` with an `ExternalSecret`
+- **ClusterSecretStore** `vault-secret-store` authenticates with a projected ServiceAccount token (10 min) against Vault's `vieta-cluster` JWT mount — no static token lives in the cluster
+- See [Secrets & Identity](#secrets--identity) for the Vault side
 
 ### ArgoCD & Applications
 
@@ -248,6 +275,7 @@ Public-facing edge node on Oracle Cloud's Always Free ARM tier. Provides:
 - **HAProxy:** SNI routing for `*.cloud` and `*.relay` subdomains
 - **WireGuard:** encrypted tunnel back to the homelab
 - **Tailscale:** out-of-band management
+- **SSH:** certificate-only, both directions — the NixOS host trusts the Vault user CA and presents its own host certificate
 
 | Layer | Scope |
 |:------|:------|
