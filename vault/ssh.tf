@@ -74,8 +74,8 @@ resource "vault_ssh_secret_backend_ca" "host_signer" {
 }
 
 locals {
-  # One year, in seconds
-  ssh_host_cert_ttl = "31536000"
+  # 90 days, in seconds. ssh-cert-converge.yaml renews both sites weekly
+  ssh_host_cert_ttl = "7776000"
 
   # Mirrors the DHCP reservations in 01-network/static_hosts.tf
   homelab_host_principals = [
