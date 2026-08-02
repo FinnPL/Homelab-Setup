@@ -91,7 +91,11 @@ resource "proxmox_virtual_environment_download_file" "debian_lxc_template" {
   node_name    = var.proxmox_node
 
   file_name = "debian-12-standard_12.12-1_amd64.tar.zst"
-  url       = "http://download.proxmox.com/images/system/debian-12-standard_12.12-1_amd64.tar.zst"
+
+  # http://download.proxmox.com/images/aplinfo-pve-8.dat
+  url                = "http://download.proxmox.com/images/system/debian-12-standard_12.12-1_amd64.tar.zst"
+  checksum           = "50c85eaaece677a3ebe01cc909b83872e9da2a22c29ae652838afce71e83222fdf40f6accecd7d52b180e912fc1f85ecdf7b3fc4d3027da4d865e509a9e76597"
+  checksum_algorithm = "sha512"
 
   overwrite = false
 }
