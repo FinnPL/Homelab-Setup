@@ -41,13 +41,12 @@
     },
     {
       "customType": "regex",
-      "description": "Track pinned nix run github refs in cloud-edge workflow",
+      "description": "Track pinned nix run github refs in GitHub workflows",
       "managerFilePatterns": [
-        "/(^|/)\\.github/workflows/cloud-edge\\.ya?ml$/"
+        "/(^|/)\\.github/workflows/.+\\.ya?ml$/"
       ],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+nix\\s+run\\s+github:[^/\\s]+/[^/\\s]+/(?<currentValue>[^\\s#]+)(?:#[^\\s]+)?",
-        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\s+packageName=(?<packageName>\\S+)\\s+ref=(?<currentValue>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+nix\\s+run\\s+github:[^/\\s]+/[^/\\s]+/(?<currentDigest>[0-9a-f]{40})#[^\\s]+"
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+nix\\s+run\\s+github:[^/\\s]+/[^/\\s]+/(?<currentValue>[^\\s#]+)(?:#[^\\s]+)?"
       ]
     },
     {
