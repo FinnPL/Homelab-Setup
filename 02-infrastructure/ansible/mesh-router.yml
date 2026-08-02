@@ -5,6 +5,8 @@
     wg_peer_pubkey: ""
     wg_peer_endpoint: ""
     cloud_vcn_cidr: ""
+    cloud_edge_allowed_dest: ""
+    cloud_edge_allowed_port: ""
     vault_ssh_host_dns_name: "mesh-router.athena"
   pre_tasks:
     - name: Wait for SSH to become available
@@ -55,6 +57,8 @@
         src: templates/wg-mesh-nat.service.j2
         dest: /etc/systemd/system/wg-mesh-nat.service
         mode: "0644"
+      notify: restart wg-mesh-nat
+      tags: [mesh-fw]
 
     - name: Enable and start wg-mesh-nat
       systemd:
@@ -62,9 +66,17 @@
         enabled: true
         state: started
         daemon_reload: true
+      tags: [mesh-fw]
 
   handlers:
     - name: restart wireguard
       systemd:
         name: wg-quick@wg0
         state: restarted
+
+    - name: restart wg-mesh-nat
+      systemd:
+        name: wg-mesh-nat
+        state: restarted
+        daemon_reload: true
+      tags: [mesh-fw]

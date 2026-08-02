@@ -1,4 +1,6 @@
-{pkgs, ...}: {
+{pkgs, ...}: let
+  homelabTarget = "10.10.1.201/32";
+in {
   environment.systemPackages = [pkgs.wireguard-tools];
 
   # CI writes WG private key to /etc/wireguard/private.key
@@ -28,24 +30,22 @@
       wg set wg0 \
         listen-port 51820 \
         private-key /etc/wireguard/private.key \
-        peer "$PEER_PUBKEY" allowed-ips 10.10.1.0/24
+        peer "$PEER_PUBKEY" allowed-ips ${homelabTarget}
       ip link set wg0 mtu 1420 up
 
-      # Get this node's VCN IP (the address Cilium uses as InternalIP)
       VCN_IP=$(ip -4 addr show eth0 | grep -oP 'inet \K[0-9.]+')
       if [ -z "$VCN_IP" ]; then
         echo "Could not determine VCN IP from eth0, aborting"
         exit 1
       fi
 
-      # Route homelab traffic through WG tunnel with correct source IP.
-      # This ensures VXLAN outer headers carry the VCN IP, not the wg0 IP.
-      ip route replace 10.10.1.0/24 dev wg0 table 51 src "$VCN_IP"
-      if ! ip rule show | grep -q "5260:"; then
-        ip rule add to 10.10.1.0/24 lookup 51 priority 5260
-      fi
+      ip route flush table 51 2>/dev/null || true
+      ip route replace ${homelabTarget} dev wg0 table 51 src "$VCN_IP"
 
-      echo "Homelab WG tunnel up: 10.10.1.0/24 via wg0 src $VCN_IP"
+      while ip rule del priority 5260 2>/dev/null; do :; done
+      ip rule add to ${homelabTarget} lookup 51 priority 5260
+
+      echo "Homelab WG tunnel up: ${homelabTarget} via wg0 src $VCN_IP"
     '';
   };
 
@@ -61,9 +61,6 @@
 
   # WireGuard listen port
   networking.firewall.allowedUDPPorts = [51820];
-
-  # Trust the WG interface for forwarded traffic
-  networking.firewall.trustedInterfaces = ["wg0"];
 
   # Ensure the key directory exists
   systemd.tmpfiles.rules = [

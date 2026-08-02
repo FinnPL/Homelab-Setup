@@ -1,13 +1,27 @@
 [Unit]
-Description=Masquerade OCI VCN traffic to homelab LAN
+Description=Masquerade and scope OCI VCN traffic to the homelab LAN
 After=wg-quick@wg0.service network-online.target
 Wants=wg-quick@wg0.service network-online.target
 
 [Service]
 Type=oneshot
 RemainAfterExit=true
+
+ExecStart=-/sbin/iptables -t nat -D POSTROUTING -s {{ cloud_vcn_cidr }} -o eth0 -j MASQUERADE
 ExecStart=/sbin/iptables -t nat -A POSTROUTING -s {{ cloud_vcn_cidr }} -o eth0 -j MASQUERADE
-ExecStop=/sbin/iptables -t nat -D POSTROUTING -s {{ cloud_vcn_cidr }} -o eth0 -j MASQUERADE
+
+ExecStart=-/sbin/iptables -N WG-MESH-FWD
+ExecStart=/sbin/iptables -F WG-MESH-FWD
+ExecStart=/sbin/iptables -A WG-MESH-FWD -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+ExecStart=/sbin/iptables -A WG-MESH-FWD -d {{ cloud_edge_allowed_dest }} -p tcp --dport {{ cloud_edge_allowed_port }} -j ACCEPT
+ExecStart=/sbin/iptables -A WG-MESH-FWD -j DROP
+ExecStart=-/sbin/iptables -D FORWARD -i wg0 -j WG-MESH-FWD
+ExecStart=/sbin/iptables -I FORWARD 1 -i wg0 -j WG-MESH-FWD
+
+ExecStop=-/sbin/iptables -t nat -D POSTROUTING -s {{ cloud_vcn_cidr }} -o eth0 -j MASQUERADE
+ExecStop=-/sbin/iptables -D FORWARD -i wg0 -j WG-MESH-FWD
+ExecStop=-/sbin/iptables -F WG-MESH-FWD
+ExecStop=-/sbin/iptables -X WG-MESH-FWD
 
 [Install]
 WantedBy=multi-user.target
