@@ -41,7 +41,8 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
   lifecycle {
     ignore_changes = [
       mount_point[0].volume,
-      mount_point[0].size
+      mount_point[0].size,
+      operating_system[0].template_file_id
     ]
   }
 
