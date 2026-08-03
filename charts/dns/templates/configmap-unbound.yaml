@@ -4,11 +4,16 @@ metadata:
   name: unbound-config
   namespace: dns
 data:
+  # IANA root trust anchors (https://data.iana.org/root-anchors/root-anchors.xml).
+  root.ds: |
+    . IN DS 20326 8 2 E06D44B80B8F1D39A95C0B0D7C65D08458E880409BBC683457104237C7F8EC8D
+    . IN DS 38696 8 2 683D2D0ACB8C9B712A1948B27F741219298D0A450D612C483AF444A4C0FB2B16
+
   unbound.conf: |
     server:
       chroot: ""
       username: ""
-      tls-cert-bundle: "/tmp/unbound/ca-certificates.crt"
+      tls-cert-bundle: "/etc/ssl/certs/ca-certificates.crt"
 
       # Listen on loopback as Blocky is the only client
       interface: 127.0.0.1
@@ -33,7 +38,7 @@ data:
       pidfile: ""
 
       # DNSSEC strict validation
-      auto-trust-anchor-file: "/tmp/unbound/root.key"
+      trust-anchor-file: "/usr/local/unbound/root.ds"
       val-permissive-mode: no
 
       prefetch: yes
