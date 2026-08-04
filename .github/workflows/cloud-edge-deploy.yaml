@@ -440,11 +440,6 @@ jobs:
       - name: Deploy MyIP secrets
         env:
           IP: ${{ steps.edge.outputs.ip }}
-          IPINFO_API_TOKEN: ${{ secrets.IPINFO_API_TOKEN }}
-          IPAPIIS_API_KEY: ${{ secrets.IPAPIIS_API_KEY }}
-          IP2LOCATION_API_KEY: ${{ secrets.IP2LOCATION_API_KEY }}
-          IPCHECKING_API_KEY: ${{ secrets.IPCHECKING_API_KEY }}
-          GOOGLE_MAP_API_KEY: ${{ secrets.GOOGLE_MAP_API_KEY }}
           MAXMIND_AUTO_UPDATE: ${{ vars.MAXMIND_AUTO_UPDATE }}
         run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh deploy-myip-secrets
 
@@ -459,8 +454,9 @@ jobs:
           # Keep deploy transport explicit and strict for all SSH calls done by nixos-rebuild.
           export NIX_SSHOPTS="-i ~/.ssh/edge_key -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=yes"
 
-          # renovate: datasource=git-refs depName=nixpkgs packageName=https://github.com/NixOS/nixpkgs ref=master versioning=git
-          nix run github:NixOS/nixpkgs/f37d14db4e7f801872506a2dee5cce5da36ea512#nixos-rebuild -- \
+          NIXPKGS_REV="$(jq -er '.nodes.nixpkgs.locked.rev' ./cloud-edge/nixos/flake.lock)"
+
+          nix run "github:NixOS/nixpkgs/${NIXPKGS_REV}#nixos-rebuild" -- \
             switch \
             --flake ./cloud-edge/nixos#oracle-edge \
             --build-host "root@$IP" \

@@ -9,6 +9,7 @@ spec:
       group: gateway.networking.k8s.io
       kind: Gateway
       namespace: gateway
+      sectionName: https
   hostnames:
     - grafana.lippok.dev
   rules:
@@ -36,6 +37,7 @@ spec:
       group: gateway.networking.k8s.io
       kind: Gateway
       namespace: gateway
+      sectionName: https
   hostnames:
     - alerts.lippok.dev
   rules:
@@ -61,6 +63,7 @@ spec:
       group: gateway.networking.k8s.io
       kind: Gateway
       namespace: gateway
+      sectionName: https
   hostnames:
     - prometheus.lippok.dev
   rules:

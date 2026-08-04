@@ -43,5 +43,6 @@ httproute:
   gateway:
     name: main-gateway
     namespace: gateway
+    sectionName: https
   hostnames:
     - it-tools.lippok.dev

@@ -82,6 +82,42 @@ resource "kubectl_manifest" "main_gateway" {
   ]
 }
 
+resource "kubectl_manifest" "http_to_https_redirect" {
+  yaml_body = yamlencode({
+    apiVersion = "gateway.networking.k8s.io/v1"
+    kind       = "HTTPRoute"
+    metadata = {
+      name      = "http-to-https-redirect"
+      namespace = kubernetes_namespace_v1.gateway.metadata[0].name
+    }
+    spec = {
+      parentRefs = [
+        {
+          name        = "main-gateway"
+          namespace   = kubernetes_namespace_v1.gateway.metadata[0].name
+          sectionName = "http"
+        }
+      ]
+      rules = [
+        {
+          filters = [
+            {
+              type = "RequestRedirect"
+              requestRedirect = {
+                scheme     = "https"
+                port       = 443
+                statusCode = 301
+              }
+            }
+          ]
+        }
+      ]
+    }
+  })
+
+  depends_on = [kubectl_manifest.main_gateway]
+}
+
 # Data source to get the Gateway's LoadBalancer IP after creation
 data "kubernetes_service_v1" "gateway_lb" {
   metadata {

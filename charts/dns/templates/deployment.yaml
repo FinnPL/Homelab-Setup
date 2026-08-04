@@ -16,6 +16,7 @@ spec:
         app: dns
       annotations:
         checksum/blocky-config: {{ include (print $.Template.BasePath "/configmap-blocky.yaml") . | sha256sum }}
+        checksum/unbound-config: {{ include (print $.Template.BasePath "/configmap-unbound.yaml") . | sha256sum }}
     spec:
 
       # Prefer worker nodes but tolerate control-plane as a fallback
@@ -36,34 +37,6 @@ spec:
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
-
-      initContainers:
-        - name: generate-root-key
-          image: alpine:3.24
-          command:
-            - sh
-            - -c
-            - |
-              apk add --no-cache unbound curl
-              unbound-anchor -a /tmp/unbound/root.key || true
-              curl -sL https://curl.se/ca/cacert.pem -o /tmp/unbound/ca-certificates.crt
-              chown 1000:1000 /tmp/unbound/root.key /tmp/unbound/ca-certificates.crt
-          volumeMounts:
-            - name: unbound-data
-              mountPath: /tmp/unbound
-          resources:
-            requests:
-              cpu: 25m
-              memory: 32Mi
-            limits:
-              cpu: 200m
-              memory: 64Mi
-          securityContext:
-            runAsUser: 0
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
-              add: ["CHOWN"]
 
       # Blocky: filtering, caching
       containers:
@@ -103,9 +76,9 @@ spec:
           resources:
             requests:
               cpu: 200m
-              memory: 128Mi
+              memory: 256Mi
             limits:
-              memory: 512Mi
+              memory: 1Gi
           startupProbe:
             httpGet:
               path: /api/blocking/status
@@ -156,6 +129,10 @@ spec:
             - name: unbound-config
               mountPath: /usr/local/unbound/unbound.conf
               subPath: unbound.conf
+              readOnly: true
+            - name: unbound-config
+              mountPath: /usr/local/unbound/root.ds
+              subPath: root.ds
               readOnly: true
             - name: unbound-data
               mountPath: /tmp/unbound

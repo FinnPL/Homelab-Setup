@@ -8,6 +8,7 @@ spec:
   parentRefs:
     - name: {{ .Values.httproute.gateway.name }}
       namespace: {{ .Values.httproute.gateway.namespace }}
+      sectionName: {{ .Values.httproute.gateway.sectionName }}
   hostnames:
 {{ toYaml .Values.httproute.hostnames | indent 4 }}
   rules:

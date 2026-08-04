@@ -29,12 +29,24 @@ data:
         ads:
           - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
           - https://adaway.org/hosts.txt
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/hosts/pro.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/pro-onlydomains.txt
         malware:
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/hosts/tif.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/tif-onlydomains.txt
+        native:
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.apple-onlydomains.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.amazon-onlydomains.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.samsung-onlydomains.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.winoffice-onlydomains.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.tiktok-onlydomains.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.huawei-onlydomains.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.xiaomi-onlydomains.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.vivo-onlydomains.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.oppo-realme-onlydomains.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.lgwebos-onlydomains.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.roku-onlydomains.txt
 
       allowlists:
-        ads:
+        ads: &connectivity-checks
           - |
             connectivitycheck.gstatic.com
             clients3.google.com
@@ -44,26 +56,19 @@ data:
             connectivity.ubnt.com
             www.msftconnecttest.com
             ipv6.msftconnecttest.com
-        malware:
-          - |
-            connectivitycheck.gstatic.com
-            clients3.google.com
-            msftconnecttest.com
-            msftncsi.com
-            ping.ui.com
-            connectivity.ubnt.com
-            www.msftconnecttest.com
-            ipv6.msftconnecttest.com
+        malware: *connectivity-checks
+        native: *connectivity-checks
 
       clientGroupsBlock:
         default:
           - ads
           - malware
+          - native
 
       blockType: nxDomain
       loading:
         refreshPeriod: 24h
-        concurrency: 2
+        concurrency: 4
         downloads:
           timeout: 4m
           attempts: 3
