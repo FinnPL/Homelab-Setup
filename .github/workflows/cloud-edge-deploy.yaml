@@ -20,6 +20,13 @@ on:
         description: "Run nixos-rebuild (config update)"
         type: boolean
         default: false
+      activation_mode:
+        description: "How to activate: switch (live), or boot to stage it and reboot (for changes that trip switch inhibitors)"
+        type: choice
+        options:
+          - switch
+          - boot
+        default: switch
       force_install_nixos:
         description: "Force nixos-anywhere install (manual, bypasses fresh-VM proof)"
         type: boolean
@@ -115,7 +122,7 @@ jobs:
           vault-role: cloud-edge
 
       - name: Terraform Init
-        run: terraform init -upgrade
+        run: terraform init
 
       - name: Terraform Validate
         run: terraform validate
@@ -444,8 +451,9 @@ jobs:
         if: steps.mode.outputs.deploy_requested == 'true'
         env:
           IP: ${{ steps.edge.outputs.ip }}
+          ACTIVATION_MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.activation_mode || 'switch' }}
         run: |
-          echo "Deploying NixOS config to $IP via nixos-rebuild remote mode..."
+          echo "Deploying NixOS config to $IP via nixos-rebuild remote mode ($ACTIVATION_MODE)..."
 
           # Keep deploy transport explicit and strict for all SSH calls done by nixos-rebuild.
           export NIX_SSHOPTS="-i ~/.ssh/edge_key -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=yes"
@@ -453,11 +461,21 @@ jobs:
           NIXPKGS_REV="$(jq -er '.nodes.nixpkgs.locked.rev' ./cloud-edge/nixos/flake.lock)"
 
           nix run "github:NixOS/nixpkgs/${NIXPKGS_REV}#nixos-rebuild" -- \
-            switch \
+            "$ACTIVATION_MODE" \
             --flake ./cloud-edge/nixos#oracle-edge \
             --build-host "root@$IP" \
             --target-host "root@$IP" \
             --fast
+
+      # boot only stages the generation; nothing is live until the host restarts.
+      - name: "Reboot into the staged generation"
+        if: |
+          steps.mode.outputs.deploy_requested == 'true' &&
+          github.event_name == 'workflow_dispatch' &&
+          inputs.activation_mode == 'boot'
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh reboot-edge
 
       - name: Wait for Tailscale to connect
         id: tailscale
