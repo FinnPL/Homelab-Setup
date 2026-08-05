@@ -37,11 +37,6 @@ variable "ansible_ssh_key_file" {
   type        = string
 }
 
-variable "proxmox_ssh_public_key" {
-  description = "Raw SSH public key string for authorized_keys"
-  type        = string
-}
-
 variable "proxmox_exporter_user_id" {
   description = "Proxmox user ID for the exporter token (for example prometheus-exporter@pve)"
   type        = string

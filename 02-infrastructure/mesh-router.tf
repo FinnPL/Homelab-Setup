@@ -26,11 +26,7 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
 
     user_account {
       password = var.mesh_router_root_password
-      keys = [
-        <<-EOT
-        ${trimspace(var.proxmox_ssh_public_key)}
-        EOT
-      ]
+      keys     = [local.vault_user_ca_authorized_key]
     }
   }
 
@@ -74,6 +70,7 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
 
   lifecycle {
     replace_triggered_by = [terraform_data.mesh_wg_peer_endpoint_marker]
+    ignore_changes       = [initialization[0].user_account[0].keys]
   }
 
   provisioner "local-exec" {
