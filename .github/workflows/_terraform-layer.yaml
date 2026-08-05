@@ -10,10 +10,6 @@ on:
         description: "Layer directory name (e.g. 01-network)"
         required: true
         type: string
-      init_upgrade:
-        description: "Pass -upgrade to terraform init"
-        type: boolean
-        default: false
       needs_homelab:
         description: "Reach the homelab (Tailscale + Node + unzip)"
         type: boolean
@@ -123,7 +119,7 @@ jobs:
         run: echo "TF_VAR_ansible_ssh_key_file=${{ steps.ssh_cert.outputs.key-path }}" >> "$GITHUB_ENV"
 
       - name: Terraform Init
-        run: terraform init ${{ inputs.init_upgrade && '-upgrade' || '' }}
+        run: terraform init
 
       - name: Terraform Validate
         run: terraform validate

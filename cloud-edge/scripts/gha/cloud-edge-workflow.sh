@@ -471,6 +471,60 @@ refresh_ssh_after_install() {
   sign_host_cert
 }
 
+reboot_edge() {
+  require_var IP
+
+  local ssh_opts=(
+    -i ~/.ssh/edge_key
+    -o BatchMode=yes
+    -o ConnectTimeout=10
+    -o UserKnownHostsFile=~/.ssh/known_hosts
+    -o StrictHostKeyChecking=yes
+  )
+  local attempts="${REBOOT_SSH_ATTEMPTS:-40}"
+  local delay_seconds="${REBOOT_SSH_DELAY_SECONDS:-10}"
+
+  # `nixos-rebuild boot` already moved the system profile to the staged
+  # generation; that is what the host must be running once it comes back.
+  local expected
+  expected=$(ssh "${ssh_opts[@]}" "root@$IP" 'readlink -f /nix/var/nix/profiles/system') ||
+    error "Could not read the staged system generation on $IP"
+
+  echo "Rebooting $IP into $expected ..."
+
+  # Detached so sshd going down does not race the exit status of the command.
+  ssh "${ssh_opts[@]}" "root@$IP" 'systemd-run --on-active=2 --collect systemctl reboot' ||
+    error "Could not schedule reboot on $IP"
+
+  # Let the host actually go down, or the first probe answers from the old sshd.
+  sleep 15
+
+  local i booted=""
+  for ((i = 1; i <= attempts; i++)); do
+    if booted=$(ssh "${ssh_opts[@]}" "root@$IP" 'readlink -f /run/current-system' 2>/dev/null) && [ -n "$booted" ]; then
+      echo "Host is back (attempt $i/$attempts)."
+      break
+    fi
+
+    booted=""
+    echo "Host not back yet (attempt $i/$attempts)"
+    if [ "$i" -lt "$attempts" ]; then
+      sleep "$delay_seconds"
+    fi
+  done
+
+  if [ -z "$booted" ]; then
+    error "$IP did not come back after reboot ($attempts attempts)"
+  fi
+
+  # A silent fallback to the previous generation must not read as success.
+  if [ "$booted" != "$expected" ]; then
+    error "Booted the wrong generation on $IP. staged=$expected running=$booted"
+  fi
+
+  echo "Rebooted into $booted"
+}
+
 deploy_wireguard_keys() {
   require_var IP
   require_var WG_PRIVATE_KEY
@@ -690,6 +744,7 @@ Commands:
   write-ssh-keys-nix
   write-acme-email-nix
   refresh-ssh-after-install
+  reboot-edge
   deploy-cloudflare-credentials
   deploy-myip-secrets
   deploy-tailscale-credentials
@@ -735,6 +790,9 @@ main() {
       ;;
     refresh-ssh-after-install)
       refresh_ssh_after_install
+      ;;
+    reboot-edge)
+      reboot_edge
       ;;
     deploy-cloudflare-credentials)
       deploy_cloudflare_credentials

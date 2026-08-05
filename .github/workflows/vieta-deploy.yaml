@@ -114,7 +114,6 @@ jobs:
       layer: 02-infrastructure
       needs_homelab: true
       needs_ansible: true
-      init_upgrade: true
       apply: ${{ github.event_name == 'workflow_dispatch' && inputs.apply || false }}
 
   deploy-services:
@@ -131,5 +130,4 @@ jobs:
     with:
       layer: 03-services
       needs_homelab: true
-      init_upgrade: true
       apply: ${{ github.event_name == 'workflow_dispatch' && inputs.apply || false }}
