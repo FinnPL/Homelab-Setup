@@ -14,7 +14,7 @@ _:
       domain = "cloud.lippok.dev";
       extraDomainNames = ["*.cloud.lippok.dev"];
       dnsProvider = "cloudflare";
-      credentialsFile = "/etc/cloudflare/credentials";
+      environmentFile = "/etc/cloudflare/credentials";
       group = "haproxy";
       reloadServices = ["haproxy.service"];
     };
