@@ -24,6 +24,11 @@ locals {
   host_ips       = data.terraform_remote_state.network.outputs.host_ips
   host_vm_macs   = data.terraform_remote_state.network.outputs.host_vm_macs
 
+  vault_user_ca_authorized_key = format(
+    "cert-authority,principals=\"root\" %s",
+    trimspace(file("${path.module}/ansible/files/vault_user_ca.pub"))
+  )
+
   # Derived values
   proxmox_host_ip    = local.host_ips.nuc
   athena_gateway     = local.athena_network.gateway

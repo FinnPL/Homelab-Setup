@@ -51,7 +51,6 @@ jobs:
       TF_VAR_proxmox_ssh_user: ${{ vars.PROXMOX_SSH_USER }}
       TF_VAR_proxmox_insecure: ${{ vars.PROXMOX_INSECURE }}
       TF_VAR_proxmox_node: ${{ vars.PROXMOX_NODE }}
-      TF_VAR_proxmox_ssh_public_key: ${{ vars.PROXMOX_SSH_PUB_KEY }}
       TF_VAR_cluster_name: ${{ vars.TALOS_CLUSTER_NAME }}
       TF_VAR_mesh_wg_peer_pubkey: ${{ vars.CLOUD_WG_PUBKEY }}
       TF_VAR_acme_email: ${{ vars.ACME_EMAIL }}

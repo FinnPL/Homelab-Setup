@@ -10,11 +10,7 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
     hostname = var.nfs_server_config.name
     user_account {
       password = var.nfs_root_password
-      keys = [
-        <<-EOT
-        ${trimspace(var.proxmox_ssh_public_key)}
-        EOT
-      ]
+      keys     = [local.vault_user_ca_authorized_key]
     }
   }
 
@@ -42,7 +38,8 @@ resource "proxmox_virtual_environment_container" "nfs_server" {
     ignore_changes = [
       mount_point[0].volume,
       mount_point[0].size,
-      operating_system[0].template_file_id
+      operating_system[0].template_file_id,
+      initialization[0].user_account[0].keys
     ]
   }
 
