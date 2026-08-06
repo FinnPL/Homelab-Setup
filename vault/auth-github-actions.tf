@@ -25,6 +25,26 @@ resource "vault_jwt_auth_backend_role" "vault_deploy" {
   token_max_ttl  = 1200
 }
 
+resource "vault_jwt_auth_backend_role" "tailscale_deploy" {
+  backend         = vault_jwt_auth_backend.github_actions.path
+  role_name       = "tailscale-deploy"
+  role_type       = "jwt"
+  user_claim      = "job_workflow_ref"
+  bound_audiences = [var.vault_address]
+
+  bound_claims_type = "glob"
+  bound_claims = {
+    repository       = var.github_repository
+    job_workflow_ref = "${var.github_repository}/.github/workflows/tailscale-deploy.yaml@*"
+    environment      = "tailscale"
+  }
+
+  token_policies = [vault_policy.aws_tfstate.name]
+  token_type     = "service"
+  token_ttl      = 1200
+  token_max_ttl  = 1200
+}
+
 resource "vault_jwt_auth_backend_role" "vieta_layers" {
   backend         = vault_jwt_auth_backend.github_actions.path
   role_name       = "vieta-layers"
