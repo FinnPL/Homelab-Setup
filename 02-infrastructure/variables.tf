@@ -114,7 +114,7 @@ variable "kubernetes_version" {
   description = "Kubernetes version for Talos cluster"
   type        = string
   # renovate: datasource=github-releases depName=kubernetes/kubernetes versioning=semver extractVersion=^v(?<version>.*)$
-  default = "1.35.0"
+  default = "1.36.3"
 }
 
 variable "cluster_name" {
