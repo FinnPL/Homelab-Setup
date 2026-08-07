@@ -1,11 +1,10 @@
 {pkgs, ...}: {
   services.tailscale = {
     enable = true;
-    # CI writes the OAuth client secret (tskey-client-...) to this file.
     authKeyFile = "/etc/tailscale/authkey";
     extraUpFlags = [
       "--accept-dns=false"
-      "--advertise-tags=tag:k8s"
+      "--advertise-tags=tag:cloud-edge"
       "--advertise-exit-node"
     ];
   };

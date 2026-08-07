@@ -1,0 +1,80 @@
+name: "Mint Tailscale auth key"
+description: "Exchange the runner's OIDC token for a single-use, tagged, short-lived tailnet join key"
+
+inputs:
+  client-id:
+    description: "Federated identity client ID. Not a secret; the audience is derived from it."
+    required: true
+  tags:
+    description: "Comma-separated tags the joining node takes, e.g. tag:cloud-edge"
+    required: true
+  description:
+    description: "Shows up in the admin console against the key"
+    default: "minted by GitHub Actions"
+  expiry-seconds:
+    description: "How long the key stays usable. It only has to survive this deploy."
+    default: "600"
+
+outputs:
+  authkey:
+    description: "The minted key. Single-use, so it is inert once the node has joined."
+    value: ${{ steps.mint.outputs.authkey }}
+
+runs:
+  using: composite
+  steps:
+    - name: Mint
+      id: mint
+      shell: bash
+      env:
+        CLIENT_ID: ${{ inputs.client-id }}
+        TS_TAGS: ${{ inputs.tags }}
+        TS_DESCRIPTION: ${{ inputs.description }}
+        EXPIRY_SECONDS: ${{ inputs.expiry-seconds }}
+      run: |
+        set -euo pipefail
+
+        # The federated identity's audience is always api.tailscale.com/<client id>.
+        jwt=$(curl -sS -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=api.tailscale.com/${CLIENT_ID}" \
+          | jq -r '.value')
+        [ -n "$jwt" ] && [ "$jwt" != "null" ] || { echo "::error::no OIDC token; needs id-token: write"; exit 1; }
+
+        access_token=$(curl -sS -X POST https://api.tailscale.com/api/v2/oauth/token-exchange \
+          -H "Content-Type: application/x-www-form-urlencoded" \
+          -d "client_id=${CLIENT_ID}" \
+          --data-urlencode "jwt=${jwt}" \
+          | jq -r '.access_token // empty')
+        [ -n "$access_token" ] || { echo "::error::token exchange failed for ${CLIENT_ID}"; exit 1; }
+        echo "::add-mask::$access_token"
+
+        tags_json=$(printf '%s' "$TS_TAGS" | jq -R 'split(",") | map(gsub("^\\s+|\\s+$"; ""))')
+        payload=$(jq -n \
+          --argjson tags "$tags_json" \
+          --argjson expiry "$EXPIRY_SECONDS" \
+          --arg description "$TS_DESCRIPTION" \
+          '{
+            description: $description,
+            expirySeconds: $expiry,
+            capabilities: {
+              devices: {
+                create: {
+                  reusable: false,
+                  ephemeral: false,
+                  preauthorized: true,
+                  tags: $tags,
+                },
+              },
+            },
+          }')
+
+        authkey=$(curl -sS -X POST https://api.tailscale.com/api/v2/tailnet/-/keys \
+          -H "Authorization: Bearer ${access_token}" \
+          -H "Content-Type: application/json" \
+          -d "$payload" \
+          | jq -r '.key // empty')
+        [ -n "$authkey" ] || { echo "::error::key creation failed for tags ${TS_TAGS}"; exit 1; }
+
+        echo "::add-mask::$authkey"
+        echo "authkey=$authkey" >> "$GITHUB_OUTPUT"
+        echo "Minted a single-use ${TS_TAGS} key, valid ${EXPIRY_SECONDS}s."

@@ -654,7 +654,7 @@ EOF
 
 deploy_tailscale_credentials() {
   require_var IP
-  require_var TAILSCALE_OAUTH_SECRET
+  require_var TAILSCALE_AUTHKEY
 
   local ssh_opts=(
     -i ~/.ssh/edge_key
@@ -663,12 +663,12 @@ deploy_tailscale_credentials() {
     -o UserKnownHostsFile=~/.ssh/known_hosts
     -o StrictHostKeyChecking=yes
   )
-  echo "Deploying Tailscale OAuth credentials to edge node..."
+  echo "Deploying Tailscale auth key to edge node..."
   ssh "${ssh_opts[@]}" "root@$IP" '
     mkdir -p /etc/tailscale
     cat > /etc/tailscale/authkey
     chmod 600 /etc/tailscale/authkey
-  ' <<< "$TAILSCALE_OAUTH_SECRET"
+  ' <<< "$TAILSCALE_AUTHKEY"
 
   # Deploy the subnet CIDR for Tailscale route advertisement
   local subnet_cidr
