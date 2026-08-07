@@ -9,37 +9,44 @@
     "tag:ci":         ["tag:tf-bootstrap"],
 
     "tag:vieta-oob": ["autogroup:admin", "tag:tf-bootstrap"],
-
-    // Transitional.
-    "tag:k8s":    ["tag:tf-bootstrap"],
-    "tag:router": ["finnpl@github", "autogroup:admin"],
   },
 
   "autoApprovers": {
     "routes": {
       // Vieta LAN: the in-cluster Connector, and the out-of-band Pi behind it.
-      "10.10.1.0/24": ["tag:vieta-k8s", "tag:vieta-oob", "tag:k8s", "tag:router"],
+      "10.10.1.0/24": ["tag:vieta-k8s", "tag:vieta-oob"],
 
       // OCI public subnet, advertised by the edge node.
-      "10.80.1.0/24": ["tag:cloud-edge", "tag:k8s"],
+      "10.80.1.0/24": ["tag:cloud-edge"],
 
       // Minerva LAN.
-      "10.0.1.0/24": ["tag:minerva", "tag:ci"],
+      "10.0.1.0/24": ["tag:minerva"],
     },
 
-    "exitNode": [
-      "tag:vieta-k8s",
-      "tag:cloud-edge",
-      "tag:minerva",
-      "tag:k8s",
-      "tag:ci",
-    ],
+    "exitNode": ["tag:vieta-k8s", "tag:cloud-edge", "tag:minerva"],
   },
 
   "grants": [
+    // People keep full reach. The split exists to constrain machines, not operators.
     {
-      "src": ["*"],
+      "src": ["autogroup:member"],
       "dst": ["*"],
+      "ip":  ["*"],
+    },
+
+    // Egress through any advertised exit node.
+    {
+      "src": ["autogroup:member"],
+      "dst": ["autogroup:internet"],
+      "ip":  ["*"],
+    },
+
+    // CI reaches the Vieta LAN through whichever subnet router is up: the in-cluster
+    // Connector normally, the out-of-band Pi when the cluster is down. Written against
+    // the CIDR rather than a node, so failover needs no second rule.
+    {
+      "src": ["tag:ci"],
+      "dst": ["10.10.1.0/24"],
       "ip":  ["*"],
     },
   ],
@@ -53,9 +60,8 @@
     },
   ],
 
-  // Asserted on every plan. These encode the recovery path: CI reaches PVE and the
-  // Talos API through whichever subnet router is currently up, so they must keep
-  // passing when the in-cluster Connector is gone and only the OOB Pi is routing.
+  // Asserted on every plan, so a grant change that would break the recovery path or
+  // re-merge the trust domains fails the PR instead of the tailnet.
   "tests": [
     {
       "src": "tag:ci",
@@ -63,6 +69,15 @@
         "10.10.1.42:8006",
         "10.10.1.60:6443",
       ],
+    },
+    {
+      // Minerva used to carry tag:ci. It must no longer reach Vieta.
+      "src":  "tag:minerva",
+      "deny": ["10.10.1.42:8006"],
+    },
+    {
+      "src":  "tag:cloud-edge",
+      "deny": ["10.10.1.42:8006"],
     },
   ],
 }
