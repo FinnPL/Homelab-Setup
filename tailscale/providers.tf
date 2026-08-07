@@ -6,7 +6,16 @@ terraform {
       source  = "tailscale/tailscale"
       version = "0.29.2"
     }
+    vault = {
+      source  = "hashicorp/vault"
+      version = "5.10.1"
+    }
   }
+}
+
+provider "vault" {
+  address          = var.vault_address
+  skip_child_token = true
 }
 
 provider "tailscale" {

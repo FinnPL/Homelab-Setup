@@ -39,6 +39,7 @@ jobs:
       TF_INPUT: "false"
       TF_VAR_oauth_client_id: ${{ vars.TAILSCALE_OAUTH_CLIENT_ID }}
       TF_VAR_audience: ${{ vars.TAILSCALE_AUDIENCE }}
+      VAULT_ADDR: ${{ vars.VAULT_ADDR }}
 
     steps:
       - name: Checkout Code
@@ -48,6 +49,7 @@ jobs:
         uses: ./.github/actions/tf-aws-setup
         with:
           vault-role: tailscale-deploy
+          export-token: true
 
       - name: Terraform Init
         run: terraform init
