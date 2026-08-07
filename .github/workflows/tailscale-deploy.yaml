@@ -1,0 +1,65 @@
+name: "Tailscale: deploy"
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "tailscale/**"
+      - ".github/workflows/tailscale-deploy.yaml"
+  pull_request:
+    paths:
+      - "tailscale/**"
+      - ".github/workflows/tailscale-deploy.yaml"
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Run terraform apply (dangerous)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: tailscale
+  cancel-in-progress: false
+
+jobs:
+  terraform:
+    name: "tailscale"
+    runs-on: ubuntu-latest
+    environment: tailscale
+    defaults:
+      run:
+        working-directory: ./tailscale
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+      TF_VAR_oauth_client_id: ${{ vars.TAILSCALE_OAUTH_CLIENT_ID }}
+      TF_VAR_audience: ${{ vars.TAILSCALE_AUDIENCE }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Setup Terraform + AWS
+        uses: ./.github/actions/tf-aws-setup
+        with:
+          vault-role: tailscale-deploy
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -lock-timeout=10m -out .planfile -input=false
+
+      - name: Terraform Apply
+        if: |
+          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+          (github.event_name == 'workflow_dispatch' && inputs.apply)
+        run: terraform apply -lock-timeout=10m -auto-approve -input=false .planfile

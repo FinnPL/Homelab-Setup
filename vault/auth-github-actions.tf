@@ -39,7 +39,7 @@ resource "vault_jwt_auth_backend_role" "tailscale_deploy" {
     environment      = "tailscale"
   }
 
-  token_policies = [vault_policy.aws_tfstate.name]
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.tailscale.name]
   token_type     = "service"
   token_ttl      = 1200
   token_max_ttl  = 1200

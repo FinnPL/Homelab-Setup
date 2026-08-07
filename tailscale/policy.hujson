@@ -1,0 +1,31 @@
+// Tailnet policy file. Managed by Terraform.
+{
+  "tagOwners": {
+    "tag:k8s":    [],
+    "tag:router": ["finnpl@github"],
+    "tag:ci":     ["autogroup:admin"],
+  },
+
+  "autoApprovers": {
+    "routes": {
+      "10.0.0.0/8": ["tag:k8s"],
+    },
+  },
+
+  "grants": [
+    {
+      "src": ["*"],
+      "dst": ["*"],
+      "ip":  ["*"],
+    },
+  ],
+
+  "ssh": [
+    {
+      "action": "check",
+      "src":    ["autogroup:member"],
+      "dst":    ["autogroup:self"],
+      "users":  ["autogroup:nonroot", "root"],
+    },
+  ],
+}

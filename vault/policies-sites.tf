@@ -32,6 +32,16 @@ resource "vault_policy" "cloud_edge" {
   EOT
 }
 
+# The tailnet layer owns the operator's OAuth client, so it writes the secret ESO reads.
+resource "vault_policy" "tailscale" {
+  name = "tailscale"
+
+  policy = <<-EOT
+    path "kv/data/apps/tailscale" { capabilities = ["create", "read", "update"] }
+    path "kv/metadata/apps/tailscale" { capabilities = ["read"] }
+  EOT
+}
+
 resource "vault_policy" "minerva" {
   name = "minerva"
 
