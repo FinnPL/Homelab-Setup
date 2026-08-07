@@ -1,15 +1,15 @@
 // Tailnet policy file. Managed by Terraform.
 {
   "tagOwners": {
-    "tag:vieta-k8s": [],
-    "tag:vieta-oob": ["autogroup:admin"],
-    "tag:cloud-edge": [],
-    "tag:minerva":    [],
-    "tag:ci":         [],
+    "tag:vieta-k8s":  ["autogroup:admin"],
+    "tag:vieta-oob":  ["autogroup:admin"],
+    "tag:cloud-edge": ["autogroup:admin"],
+    "tag:minerva":    ["autogroup:admin"],
+    "tag:ci":         ["autogroup:admin"],
 
     // Transitional.
-    "tag:k8s":    [],
-    "tag:router": ["finnpl@github"],
+    "tag:k8s":    ["autogroup:admin"],
+    "tag:router": ["finnpl@github", "autogroup:admin"],
   },
 
   "autoApprovers": {
