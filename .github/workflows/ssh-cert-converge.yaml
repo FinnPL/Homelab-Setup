@@ -56,15 +56,13 @@ jobs:
           secrets: |
             aws/creds/tfstate access_key | AWS_ACCESS_KEY_ID ;
             aws/creds/tfstate secret_key | AWS_SECRET_ACCESS_KEY ;
-            aws/creds/tfstate security_token | AWS_SESSION_TOKEN ;
-            kv/data/ci/tailscale oauth-client-id | TS_OAUTH_CLIENT_ID ;
-            kv/data/ci/tailscale oauth-secret | TS_OAUTH_SECRET
+            aws/creds/tfstate security_token | AWS_SESSION_TOKEN
 
       - name: Tailscale
         uses: tailscale/github-action@306e68a486fd2350f2bfc3b19fcd143891a4a2d8 # v4
         with:
-          oauth-client-id: ${{ env.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ env.TS_OAUTH_SECRET }}
+          oauth-client-id: ${{ vars.TAILSCALE_CI_CLIENT_ID }}
+          audience: api.tailscale.com/${{ vars.TAILSCALE_CI_CLIENT_ID }}
           tags: tag:ci
 
       - name: Install Ansible

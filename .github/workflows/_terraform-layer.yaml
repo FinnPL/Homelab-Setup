@@ -76,16 +76,14 @@ jobs:
             kv/data/vieta/postgres root-password | TF_VAR_postgres_root_password ;
             kv/data/vieta/postgres admin-password | TF_VAR_postgres_admin_password ;
             kv/data/vieta/mesh-router root-password | TF_VAR_mesh_router_root_password ;
-            kv/data/vieta/mesh-router wg-private-key | TF_VAR_mesh_wg_private_key ;
-            kv/data/ci/tailscale oauth-client-id | TS_OAUTH_CLIENT_ID ;
-            kv/data/ci/tailscale oauth-secret | TS_OAUTH_SECRET
+            kv/data/vieta/mesh-router wg-private-key | TF_VAR_mesh_wg_private_key
 
       - name: Tailscale
         if: inputs.needs_homelab
         uses: tailscale/github-action@306e68a486fd2350f2bfc3b19fcd143891a4a2d8 # v4
         with:
-          oauth-client-id: ${{ env.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ env.TS_OAUTH_SECRET }}
+          oauth-client-id: ${{ vars.TAILSCALE_CI_CLIENT_ID }}
+          audience: api.tailscale.com/${{ vars.TAILSCALE_CI_CLIENT_ID }}
           tags: tag:ci
 
       - name: Setup Node.js

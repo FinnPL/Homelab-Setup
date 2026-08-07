@@ -262,8 +262,15 @@ jobs:
             kv/data/cloud-edge/myip cloudflare-api | MYIP_CLOUDFLARE_API ;
             kv/data/cloud-edge/maxmind account-id | MAXMIND_ACCOUNT_ID ;
             kv/data/cloud-edge/maxmind license-key | MAXMIND_LICENSE_KEY ;
-            kv/data/cloudflare api-token | CLOUDFLARE_API_TOKEN ;
-            kv/data/apps/tailscale oauth-secret | TAILSCALE_OAUTH_SECRET
+            kv/data/cloudflare api-token | CLOUDFLARE_API_TOKEN
+
+      - name: Mint edge tailnet key
+        id: ts_authkey
+        uses: ./.github/actions/tailscale-authkey
+        with:
+          client-id: ${{ vars.TAILSCALE_CLOUD_EDGE_CLIENT_ID }}
+          tags: tag:cloud-edge
+          description: "oracle-edge join key"
 
       - name: Setup Terraform + AWS
         uses: ./.github/actions/tf-aws-setup
@@ -419,6 +426,7 @@ jobs:
       - name: Deploy Tailscale credentials
         env:
           IP: ${{ steps.edge.outputs.ip }}
+          TAILSCALE_AUTHKEY: ${{ steps.ts_authkey.outputs.authkey }}
         run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh deploy-tailscale-credentials
 
       # WireGuard keys for the homelab tunnel (wg0)
