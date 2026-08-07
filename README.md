@@ -95,6 +95,22 @@ Vault has no network path into the homelab (_yet_), so it cannot fetch the clust
 
 ---
 
+## Tailnet
+
+Tailscale mesh across all three sites, managed as its own Terraform root module (`tailscale/`) and applied by `tailscale-deploy.yaml`. No Tailscale API key is stored anywhere: each workflow authenticates with its GitHub OIDC token through a federated identity bound to that deployment environment, and the cluster operator gets its standing OAuth client via Vault ESO.
+
+| Tag | Node |
+|:----|:-----|
+| `tag:ci` | GitHub runners joining the tailnet (e.g., to reach Vieta) |
+| `tag:vieta-k8s` | Tailscale operator in-cluster; subnet router for `10.10.1.0/24` |
+| `tag:vieta-oob` | Out-of-band Pi, advertising the same route when the cluster is down |
+| `tag:cloud-edge` | Oracle edge node |
+| `tag:minerva` | Minerva site |
+
+The policy file (`policy.hujson`) keeps the machine trust domains apart: CI reaches the Vieta LAN by CIDR, while the edge and Minerva nodes reach nothing there. Its `tests` block asserts exactly that on every plan, so a bad grant fails on PR.
+
+---
+
 ## Vieta Site
 
 The primary site, structured as four Terraform layers plus the applications deployed by ArgoCD. State flows forward via remote state outputs.
