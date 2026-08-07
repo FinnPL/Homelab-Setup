@@ -1,15 +1,36 @@
 // Tailnet policy file. Managed by Terraform.
 {
   "tagOwners": {
+    "tag:vieta-k8s": [],
+    "tag:vieta-oob": ["autogroup:admin"],
+    "tag:cloud-edge": [],
+    "tag:minerva":    [],
+    "tag:ci":         [],
+
+    // Transitional.
     "tag:k8s":    [],
     "tag:router": ["finnpl@github"],
-    "tag:ci":     ["autogroup:admin"],
   },
 
   "autoApprovers": {
     "routes": {
-      "10.0.0.0/8": ["tag:k8s"],
+      // Vieta LAN: the in-cluster Connector, and the out-of-band Pi behind it.
+      "10.10.1.0/24": ["tag:vieta-k8s", "tag:vieta-oob", "tag:k8s", "tag:router"],
+
+      // OCI public subnet, advertised by the edge node.
+      "10.80.1.0/24": ["tag:cloud-edge", "tag:k8s"],
+
+      // Minerva LAN.
+      "10.0.1.0/24": ["tag:minerva", "tag:ci"],
     },
+
+    "exitNode": [
+      "tag:vieta-k8s",
+      "tag:cloud-edge",
+      "tag:minerva",
+      "tag:k8s",
+      "tag:ci",
+    ],
   },
 
   "grants": [
@@ -26,6 +47,19 @@
       "src":    ["autogroup:member"],
       "dst":    ["autogroup:self"],
       "users":  ["autogroup:nonroot", "root"],
+    },
+  ],
+
+  // Asserted on every plan. These encode the recovery path: CI reaches PVE and the
+  // Talos API through whichever subnet router is currently up, so they must keep
+  // passing when the in-cluster Connector is gone and only the OOB Pi is routing.
+  "tests": [
+    {
+      "src": "tag:ci",
+      "accept": [
+        "10.10.1.42:8006",
+        "10.10.1.60:6443",
+      ],
     },
   ],
 }
