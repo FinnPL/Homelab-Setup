@@ -1,6 +1,7 @@
 {pkgs, ...}: {
   services.tailscale = {
     enable = true;
+    useRoutingFeatures = "server";
     authKeyFile = "/etc/tailscale/authkey";
     extraUpFlags = [
       "--accept-dns=false"

@@ -33,10 +33,7 @@ resource "tailscale_federated_identity" "minerva" {
 resource "tailscale_oauth_client" "vieta_operator" {
   description = "Vieta tailscale-operator"
   scopes      = ["auth_keys", "devices:core"]
-
-  # Both names until charts/tailscale has rolled out, so this module and the chart can
-  # be applied in either order without the operator losing the ability to mint keys.
-  tags = ["tag:vieta-k8s", "tag:k8s"]
+  tags        = ["tag:vieta-k8s"]
 }
 
 # Handed to the operator through Vault kv -> ESO
