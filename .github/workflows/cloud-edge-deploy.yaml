@@ -145,10 +145,9 @@ jobs:
 
       - name: Comment Terraform Plan
         if: github.event_name == 'pull_request'
-        uses: borchero/terraform-plan-comment@2d41e908725447b1677913001dfb92fa7010c025 # v3.1.0
+        uses: ./.github/actions/terraform-plan-comment
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          planfile: .planfile
           working-directory: ./cloud-edge
           header: "Terraform Plan (cloud-edge)"
 
