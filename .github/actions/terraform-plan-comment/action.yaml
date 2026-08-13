@@ -1,0 +1,119 @@
+name: "Terraform plan comment"
+description: "Post a terraform plan to the PR, degrading to a resource-list comment when the diff outgrows GitHub's comment and step-summary limits"
+
+inputs:
+  token:
+    description: "Token used to read and write PR comments"
+    required: true
+  header:
+    description: "Comment header; also the key an existing comment is matched on"
+    required: true
+  planfile:
+    description: "Saved plan to render, relative to working-directory"
+    default: ".planfile"
+  working-directory:
+    description: "Layer directory the plan belongs to"
+    default: "."
+  max-chars:
+    description: "Plan size above which only the resource list is posted. A comment caps at 65536 chars and a step summary at 1 MiB, so the full diff is split across several comments up to this point."
+    default: "200000"
+
+runs:
+  using: composite
+  steps:
+    - name: Measure plan
+      id: size
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        PLANFILE: ${{ inputs.planfile }}
+        MAX_CHARS: ${{ inputs.max-chars }}
+      run: |
+        set -euo pipefail
+
+        # The plan step is continue-on-error, so a failed plan leaves no planfile.
+        if [ ! -f "$PLANFILE" ]; then
+          echo "::notice::No planfile at $PLANFILE, skipping the plan comment"
+          echo "state=missing" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+
+        chars=$(terraform show -no-color "$PLANFILE" | wc -c)
+        if [ "$chars" -gt "$MAX_CHARS" ]; then
+          echo "::notice::Plan renders to $chars characters, posting the resource list only"
+          echo "state=oversized" >> "$GITHUB_OUTPUT"
+        else
+          echo "state=ok" >> "$GITHUB_OUTPUT"
+        fi
+        echo "chars=$chars" >> "$GITHUB_OUTPUT"
+
+    - name: Comment plan diff
+      if: steps.size.outputs.state == 'ok'
+      uses: borchero/terraform-plan-comment@f585438eda2fa77c6f275994b92aeccd86ef3542 # v3.2.0
+      with:
+        token: ${{ inputs.token }}
+        planfile: ${{ inputs.planfile }}
+        working-directory: ${{ inputs.working-directory }}
+        header: ${{ inputs.header }}
+
+    - name: Comment plan resource list
+      if: steps.size.outputs.state == 'oversized'
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        PLANFILE: ${{ inputs.planfile }}
+        HEADER: ${{ inputs.header }}
+        CHARS: ${{ steps.size.outputs.chars }}
+        PR_NUMBER: ${{ github.event.pull_request.number }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        set -euo pipefail
+
+        plan_json="$RUNNER_TEMP/plan.json"
+        body="$RUNNER_TEMP/plan-comment.md"
+        terraform show -json "$PLANFILE" > "$plan_json"
+
+        {
+          printf '## %s\n\n' "$HEADER"
+          jq -r '
+            def action_label:
+              if . == ["create"] then "✨ Create"
+              elif . == ["update"] then "♻️ Update"
+              elif . == ["delete"] then "🗑️ Delete"
+              elif . == ["delete","create"] or . == ["create","delete"] then "⚙️ Re-Create"
+              elif . == ["open"] then "👻 Ephemeral"
+              else null end;
+            [.resource_changes[]? | {l: (.change.actions | action_label), a: .address} | select(.l != null)]
+            | if length == 0 then "**→ No Resource Changes!**"
+              else "**→ " + (length | tostring) + " resource changes.**\n\n"
+                + ( group_by(.l)
+                    | map("### " + .[0].l + "\n\n" + (map("- `" + .a + "`") | join("\n")))
+                    | join("\n\n") )
+              end
+          ' "$plan_json"
+          printf '\n\n---\n\n'
+          printf '_Diff omitted: it renders to %s characters, past what GitHub accepts in a comment. Read it in the plan step of [this run](%s)._\n' \
+            "$CHARS" "$RUN_URL"
+        } > "$body"
+
+        cat "$body" >> "$GITHUB_STEP_SUMMARY"
+
+        if [ -z "${PR_NUMBER:-}" ]; then
+          exit 0
+        fi
+
+        # Reuse the first comment under this header; drop the rest, since the
+        # diff comment splits itself across several when it is long.
+        mapfile -t existing < <(
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | startswith(\"## ${HEADER}\")) | .id"
+        )
+        if [ "${#existing[@]}" -gt 0 ]; then
+          gh api -X PATCH "repos/${GITHUB_REPOSITORY}/issues/comments/${existing[0]}" -F body=@"$body" > /dev/null
+          for id in "${existing[@]:1}"; do
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/issues/comments/${id}" > /dev/null
+          done
+        else
+          gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" -F body=@"$body" > /dev/null
+        fi

@@ -20,6 +20,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
   id-token: write
 
 concurrency:
@@ -59,6 +60,14 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan -lock-timeout=10m -out .planfile -input=false
+
+      - name: Comment Terraform Plan
+        if: github.event_name == 'pull_request'
+        uses: ./.github/actions/terraform-plan-comment
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: ./tailscale
+          header: "Terraform Plan (tailscale)"
 
       - name: Terraform Apply
         if: |
