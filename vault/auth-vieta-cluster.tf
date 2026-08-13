@@ -4,7 +4,7 @@ resource "vault_jwt_auth_backend" "vieta_cluster" {
   path                   = "vieta-cluster"
   description            = "Vieta Kubernetes service-account tokens"
   bound_issuer           = var.vieta_apiserver_issuer
-  jwt_validation_pubkeys = [file("${path.module}/vieta-sa-pubkey.pem")]
+  jwt_validation_pubkeys = [chomp(file("${path.module}/vieta-sa-pubkey.pem"))]
 }
 
 resource "vault_jwt_auth_backend_role" "eso" {
