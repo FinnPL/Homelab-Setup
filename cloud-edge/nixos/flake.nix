@@ -2,7 +2,7 @@
   description = "NixOS configurations for Homelab cloud nodes";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/49ad59a0ee896dd6c1465910de9d7ecc64db93a1";
+    nixpkgs.url = "github:NixOS/nixpkgs/a896b510a0794f7bae5640bdb7412b60b0c5e5eb";
 
     disko = {
       url = "github:nix-community/disko/5ad85c82cc52264f4beddc934ba57f3789f28347";
