@@ -382,6 +382,13 @@ kube-prometheus-stack:
       timeoutSeconds: 10
       periodSeconds: 10
       failureThreshold: 3
+    startupProbe:
+      httpGet:
+        path: /api/health
+        port: grafana
+      timeoutSeconds: 10
+      periodSeconds: 10
+      failureThreshold: 60
     securityContext:
       runAsNonRoot: true
       runAsUser: 472
