@@ -297,3 +297,6 @@ Public-facing edge node on Oracle Cloud's Always Free ARM tier. Provides:
 |:------|:------|
 | `cloud-edge/*.tf` | OCI instance, VCN, security list, edge subnet/firewall, Cloudflare `*.cloud` and `*.relay` records |
 | `cloud-edge/nixos/` | NixOS flake (deployed via nixos-anywhere); full host configuration for the `oracle-edge` node |
+
+---
+MIT (c) 2024-2026 Finn Paul Lippok. See [LICENSE](LICENSE).
