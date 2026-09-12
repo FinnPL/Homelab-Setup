@@ -4,6 +4,7 @@ description: "Install a pinned Terraform and mint short-lived S3 state-backend c
 inputs:
   terraform_version:
     description: "Terraform version to install"
+    # renovate: datasource=github-releases depName=hashicorp/terraform extractVersion=^v(?<version>.*)$
     default: "1.10.0"
   aws-region:
     description: "AWS region of the state bucket"
