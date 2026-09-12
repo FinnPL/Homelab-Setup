@@ -1,0 +1,13 @@
+{{- if .Values.dormMonitoring.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dorm-exporter-certs
+  labels:
+    app.kubernetes.io/part-of: monitoring-stack
+data:
+{{- range $path, $_ := .Files.Glob "files/dorm-exporter-certs/*.pem" }}
+  {{ base $path }}: |
+{{ $.Files.Get $path | indent 4 }}
+{{- end }}
+{{- end }}
