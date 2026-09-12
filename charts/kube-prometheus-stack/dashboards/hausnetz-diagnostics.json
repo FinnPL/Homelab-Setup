@@ -23,7 +23,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Loss the probers actually measured. Compare the same target across sites: loss on one site only localises the fault to that building.",
+      "description": "Probes sent vs replies received. Targets probed at less than 0.1/s are excluded so a newly added or removed rung does not read as 100% loss while its window fills.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -86,7 +86,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "1 - (rate(smokeping_response_duration_seconds_count{job=\"smokeping\"}[5m]) / clamp_min(rate(smokeping_requests_total{job=\"smokeping\"}[5m]), 1))",
+          "expr": "1 - (rate(smokeping_response_duration_seconds_count{job=\"smokeping\"}[5m]) / (rate(smokeping_requests_total{job=\"smokeping\"}[5m]) > 0.1))",
           "legendFormat": "{{site}} -> {{host}}",
           "range": true,
           "refId": "A"
@@ -265,7 +265,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Traffic-normalised. Raw discard COUNT ranks busy ports highest; this ranks actually-faulty ones. Discards without errors = congestion.",
+      "description": "Discards per inbound unicast packet, counting only ports carrying >10 pkt/s. Without that floor an idle port with 0.3 discards/s ranks as '30%'.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -327,7 +327,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "topk(10, rate(ifInDiscards{job=\"network_switches\"}[15m]) / clamp_min(rate(ifHCInUcastPkts{job=\"network_switches\"}[15m]), 1))",
+          "expr": "topk(10, rate(ifInDiscards{job=\"network_switches\"}[15m]) / (rate(ifHCInUcastPkts{job=\"network_switches\"}[15m]) > 10))",
           "legendFormat": "{{switch_name}} {{ifName}} {{ifAlias}}",
           "range": true,
           "refId": "A"
@@ -341,7 +341,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "",
+      "description": "Only the v4.0 units populate dot3StatsTable, so this covers 4 of 12 switches and none of the known bad ports. Empty means no active FCS errors on those four.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -403,7 +403,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "topk(10, rate(dot3StatsFCSErrors{job=\"network_switches\"}[1h]))",
+          "expr": "topk(10, rate(dot3StatsFCSErrors{job=\"network_switches\"}[1h]) > 0)",
           "legendFormat": "{{switch_name}} {{ifName}} {{ifAlias}}",
           "range": true,
           "refId": "A"
@@ -417,7 +417,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Any nonzero value here is a duplex mismatch. Classic cause of 'link is up but slow and lossy'.",
+      "description": "dot3StatsLateCollisions reads zero on every switch in this fleet, so this panel cannot detect a duplex mismatch here. Kept only so the gap is visible.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -479,7 +479,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "topk(10, rate(dot3StatsLateCollisions{job=\"network_switches\"}[1h]))",
+          "expr": "topk(10, rate(dot3StatsLateCollisions{job=\"network_switches\"}[1h]) > 0)",
           "legendFormat": "{{switch_name}} {{ifName}} {{ifAlias}}",
           "range": true,
           "refId": "A"
@@ -493,7 +493,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "",
+      "description": "Only the v4.0 units populate dot3StatsTable. Historical symbol errors exist on R6S3/R6S4 but are not currently incrementing.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -555,7 +555,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "topk(10, rate(dot3StatsSymbolErrors{job=\"network_switches\"}[1h]))",
+          "expr": "topk(10, rate(dot3StatsSymbolErrors{job=\"network_switches\"}[1h]) > 0)",
           "legendFormat": "{{switch_name}} {{ifName}} {{ifAlias}}",
           "range": true,
           "refId": "A"
@@ -582,7 +582,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Inter-switch trunks are 1G. If T16 is daisy-chained, every downstream building's traffic funnels through each hop - saturation here explains evening complaints better than any single faulty port.",
+      "description": "Egress bits/s against negotiated link speed. Ports with no link are excluded - dividing by a clamped zero turned 344 down ports into six-figure percentages.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -645,7 +645,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "(rate(ifHCOutOctets{job=\"network_switches\", ifAlias!=\"\"}[5m]) * 8) / clamp_min(ifHighSpeed{job=\"network_switches\"} * 1000000, 1)",
+          "expr": "(rate(ifHCOutOctets{job=\"network_switches\", ifAlias!=\"\"}[5m]) * 8) / ((ifHighSpeed{job=\"network_switches\"} > 0) * 1000000)",
           "legendFormat": "{{switch_name}} {{ifName}} {{ifAlias}}",
           "range": true,
           "refId": "A"
@@ -1308,6 +1308,82 @@
         }
       ],
       "title": "CPU by hardware revision",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "p99 round-trip to each switch's control plane, labelled by hardware revision. Medians are ~2.5ms everywhere; only the tail diverges - v4.0 stays near 3-20ms while v2.0/v3.0 reach 39-156ms. Control-plane ping is weak evidence for user traffic, but it tracks CPU and revision exactly.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisPlacement": "auto",
+            "drawStyle": "line",
+            "fillOpacity": 8,
+            "lineWidth": 1,
+            "pointSize": 4,
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
+          },
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 85
+      },
+      "id": 210,
+      "options": {
+        "legend": {
+          "calcs": [
+            "max",
+            "mean"
+          ],
+          "displayMode": "table",
+          "placement": "right",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, sum by (le, host) (rate(smokeping_response_duration_seconds_bucket{job=\"smokeping\"}[10m]))) * on(host) group_left(switch_name, tpSysHardwareVersion) label_replace(tpSysHardwareVersion{job=\"network_switches\"}, \"host\", \"$1\", \"instance\", \"(.*)\")",
+          "legendFormat": "{{switch_name}} ({{tpSysHardwareVersion}})",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Switch ping p99 by hardware revision",
       "type": "timeseries"
     }
   ],
