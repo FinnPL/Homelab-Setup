@@ -3,6 +3,11 @@ crossplane:
   dedicatedPoolerPoolMode: transaction
 
 gatus:
+  image:
+    repository: twinproduction/gatus
+    # renovate: datasource=docker depName=twinproduction/gatus
+    tag: v5.36.0
+
   podSecurityContext:
     fsGroup: 65534
     runAsNonRoot: true
@@ -237,6 +242,20 @@ gatus:
             failure-threshold: 3
             success-threshold: 2
 
+      - name: "Proxmox VE"
+        group: "Servers"
+        url: "https://pve.lippok.dev"
+        interval: 60s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 2000"
+          - "[CERTIFICATE_EXPIRATION] > 24h"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
       # K8s Workers
       - name: "Talos Worker 1"
         group: "K8s Nodes"
@@ -325,6 +344,48 @@ gatus:
       - name: "Grafana"
         group: "Kubernetes"
         url: "https://grafana.lippok.dev"
+        interval: 60s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 2000"
+          - "[CERTIFICATE_EXPIRATION] > 24h"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Prometheus"
+        group: "Kubernetes"
+        url: "https://prometheus.lippok.dev/-/healthy"
+        interval: 60s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 2000"
+          - "[CERTIFICATE_EXPIRATION] > 24h"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "Alertmanager"
+        group: "Kubernetes"
+        url: "https://alerts.lippok.dev"
+        interval: 60s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CONNECTED] == true"
+          - "[RESPONSE_TIME] < 2000"
+          - "[CERTIFICATE_EXPIRATION] > 24h"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "IT-Tools"
+        group: "Kubernetes"
+        url: "https://it-tools.lippok.dev"
         interval: 60s
         conditions:
           - "[STATUS] == 200"
