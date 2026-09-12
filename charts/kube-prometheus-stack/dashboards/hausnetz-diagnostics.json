@@ -15,7 +15,7 @@
       },
       "id": 100,
       "panels": [],
-      "title": "Path quality - what users actually experience",
+      "title": "Path quality",
       "type": "row"
     },
     {
@@ -176,7 +176,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Jitter, not loss, is what breaks calls and games. A target can show 0% loss and still be unusable if this is spiky.",
+      "description": "Spread between the 99th and 50th percentile round-trip. A target can show zero loss and still be unusable if this is large.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -574,7 +574,7 @@
       },
       "id": 102,
       "panels": [],
-      "title": "Trunk saturation - the congestion hypothesis",
+      "title": "Trunk saturation",
       "type": "row"
     },
     {
@@ -664,7 +664,7 @@
       },
       "id": 200,
       "panels": [],
-      "title": "Control-plane load - why switch CPU sits at 40-56%",
+      "title": "Control-plane load",
       "type": "row"
     },
     {
@@ -672,7 +672,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Every broadcast frame is flooded to all ports and punted to the switch CPU. The prime suspect for the 40-56% CPU on the access switches.",
+      "description": "Inbound broadcast frames per second. Broadcast is flooded to every port and handled by the switch CPU.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -748,7 +748,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Unregistered multicast floods like broadcast unless IGMP snooping is on.",
+      "description": "Inbound multicast frames per second. Unregistered multicast is flooded like broadcast unless IGMP snooping is enabled.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -824,7 +824,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Compare against the broadcast/multicast panels. The S0 building routers idle near 10%; every access switch behind them runs 39-56%.",
+      "description": "Five-minute CPU average, one series per switch.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -892,7 +892,7 @@
           "refId": "A"
         }
       ],
-      "title": "Switch CPU (5m) - the symptom to correlate",
+      "title": "Switch CPU (5m)",
       "type": "timeseries"
     },
     {
@@ -900,7 +900,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Counts ifLastChange transitions. A port bouncing repeatedly is intermittent loss for exactly one room.",
+      "description": "Number of ifLastChange transitions in the window. A port changing state repeatedly means an unstable link on that port.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -976,7 +976,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "Ratio of flooded to total inbound frames. A rising share on one switch localises a storm.",
+      "description": "Flooded frames as a fraction of all inbound frames.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1052,7 +1052,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "ifInUnknownProtos: frames discarded for an unsupported protocol. Corroborates malformed or storm traffic.",
+      "description": "ifInUnknownProtos: frames discarded because the protocol is not supported.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1133,7 +1133,7 @@
       },
       "id": 207,
       "panels": [],
-      "title": "Hardware revision - the root cause of the CPU split",
+      "title": "Hardware and firmware revision",
       "type": "row"
     },
     {
@@ -1141,7 +1141,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "T1600G-52TS v4.0 idles near 10% CPU / 33% memory and populates dot3StatsTable. v2.0 and v3.0 sit at 39-49% CPU / 69-76% memory with no ethernet stats at all - independent of traffic, port count and site.",
+      "description": "Hardware revision, firmware build, CPU and memory for each switch.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1229,7 +1229,7 @@
           "refId": "C"
         }
       ],
-      "title": "Switch hardware revision vs CPU / memory",
+      "title": "Switch revision, CPU and memory",
       "type": "table"
     },
     {
@@ -1237,7 +1237,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "CPU grouped by hardware revision. The two bands should stay separated; a v4.0 unit climbing into the upper band means something new is wrong.",
+      "description": "Five-minute CPU average. One series per switch, with the hardware revision shown in the legend label; values are not aggregated by revision.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1307,7 +1307,7 @@
           "refId": "A"
         }
       ],
-      "title": "CPU by hardware revision",
+      "title": "Switch CPU (5m), revision in legend",
       "type": "timeseries"
     },
     {
@@ -1315,7 +1315,7 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "p99 round-trip to each switch's control plane, labelled by hardware revision. Medians are ~2.5ms everywhere; only the tail diverges - v4.0 stays near 3-20ms while v2.0/v3.0 reach 39-156ms. Control-plane ping is weak evidence for user traffic, but it tracks CPU and revision exactly.",
+      "description": "99th-percentile ICMP round-trip to each switch's own management address, one series per switch with the revision in the legend label. This address is answered by the switch CPU and is not the path user traffic takes through the switch.",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1383,7 +1383,7 @@
           "refId": "A"
         }
       ],
-      "title": "Switch ping p99 by hardware revision",
+      "title": "Switch ping p99, revision in legend",
       "type": "timeseries"
     }
   ],
