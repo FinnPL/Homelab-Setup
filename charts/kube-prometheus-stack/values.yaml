@@ -375,6 +375,13 @@ kube-prometheus-stack:
         memory: 128Mi
       limits:
         memory: 384Mi
+    readinessProbe:
+      httpGet:
+        path: /api/health
+        port: grafana
+      timeoutSeconds: 10
+      periodSeconds: 10
+      failureThreshold: 3
     securityContext:
       runAsNonRoot: true
       runAsUser: 472
