@@ -370,7 +370,8 @@
               }
             ]
           },
-          "unit": "pps"
+          "unit": "pps",
+          "noValue": "No active FCS errors on the four switches that report dot3StatsTable (the v4.0 units). The other eight do not expose this counter at all."
         },
         "overrides": []
       },
@@ -446,7 +447,8 @@
               }
             ]
           },
-          "unit": "pps"
+          "unit": "pps",
+          "noValue": "dot3StatsLateCollisions reads zero on every switch in this fleet, so this panel cannot detect a duplex mismatch here."
         },
         "overrides": []
       },
@@ -522,7 +524,8 @@
               }
             ]
           },
-          "unit": "pps"
+          "unit": "pps",
+          "noValue": "No active symbol errors on the four switches that report dot3StatsTable (the v4.0 units). The other eight do not expose this counter at all."
         },
         "overrides": []
       },
@@ -1227,6 +1230,19 @@
           "expr": "tpSysMonitorMemoryUtilization{job=\"network_switches\"}",
           "legendFormat": "",
           "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "format": "table",
+          "instant": true,
+          "expr": "tpSysSoftwareVersion{job=\"network_switches\"}",
+          "legendFormat": "",
+          "refId": "D"
         }
       ],
       "title": "Switch revision, CPU and memory",
