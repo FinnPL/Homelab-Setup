@@ -1,0 +1,23 @@
+{{- if .Values.dormMonitoring.enabled }}
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: {{ .Values.dormMonitoring.secret.name }}
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: vault-secret-store
+    kind: ClusterSecretStore
+  target:
+    name: {{ .Values.dormMonitoring.secret.name }}
+    creationPolicy: Owner
+    deletionPolicy: Retain
+  data:
+    - secretKey: password
+      remoteRef:
+        key: {{ .Values.dormMonitoring.secret.remoteKey }}
+        property: basic-auth-password
+        conversionStrategy: Default
+        decodingStrategy: None
+        metadataPolicy: None
+{{- end }}
