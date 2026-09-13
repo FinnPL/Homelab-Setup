@@ -236,6 +236,15 @@ kube-prometheus-stack:
               replacement: node_exporter
         - job_name: dorm-smokeping-t16
           scrape_interval: 15s
+          metric_relabel_configs:
+            - source_labels: [host]
+              regex: '137\.226\.(?:215|218)\.0*(\d+)'
+              target_label: room
+              replacement: '$1'
+            - source_labels: [host]
+              regex: '137\.226\.216\.(149)'
+              target_label: room
+              replacement: '$1'
           scheme: https
           tls_config:
             ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s16-cert.pem
@@ -250,6 +259,15 @@ kube-prometheus-stack:
               replacement: smokeping
         - job_name: dorm-smokeping-r6
           scrape_interval: 15s
+          metric_relabel_configs:
+            - source_labels: [host]
+              regex: '137\.226\.(?:215|218)\.0*(\d+)'
+              target_label: room
+              replacement: '$1'
+            - source_labels: [host]
+              regex: '137\.226\.216\.(149)'
+              target_label: room
+              replacement: '$1'
           scheme: https
           tls_config:
             ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s6-cert.pem
