@@ -238,7 +238,7 @@ kube-prometheus-stack:
           scrape_interval: 15s
           metric_relabel_configs:
             - source_labels: [host]
-              regex: '137\.226\.(?:215|218)\.0*(\d+)'
+              regex: '137\.226\.(?:215|217|218)\.0*(\d+)'
               target_label: room
               replacement: '$1'
             - source_labels: [host]
@@ -261,7 +261,7 @@ kube-prometheus-stack:
           scrape_interval: 15s
           metric_relabel_configs:
             - source_labels: [host]
-              regex: '137\.226\.(?:215|218)\.0*(\d+)'
+              regex: '137\.226\.(?:215|217|218)\.0*(\d+)'
               target_label: room
               replacement: '$1'
             - source_labels: [host]
