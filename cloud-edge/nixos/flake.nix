@@ -5,7 +5,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/49ad59a0ee896dd6c1465910de9d7ecc64db93a1";
 
     disko = {
-      url = "github:nix-community/disko/5ad85c82cc52264f4beddc934ba57f3789f28347";
+      url = "github:nix-community/disko/725ea35e410ad83be4931d1bff7e090eacaf3563";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
