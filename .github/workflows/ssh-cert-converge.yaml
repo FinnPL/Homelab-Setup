@@ -59,7 +59,7 @@ jobs:
             aws/creds/tfstate security_token | AWS_SESSION_TOKEN
 
       - name: Tailscale
-        uses: tailscale/github-action@306e68a486fd2350f2bfc3b19fcd143891a4a2d8 # v4
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4
         with:
           oauth-client-id: ${{ vars.TAILSCALE_CI_CLIENT_ID }}
           audience: api.tailscale.com/${{ vars.TAILSCALE_CI_CLIENT_ID }}
