@@ -286,6 +286,8 @@ alloy-agent:
 
 alloy-receiver:
   enabled: true
+  crds:
+    create: false
   global:
     podSecurityContext:
       fsGroup: 473

@@ -463,7 +463,7 @@ jobs:
           echo "Deploying NixOS config to $IP via nixos-rebuild remote mode ($ACTIVATION_MODE)..."
 
           # Keep deploy transport explicit and strict for all SSH calls done by nixos-rebuild.
-          export NIX_SSHOPTS="-i ~/.ssh/edge_key -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=yes"
+          export NIX_SSHOPTS="-i ~/.ssh/edge_key -o UserKnownHostsFile=~/.ssh/known_hosts -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=6"
 
           NIXPKGS_REV="$(jq -er '.nodes.nixpkgs.locked.rev' ./cloud-edge/nixos/flake.lock)"
 
