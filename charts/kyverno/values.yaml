@@ -1,4 +1,5 @@
 kyverno-policies:
+  policyType: ClusterPolicy
   validationFailureAction: Enforce
   background: false
   podSecurityStandard: restricted
