@@ -505,7 +505,6 @@ proxmoxExporter:
   enabled: true
   image:
     repository: prompve/prometheus-pve-exporter
-    # renovate: datasource=docker depName=prompve/prometheus-pve-exporter
     tag: 3.10.0
     pullPolicy: IfNotPresent
 
@@ -540,7 +539,6 @@ unifiExporter:
   enabled: true
   image:
     repository: ghcr.io/unpoller/unpoller
-    # renovate: datasource=docker depName=ghcr.io/unpoller/unpoller
     tag: v5.5.1
     pullPolicy: IfNotPresent
 

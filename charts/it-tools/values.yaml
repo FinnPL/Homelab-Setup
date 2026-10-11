@@ -2,7 +2,6 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/corentinth/it-tools
-  # renovate: datasource=docker depName=ghcr.io/corentinth/it-tools versioning=loose
   tag: 2024.10.22-7ca5933
   pullPolicy: IfNotPresent
 

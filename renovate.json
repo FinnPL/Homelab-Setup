@@ -2,146 +2,243 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
-    ":semanticCommits"
+    ":semanticCommits",
+    ":timezone(Europe/Berlin)",
+    "helpers:pinGitHubActionDigestsToSemver"
   ],
   "labels": [
     "dependencies"
   ],
   "nix": {
-    "enabled": true
-  },
-  "terraform": {
-    "enabled": true
+    "enabled": true,
+    "lockFileMaintenance": {
+      "enabled": true,
+      "schedule": [
+        "before 6am on monday"
+      ]
+    }
   },
   "pre-commit": {
     "enabled": true
-  },
-  "kubernetes": {
-    "managerFilePatterns": [
-      "/(^|/)apps/.+\\.ya?ml$/",
-      "/(^|/)charts/.+\\.ya?ml$/"
-    ]
   },
   "argocd": {
     "managerFilePatterns": [
       "/(^|/)apps/.+\\.ya?ml$/"
     ]
   },
+  "kubernetes": {
+    "managerFilePatterns": [
+      "/(^|/)charts/.+\\.ya?ml$/"
+    ]
+  },
+  "minimumReleaseAge": "3 days",
+  "platformAutomerge": false,
+  "separateMinorPatch": true,
+  "automergeSchedule": [
+    "after 8am and before 8pm"
+  ],
   "customManagers": [
     {
       "customType": "regex",
+      "description": "# renovate: annotation on the line directly above a `key: value` or `key = value` pin (tag, image:tag or image:tag@digest). Parameter order: datasource depName [registryUrl] [versioning] [extractVersion]",
       "managerFilePatterns": [
-        "/\\.tf$/",
-        "/\\.ya?ml$/"
+        "/\\.(tf|ya?ml|nix)$/"
       ],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>\\S+)(?:\\s+(?:repository-url|registryUrl)=(?<registryUrl>\\S+))?(?:\\s+versioning=(?<versioning>.*?))?(?:\\s+extractVersion=(?<extractVersion>.*?))?\\s+(?:default\\s*=\\s*\"|package:\\s*.*:)(?<currentValue>[^\"\\n]+)\"?",
-        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>\\S+)(?:\\s+(?:repository-url|registryUrl)=(?<registryUrl>\\S+))?(?:\\s+versioning=(?<versioning>.*?))?(?:\\s+extractVersion=(?<extractVersion>.*?))?\\s+tag\\s*:\\s*\"?(?<currentValue>[^\"\\n]+)\"?"
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+registryUrl=(?<registryUrl>\\S+))?(?:\\s+versioning=(?<versioning>\\S+))?(?:\\s+extractVersion=(?<extractVersion>\\S+))?\\s*\\n\\s*[\\w.-]+\\s*[:=]\\s*\"?(?:[^\\s\"@]+:)?(?<currentValue>[^\\s\"@]+)(?:@(?<currentDigest>sha256:[a-f0-9]{64}))?"
       ]
     },
     {
       "customType": "regex",
-      "description": "Track pinned nix run github refs in GitHub workflows",
+      "description": "Pinned `nix run github:owner/repo/<ref>` in workflows",
       "managerFilePatterns": [
         "/(^|/)\\.github/workflows/.+\\.ya?ml$/"
       ],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+nix\\s+run\\s+github:[^/\\s]+/[^/\\s]+/(?<currentValue>[^\\s#]+)(?:#[^\\s]+)?"
-      ]
-    },
-    {
-      "customType": "regex",
-      "description": "Track Docker image tag+digest in NixOS modules (image = \"name:tag@sha256:...\")",
-      "managerFilePatterns": [
-        "/\\.nix$/"
-      ],
-      "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+\\w+\\s*=\\s*\"[^\"]+?:(?<currentValue>[^@\":/]+)(?:@(?<currentDigest>sha256:[a-f0-9]+))?\";?"
-      ]
-    },
-    {
-      "customType": "regex",
-      "description": "Track CLI tool versions pinned as env vars in GitHub workflows",
-      "managerFilePatterns": [
-        "/(^|/)\\.github/workflows/.+\\.ya?ml$/"
-      ],
-      "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+\\w+:\\s*\"?(?<currentValue>[^\"\\n]+)\"?"
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(?:\\s+versioning=(?<versioning>\\S+))?\\s+nix\\s+run\\s+github:[^/\\s]+/[^/\\s]+/(?<currentValue>[^\\s#]+)"
       ]
     }
   ],
   "packageRules": [
     {
-      "description": "Group Terraform provider updates (excluding infrastructure-critical)",
+      "description": "Registries without release timestamps (only Docker Hub has them) would be held forever under timestamp-required, so they skip the release-age wait",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "/^(ghcr\\.io|quay\\.io|registry\\.k8s\\.io|xpkg\\.crossplane\\.io|xpkg\\.upbound\\.io)//"
+      ],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": "Same for flake inputs (git refs carry no release timestamp)",
+      "matchManagers": [
+        "nix"
+      ],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": "Automerge patches and digests once past minimumReleaseAge and every reported check is green",
+      "matchUpdateTypes": [
+        "patch",
+        "digest",
+        "pinDigest"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Merging here is an unattended apply/deploy, or the bump is not rendered by charts-validate",
+      "matchFileNames": [
+        "0[0-3]-*/**",
+        "cloud-edge/**",
+        "vault/**",
+        "tailscale/**",
+        "apps/**"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "CI tooling, batched weekly",
+      "groupName": "ci tooling",
+      "matchFileNames": [
+        ".github/**",
+        ".pre-commit-config.yaml"
+      ],
+      "schedule": [
+        "before 6am on monday"
+      ]
+    },
+    {
+      "matchFileNames": [
+        ".github/**",
+        ".pre-commit-config.yaml"
+      ],
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "automerge": true
+    },
+    {
+      "description": "Actions run with repo secrets: longer cooldown",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "A new SHA behind an existing tag is what a tag hijack looks like, and its git timestamp is attacker-controlled, so a human reviews every action digest change",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchUpdateTypes": [
+        "digest"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "setup-terraform's built-in detection writes a v-prefixed version; the annotation is the source of truth",
+      "matchManagers": [
+        "github-actions"
+      ],
+      "matchDepNames": [
+        "terraform"
+      ],
+      "enabled": false
+    },
+    {
+      "description": "Terraform CLI: lint and apply move together",
+      "groupName": "terraform cli",
+      "matchDepNames": [
+        "hashicorp/terraform"
+      ],
+      "automerge": false
+    },
+    {
+      "description": "Providers grouped per root, so one root's failed plan blocks only itself",
       "matchManagers": [
         "terraform"
+      ],
+      "matchDepTypes": [
+        "provider",
+        "required_provider"
       ],
       "groupName": "terraform providers",
+      "additionalBranchPrefix": "{{parentDir}}-",
+      "commitMessageSuffix": "({{parentDir}})"
+    },
+    {
+      "description": "The CLI lives in .github and would otherwise inherit the weekly ci tooling schedule",
+      "groupName": "kyverno",
+      "matchDepNames": [
+        "/kyverno/"
+      ],
+      "schedule": [
+        "at any time"
+      ],
+      "automerge": false
+    },
+    {
+      "groupName": "crossplane",
+      "matchDepNames": [
+        "/crossplane/"
+      ],
+      "automerge": false
+    },
+    {
+      "groupName": "tailscale",
       "matchPackageNames": [
-        "!/talos/",
-        "!/proxmox/"
+        "tailscale/tailscale",
+        "tailscale-operator"
+      ],
+      "automerge": false,
+      "additionalBranchPrefix": "",
+      "commitMessageSuffix": ""
+    },
+    {
+      "groupName": "monitoring",
+      "matchFileNames": [
+        "charts/kube-prometheus-stack/**",
+        "charts/loki/**",
+        "charts/alloy/**"
       ]
     },
     {
-      "description": "Talos provider",
-      "matchManagers": [
-        "terraform"
-      ],
-      "labels": [
-        "dependencies",
-        "infrastructure-critical"
-      ],
+      "groupName": "cilium + gateway-api",
       "matchPackageNames": [
-        "/talos/"
-      ]
+        "cilium",
+        "kubernetes-sigs/gateway-api"
+      ],
+      "automerge": false
     },
     {
-      "description": "Proxmox provider",
-      "matchManagers": [
-        "terraform"
-      ],
-      "labels": [
-        "dependencies",
-        "infrastructure-critical"
-      ],
+      "description": "Platform core: Talos OS, Talos provider and Kubernetes share one support matrix",
+      "groupName": "talos + kubernetes",
       "matchPackageNames": [
-        "/proxmox/"
-      ]
-    },
-    {
-      "description": "Helm charts",
-      "matchManagers": [
-        "terraform",
-        "argocd"
-      ],
-      "matchDatasources": [
-        "helm"
-      ],
-      "groupName": "helm charts",
-      "labels": [
-        "dependencies",
-        "helm"
-      ]
-    },
-    {
-      "description": "Kubernetes version",
-      "matchPackageNames": [
+        "siderolabs/talos",
         "kubernetes/kubernetes"
       ],
-      "labels": [
-        "dependencies",
+      "automerge": false,
+      "addLabels": [
+        "infrastructure-critical"
+      ],
+      "additionalBranchPrefix": "",
+      "commitMessageSuffix": ""
+    },
+    {
+      "matchPackageNames": [
+        "bpg/proxmox"
+      ],
+      "automerge": false,
+      "addLabels": [
         "infrastructure-critical"
       ]
     },
     {
-      "description": "Talos OS version",
       "matchPackageNames": [
-        "siderolabs/talos"
+        "ghcr.io/corentinth/it-tools"
       ],
-      "labels": [
-        "dependencies",
-        "infrastructure-critical"
-      ]
+      "versioning": "loose"
     },
     {
       "description": "Pin digests for Docker images referenced from NixOS modules",

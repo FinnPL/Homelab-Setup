@@ -5,7 +5,6 @@ crossplane:
 gatus:
   image:
     repository: twinproduction/gatus
-    # renovate: datasource=docker depName=twinproduction/gatus
     tag: v5.37.0
 
   podSecurityContext:
