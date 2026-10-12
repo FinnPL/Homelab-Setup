@@ -19,6 +19,8 @@ A **Tecmojo 10" 9U**, with the logo covered over with vinyl for a cleaner look (
   </tr>
 </table>
 
+*The photos predate the JetKVM.*
+
 ---
 
 ## Bill of materials
@@ -30,6 +32,7 @@ A **Tecmojo 10" 9U**, with the logo covered over with vinyl for a cleaner look (
 | Intel NUC (7th gen) | Proxmox host (Talos CP and other VMs, LXC)  | 1 |
 | Raspberry Pi 4 | Talos Workers | 3 |
 | Raspberry Pi 3 | **Out-of-band**: Tailscale entry for recovery if the cluster goes down | 2 |
+| JetKVM (PoE) + DC Power Extension | **Out-of-band**: KVM for the NUC, can hard power-cycle it | 1 |
 
 ### Network
 
@@ -61,7 +64,7 @@ A **Tecmojo 10" 9U**, with the logo covered over with vinyl for a cleaner look (
 | 3 | Keystone patch panel |
 | 4 | USW Ultra |
 | 5–6 | Pi cluster: 3x Pi4 + 2x Pi3 in the snap-in system (2U) |
-| 7–8 | Intel NUC in the snap-in system (2U) |
+| 7–8 | Intel NUC + JetKVM in the snap-in system (2U) |
 | 9 | Free |
 
 
@@ -69,7 +72,6 @@ A **Tecmojo 10" 9U**, with the logo covered over with vinyl for a cleaner look (
 
 ## Planned additions
 
-- **JetKVM (PoE version)** still trying to get hold of one; it'll sit next to the NUC.
 - **Spare 1U → NTP?** Leaning toward a GPS-disciplined oscillator for a NTP server with holdover. Inspired by [DIY Atomic Clock mini rack (#315)](https://github.com/geerlingguy/mini-rack/issues/315).
 
 ---
@@ -82,7 +84,7 @@ All 10" rack prints from MakerWorld, printed in ASA:
 - [USW Ultra mount](https://makerworld.com/en/models/773130-unifi-usw-ultra-10-inch-rack-mount)
 - [USW Ultra 210 W PSU mount](https://makerworld.com/en/models/1295688-unifi-usw-ultra-210w-power-supply-10-rack-mount)
 - [UCG-Max 1U mount](https://makerworld.com/en/models/1175026-10in-mini-rack-ucg-max-1u-mount) (fits the UCG-Ultra)
-- [8-bay Raspberry Pi cluster snap-in system](https://makerworld.com/en/models/2314737-rack-snap-in-system-8-bay-raspberry-pi-cluster)
+- [8-bay Raspberry Pi cluster snap-in system](https://makerworld.com/en/models/2314737-rack-snap-in-system-8-bay-raspberry-pi-cluster) ([JetKVM profile](https://makerworld.com/en/models/2314737-rack-snap-in-system-8-bay-raspberry-pi-cluster#profileId-2804866))
 - [2U Intel NUC mount](https://makerworld.com/en/models/2437633-10-inch-server-rack-2u-intel-nuc-6cay)
 - [2U 80 mm fan blank panel (bridged remix)](https://makerworld.com/en/models/2062371-10-inch-2u-80mm-fan-blank-panel-bridged-remix)
 - [Keystone patch panel ("Bonanza")](https://makerworld.com/en/models/2875409-10-inch-rack-patch-panel-keystone-bonanza)
