@@ -1,5 +1,5 @@
 _:
-# Wildcard cert for *.cloud.lippok.dev via Let's Encrypt DNS-01.
+# Wildcard cert for *.cloud.lippok.dev, and lippok.dev, via Let's Encrypt DNS-01.
 # CI writes the Cloudflare API token to /etc/cloudflare/credentials.
 # The LE account email comes from acme-email.nix (CI rewrites it)
 {
@@ -12,7 +12,7 @@ _:
 
     certs."cloud.lippok.dev" = {
       domain = "cloud.lippok.dev";
-      extraDomainNames = ["*.cloud.lippok.dev"];
+      extraDomainNames = ["*.cloud.lippok.dev" "lippok.dev"];
       dnsProvider = "cloudflare";
       environmentFile = "/etc/cloudflare/credentials";
       group = "haproxy";

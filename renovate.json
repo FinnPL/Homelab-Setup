@@ -196,6 +196,13 @@
       "commitMessageSuffix": ""
     },
     {
+      "description": "Homepage npm deps: Astro and its integrations have to move together",
+      "groupName": "homepage",
+      "matchFileNames": [
+        "homepage/**"
+      ]
+    },
+    {
       "groupName": "monitoring",
       "matchFileNames": [
         "charts/kube-prometheus-stack/**",

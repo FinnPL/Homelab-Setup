@@ -1,0 +1,148 @@
+---
+import Base from "../layouts/Base.astro";
+import Status from "../components/Status.astro";
+import { projects } from "../lib/projects";
+import { IDENTITY } from "../lib/identity";
+import { stamp } from "../lib/build";
+
+const { featured, fetchedAt } = await projects();
+const shown = featured.filter((p) => p.home !== false);
+// Small cards split the row evenly however many there are, so the grid never ends in a hole.
+const small = shown.filter((p) => !p.image).length;
+---
+
+<Base
+  title={IDENTITY.name}
+  description="Computer science student at RWTH Aachen. Homelab infrastructure, networks, and the CI that deploys them."
+>
+  <div class="wrap hero">
+    <h1>{IDENTITY.name}</h1>
+    <p class="lede">
+      I study computer science at RWTH Aachen and run the networks for two student dorms.
+      In my free time I tinker with a three-site homelab running Kubernetes, and
+      the CI that deploys it.
+    </p>
+  </div>
+
+  <section class="wrap work">
+    <div class="work-head">
+      <span class="eyebrow" style="margin:0">Selected work</span>
+      <a href="/projects">All projects →</a>
+    </div>
+
+    <div class="grid" data-small={small}>
+      {shown.map((p) => (
+        <article class={p.image ? "card feature" : "card"}>
+          {p.image && (
+            <a class="shot" href={p.page?.href ?? `https://github.com/${p.slug}`}>
+              <img
+                src={p.image.src}
+                alt={p.image.alt}
+                width={p.image.width}
+                height={p.image.height}
+                loading="eager"
+                decoding="async"
+              />
+            </a>
+          )}
+          <div class="body">
+            <h2>
+              <a href={p.page?.href ?? `https://github.com/${p.slug}`}>{p.title}</a>
+            </h2>
+            <p class="muted">{p.summary}</p>
+            <div class="chips">
+              {p.topics.map((s) => <span class="tag">{s}</span>)}
+            </div>
+            {p.page && <p class="more"><a href={p.page.href}>What runs on it →</a></p>}
+          </div>
+        </article>
+      ))}
+    </div>
+    <p class="sourced" style="margin-top:12px">
+      from the GitHub API · <time datetime={fetchedAt.toISOString()}>{stamp(fetchedAt)}</time>
+    </p>
+  </section>
+
+  <div class="wrap" style="margin-top:56px">
+    <Status />
+  </div>
+</Base>
+
+<style>
+  .hero { padding-block: 76px 34px; }
+  .hero .lede { margin-top: 20px; font-size: 1.2rem; max-width: 58ch; }
+
+  .work-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 16px; margin-bottom: 20px;
+  }
+  .work-head a { font-family: var(--mono); font-size: 0.8rem; text-decoration: none; }
+  .work-head a:hover { text-decoration: underline; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 22px;
+  }
+
+  .card {
+    grid-column: span 6;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    background: var(--paper);
+    overflow: hidden;
+  }
+
+  .card .body { padding: 18px 20px 20px; }
+  .card.feature .body { padding: 22px 24px 24px; }
+
+  .card h2 { font-size: 1.05rem; }
+  .card.feature h2 { font-size: 1.35rem; }
+  .card h2 a { color: var(--ink); text-decoration: none; }
+  .card h2 a:hover { color: var(--accent); }
+
+  .card p { margin: 8px 0 14px; font-size: 0.93rem; }
+  .card.feature p { font-size: 1rem; max-width: 70ch; }
+
+  .shot {
+    display: grid; place-items: center;
+    background: var(--paper-2);
+    border-bottom: 1px solid var(--rule);
+    padding: 14px;
+  }
+  .shot img { display: block; width: 100%; height: auto; max-height: 46vh; object-fit: contain; }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .more { margin: 16px 0 0 !important; font-family: var(--mono); font-size: 0.8rem; }
+  .more a { text-decoration: none; }
+  .more a:hover { text-decoration: underline; }
+
+  /* Wide enough for the diagram to sit beside its text instead of stacking above it. */
+  @media (min-width: 900px) {
+    .card.feature { flex-direction: row; align-items: stretch; }
+    .card.feature .shot {
+      flex: 0 0 57%;
+      border-bottom: 0;
+      border-right: 1px solid var(--rule);
+      padding: 18px;
+    }
+    .card.feature .shot img { max-height: 330px; }
+    .card.feature .body {
+      flex: 1 1 0;
+      display: flex; flex-direction: column; justify-content: center;
+      padding: 26px 28px;
+    }
+    .card.feature p { max-width: none; }
+  }
+
+  @media (min-width: 561px) and (max-width: 860px) {
+    .card:not(.feature) { grid-column: span 3; }
+  }
+  @media (min-width: 861px) {
+    .card:not(.feature) { grid-column: span 2; }
+    .grid[data-small="2"] .card:not(.feature) { grid-column: span 3; }
+    .grid[data-small="1"] .card:not(.feature) { grid-column: span 6; }
+  }
+</style>

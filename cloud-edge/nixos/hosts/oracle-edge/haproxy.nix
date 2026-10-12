@@ -1,6 +1,7 @@
 _:
 #   *.relay.lippok.dev:   SNI passthrough to homelab (E2E TLS preserved)
 #   *.cloud.lippok.dev:   terminate locally, host-route to a cloud-edge backend
+#   lippok.dev:           terminate locally, serve the static homepage
 {
   # Wait for acme
   systemd.services.haproxy = {
@@ -33,6 +34,7 @@ _:
 
         use_backend homelab_blocky if { req.ssl_sni -i dns.relay.lippok.dev }
         use_backend local_https    if { req.ssl_sni -m end -i .cloud.lippok.dev }
+        use_backend local_https    if { req.ssl_sni -i lippok.dev }
 
         tcp-request content reject
 
@@ -60,12 +62,17 @@ _:
         http-request set-header X-Forwarded-Port 443
 
         use_backend myip if { hdr(host) -i dns-check.cloud.lippok.dev }
+        use_backend homepage if { hdr(host) -i lippok.dev }
 
         default_backend cloud_unknown
 
       backend myip
         mode http
         server myip 127.0.0.1:18966 check inter 10s
+
+      backend homepage
+        mode http
+        server nginx 127.0.0.1:8080 check inter 10s
 
       backend cloud_unknown
         mode http

@@ -4,12 +4,19 @@ on:
   pull_request:
     paths:
       - "cloud-edge/**"
+      - "homepage/**"
+      - "docs/diagrams/**"
       - ".github/workflows/cloud-edge-deploy.yaml"
   push:
     branches: [main]
     paths:
       - "cloud-edge/**"
+      - "homepage/**"
+      - "docs/diagrams/**"
       - ".github/workflows/cloud-edge-deploy.yaml"
+  # Rebuilds the homepage to get new GitHub repo metadata, charts, Terraform.
+  schedule:
+    - cron: "23 4 * * *"
   workflow_dispatch:
     inputs:
       apply:
@@ -43,6 +50,10 @@ on:
         description: "Optional Terraform resource address to force-replace on apply. Only honored when apply=true."
         type: string
         default: ""
+      deploy_homepage:
+        description: "Build and deploy the homepage"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -57,9 +68,11 @@ jobs:
       terraform: ${{ steps.filter.outputs.terraform }}
       nixos: ${{ steps.filter.outputs.nixos }}
       workflow_logic: ${{ steps.filter.outputs.workflow_logic }}
+      homepage: ${{ steps.filter.outputs.homepage }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        if: github.event_name != 'schedule'
         id: filter
         with:
           filters: |
@@ -71,6 +84,9 @@ jobs:
             workflow_logic:
               - '.github/workflows/cloud-edge-deploy.yaml'
               - 'cloud-edge/scripts/gha/**'
+            homepage:
+              - 'homepage/**'
+              - 'docs/diagrams/**'
 
   terraform:
     needs: changes
@@ -494,3 +510,94 @@ jobs:
         env:
           IP: ${{ steps.edge.outputs.ip }}
         run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh wait-for-wireguard
+
+  homepage-build:
+    needs: changes
+    if: |
+      needs.changes.outputs.homepage == 'true' ||
+      github.event_name == 'schedule' ||
+      (github.event_name == 'workflow_dispatch' && inputs.deploy_homepage)
+    name: "Homepage Build"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./homepage
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: homepage/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run check
+
+      - name: Build
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: npm run build
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: homepage-dist
+          path: homepage/dist
+          retention-days: 1
+
+  deploy-homepage:
+    needs: [changes, terraform, deploy-nixos, homepage-build]
+    if: |
+      always() &&
+      needs['homepage-build'].result == 'success' &&
+      (needs.terraform.result == 'success' || needs.terraform.result == 'skipped') &&
+      (needs['deploy-nixos'].result == 'success' || needs['deploy-nixos'].result == 'skipped') &&
+      (
+        (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+        github.event_name == 'schedule' ||
+        github.event_name == 'workflow_dispatch'
+      )
+    name: "Homepage Deploy"
+    runs-on: ubuntu-latest
+    environment: cloud-edge
+    concurrency:
+      group: nixos-cloud-edge
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: homepage-dist
+          path: homepage/dist
+
+      - name: Mint edge SSH certificate
+        uses: ./.github/actions/vault-ssh-client-cert
+        with:
+          role: oci-edge
+          key-path: "~/.ssh/edge_key"
+
+      - name: Setup Terraform + AWS
+        uses: ./.github/actions/tf-aws-setup
+        with:
+          vault-role: cloud-edge
+
+      - name: Prepare edge host context
+        id: edge
+        working-directory: ./cloud-edge
+        env:
+          TF_IN_AUTOMATION: "true"
+          TF_INPUT: "false"
+        run: bash ./scripts/gha/cloud-edge-workflow.sh prepare-edge-host
+
+      - name: Sync site
+        env:
+          IP: ${{ steps.edge.outputs.ip }}
+        run: |
+          rsync -rlt --delete --delay-updates --chmod=D755,F644 --exclude=/status.json \
+            -e "ssh -i $HOME/.ssh/edge_key -o BatchMode=yes -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o StrictHostKeyChecking=yes" \
+            homepage/dist/ "root@$IP:/var/www/lippok.dev/"

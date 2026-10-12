@@ -13,6 +13,7 @@
     ./haproxy.nix
     ./acme.nix
     ./acme-email.nix
+    ./homepage.nix
     ./myip.nix
     ./container-egress.nix
   ];

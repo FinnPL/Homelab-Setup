@@ -1,0 +1,112 @@
+---
+import "../styles/global.css";
+import { IDENTITY, PROFILES, personJsonLd } from "../lib/identity";
+import { BUILD, stamp } from "../lib/build";
+
+interface Props {
+  title: string;
+  description: string;
+  heading?: string;
+  tagline?: string;
+  /** Renders a breadcrumb above the heading on pages that sit under another section. */
+  parent?: { href: string; label: string };
+}
+
+const { title, description, heading, tagline, parent } = Astro.props;
+const path = Astro.url.pathname.replace(/\.html$/, "").replace(/\/$/, "") || "/";
+
+const nav: { href: string; label: string; children?: { href: string; label: string }[] }[] = [
+  { href: "/projects", label: "projects", children: [{ href: "/homelab", label: "homelab" }] },
+  { href: "/writing", label: "writing" },
+  { href: "/about", label: "about" },
+];
+---
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={IDENTITY.name} />
+    <meta property="og:url" content={new URL(path === "/" ? "/" : path, Astro.site)} />
+    <meta property="og:image" content={new URL("/og.png", Astro.site)} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={`${IDENTITY.name}, ${IDENTITY.headline}`} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="canonical" href={new URL(path === "/" ? "/" : path, Astro.site)} />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="author" content={IDENTITY.name} />
+    <script type="application/ld+json" set:html={JSON.stringify(personJsonLd())} is:inline />
+  </head>
+
+  <body>
+    <header class="site-head">
+      <div class="wrap">
+        <a class="brand" href="/" rel="me">finn lippok<span class="tld">.dev</span></a>
+        <nav class="nav">
+          {nav.map((n) => {
+            const inSection = path === n.href || (n.children ?? []).some((c) => c.href === path);
+            return n.children ? (
+              <span class="nav-group" data-open={inSection ? "" : undefined}>
+                <a href={n.href} aria-current={path === n.href ? "page" : undefined}>{n.label}</a>
+                {n.children.map((c) => (
+                  <>
+                    <span class="nav-sep" aria-hidden="true">/</span>
+                    <a class="nav-sub" href={c.href} aria-current={path === c.href ? "page" : undefined}>
+                      {c.label}
+                    </a>
+                  </>
+                ))}
+              </span>
+            ) : (
+              <a href={n.href} aria-current={path === n.href ? "page" : undefined}>{n.label}</a>
+            );
+          })}
+        </nav>
+      </div>
+    </header>
+
+    {heading && (
+      <div class="wrap page-head">
+        {parent && (
+          <nav class="crumb" aria-label="Breadcrumb">
+            <a href={parent.href}>{parent.label}</a>
+            <span aria-hidden="true">/</span>
+            <span>{heading}</span>
+          </nav>
+        )}
+        <div class="head-row">
+          <h1>{heading}</h1>
+          <slot name="head-aside" />
+        </div>
+        {tagline && <p class="lede" style="margin-top:14px">{tagline}</p>}
+      </div>
+    )}
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="site-foot">
+      <div class="wrap">
+        <span>Aachen, Germany</span>
+        <a href="/datenschutz">Datenschutz</a>
+        <span class="spacer"></span>
+        <a href={`mailto:${IDENTITY.email}`} rel="me">{IDENTITY.email}</a>
+        {PROFILES.map((p) => <a href={p.href} rel="me">{p.label}</a>)}
+      </div>
+      <div class="wrap build">
+        <span>
+          Built {BUILD.runUrl ? <>by <a href={BUILD.runUrl}>GitHub Actions</a></> : "locally"}
+          {BUILD.sha && <> from <a href={BUILD.commitUrl}>{BUILD.sha}</a></>}
+          {" · "}<time datetime={BUILD.at.toISOString()}>{stamp(BUILD.at)}</time>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

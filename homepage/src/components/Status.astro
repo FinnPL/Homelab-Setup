@@ -1,0 +1,155 @@
+---
+---
+
+<section class="status" id="status" hidden>
+  <div class="status-head">
+    <span class="eyebrow" style="margin:0">Status</span>
+    <span class="dim small" id="status-stamp"></span>
+  </div>
+  <ul class="plain status-rows" id="status-rows"></ul>
+</section>
+
+<style is:global>
+  #status {
+    border: 1px solid var(--rule);
+    border-radius: 9px;
+    background: var(--paper-2);
+    padding: 18px 20px 14px;
+  }
+  #status .status-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; margin-bottom: 16px;
+  }
+  #status .status-rows { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
+  #status .status-row {
+    display: grid;
+    grid-template-columns: 90px minmax(0, 1fr) 104px;
+    align-items: center;
+    gap: 16px;
+  }
+  #status .status-row .name { font-size: 0.92rem; }
+  #status .bars { display: flex; gap: 2px; height: 22px; min-width: 0; }
+  #status .bars i {
+    flex: 1 1 0; min-width: 0;
+    border-radius: 2px;
+    background: var(--ok); opacity: 0.5;
+  }
+  #status .bars i.down { background: var(--warn); opacity: 1; }
+  #status .bars i.none { background: var(--rule-2); opacity: 0.6; }
+  #status .pill {
+    justify-self: end;
+    font-family: var(--mono); font-size: 0.7rem;
+    padding: 3px 9px; border-radius: 20px;
+    background: var(--ok-dim); color: var(--ok);
+    white-space: nowrap;
+  }
+  #status .pill.bad { background: var(--warn-dim); color: var(--warn); }
+  #status .pill.stale { background: var(--rule); color: var(--ink-3); }
+  #status-stamp.stale { color: var(--warn); }
+
+  #status .bars i { position: relative; }
+  #status .bars i::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 7px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 5px 9px;
+    border-radius: 5px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    color: var(--ink-2);
+    font-family: var(--sans);
+    font-style: normal;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 90ms ease;
+    z-index: 5;
+  }
+  #status .bars i:hover { opacity: 1; }
+  #status .bars i:hover::after { opacity: 1; }
+
+  @media (max-width: 560px) {
+    #status .status-row { grid-template-columns: 1fr auto; gap: 8px 12px; }
+    #status .bars { grid-column: 1 / -1; }
+  }
+</style>
+
+<script is:inline>
+  (async () => {
+    const root = document.getElementById("status");
+    try {
+      const res = await fetch("/status.json", { cache: "no-store" });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!Array.isArray(data.rows) || data.rows.length === 0) return;
+
+      // The edge rewrites status.json every 5 minutes. Missing three runs means the homelab or the
+      // path to it is down, which is exactly when the last good state must not be shown as current.
+      const STALE_MS = 15 * 60 * 1000;
+      const generated = data.generated ? new Date(data.generated) : null;
+      const stale = !generated || Date.now() - generated.getTime() > STALE_MS;
+
+      const list = document.getElementById("status-rows");
+      const duration = (m) =>
+        m >= 60 ? Math.floor(m / 60) + "h " + (m % 60) + "min" : m + " min";
+      for (const row of data.rows) {
+        const days = Array.isArray(row.days) ? row.days.slice(-30) : [];
+        const li = document.createElement("li");
+        li.className = "status-row";
+
+        const name = document.createElement("span");
+        name.className = "name";
+        name.textContent = row.label;
+
+        const bars = document.createElement("span");
+        bars.className = "bars";
+        const keys = Array.isArray(data.keys) ? data.keys.slice(-days.length) : [];
+        const minutes = Array.isArray(row.minutes) ? row.minutes.slice(-days.length) : [];
+        days.forEach((d, i) => {
+          const bar = document.createElement("i");
+          if (d === 0) bar.className = "down";
+          else if (d !== 1) bar.className = "none";
+
+          const when = keys[i]
+            ? new Date(keys[i] + "T12:00:00").toLocaleDateString("en-GB", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              })
+            : null;
+          const state =
+            d === 0 ? "down " + duration(minutes[i] ?? 0) : d === 1 ? "no outage" : "no data";
+          bar.dataset.tip = when ? when + " · " + state : state;
+          bars.appendChild(bar);
+        });
+
+        const pill = document.createElement("span");
+        pill.className = stale ? "pill stale" : row.state === "ok" ? "pill" : "pill bad";
+        pill.textContent = stale ? "Unknown" : row.state === "ok" ? "Operational" : "Degraded";
+
+        li.append(name, bars, pill);
+        list.appendChild(li);
+      }
+
+      if (generated) {
+        const stamp = document.getElementById("status-stamp");
+        const when = generated.toLocaleString("en-GB", {
+          day: "numeric",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+          hourCycle: "h23",
+        });
+        stamp.textContent = (stale ? "no update since " : "as of ") + when;
+        if (stale) stamp.classList.add("stale");
+      }
+      root.hidden = false;
+    } catch {
+      return;
+    }
+  })();
+</script>
