@@ -5,7 +5,7 @@
     wg_peer_pubkey: ""
     wg_peer_endpoint: ""
     cloud_vcn_cidr: ""
-    cloud_edge_allowed_dest: ""
+    cloud_edge_allowed_dests: []
     cloud_edge_allowed_port: ""
     vault_ssh_host_dns_name: "mesh-router.athena"
   pre_tasks:

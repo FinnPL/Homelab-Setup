@@ -246,17 +246,18 @@ variable "cloud_vcn_cidr" {
   default     = "10.80.1.0/24"
 }
 
-# The cloud-edge only ever proxies to the Blocky/DNS Gateway VIP. That VIP is
-# pinned by charts/dns/templates/service.yaml, not derivable from state here,
-# and is mirrored in cloud-edge/nixos/hosts/oracle-edge/{haproxy,wireguard}.nix.
-variable "cloud_edge_allowed_dest" {
-  description = "Single homelab IP the cloud-edge may reach across the WG tunnel"
-  type        = string
-  default     = "10.10.1.201"
+# The cloud-edge reaches exactly two VIPs: Blocky (pinned by charts/dns/templates/service.yaml),
+# which HAProxy relays DoH to, and the main Gateway, where it reads Gatus for the homepage's
+# status.json. Neither is derivable from state here; both are mirrored in
+# cloud-edge/nixos/hosts/oracle-edge/wireguard.nix.
+variable "cloud_edge_allowed_dests" {
+  description = "Homelab IPs the cloud-edge may reach across the WG tunnel"
+  type        = list(string)
+  default     = ["10.10.1.201", "10.10.1.200"]
 }
 
 variable "cloud_edge_allowed_port" {
-  description = "TCP port on cloud_edge_allowed_dest the cloud-edge may reach"
+  description = "TCP port on cloud_edge_allowed_dests the cloud-edge may reach"
   type        = number
   default     = 443
 }
