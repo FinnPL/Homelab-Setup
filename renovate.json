@@ -203,6 +203,26 @@
       ]
     },
     {
+      "description": "@astrojs/check supports TypeScript up to 6",
+      "matchFileNames": [
+        "homepage/**"
+      ],
+      "matchPackageNames": [
+        "typescript"
+      ],
+      "allowedVersions": "<7"
+    },
+    {
+      "description": "Node types follow the Node major that CI and the edge run (24)",
+      "matchFileNames": [
+        "homepage/**"
+      ],
+      "matchPackageNames": [
+        "@types/node"
+      ],
+      "allowedVersions": "<25"
+    },
+    {
       "groupName": "monitoring",
       "matchFileNames": [
         "charts/kube-prometheus-stack/**",
