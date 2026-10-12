@@ -107,14 +107,14 @@ variable "talos_version" {
   description = "Talos Linux version to use"
   type        = string
   # renovate: datasource=github-releases depName=siderolabs/talos
-  default = "v1.12.1"
+  default = "v1.12.12"
 }
 
 variable "kubernetes_version" {
   description = "Kubernetes version for Talos cluster"
   type        = string
   # renovate: datasource=github-releases depName=kubernetes/kubernetes versioning=semver extractVersion=^v(?<version>.*)$
-  default = "1.35.0"
+  default = "1.35.9"
 }
 
 variable "cluster_name" {
