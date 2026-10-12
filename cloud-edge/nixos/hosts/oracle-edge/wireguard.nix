@@ -1,5 +1,9 @@
-{pkgs, ...}: let
-  homelabTarget = "10.10.1.201/32";
+{
+  pkgs,
+  lib,
+  ...
+}: let
+  homelabTargets = ["10.10.1.201/32" "10.10.1.200/32"];
 in {
   environment.systemPackages = [pkgs.wireguard-tools];
 
@@ -30,7 +34,7 @@ in {
       wg set wg0 \
         listen-port 51820 \
         private-key /etc/wireguard/private.key \
-        peer "$PEER_PUBKEY" allowed-ips ${homelabTarget}
+        peer "$PEER_PUBKEY" allowed-ips ${lib.concatStringsSep "," homelabTargets}
       ip link set wg0 mtu 1420 up
 
       VCN_IP=$(ip -4 addr show eth0 | grep -oP 'inet \K[0-9.]+')
@@ -40,12 +44,14 @@ in {
       fi
 
       ip route flush table 51 2>/dev/null || true
-      ip route replace ${homelabTarget} dev wg0 table 51 src "$VCN_IP"
-
       while ip rule del priority 5260 2>/dev/null; do :; done
-      ip rule add to ${homelabTarget} lookup 51 priority 5260
+      ${lib.concatMapStrings (t: ''
+          ip route replace ${t} dev wg0 table 51 src "$VCN_IP"
+          ip rule add to ${t} lookup 51 priority 5260
+        '')
+        homelabTargets}
 
-      echo "Homelab WG tunnel up: ${homelabTarget} via wg0 src $VCN_IP"
+      echo "Homelab WG tunnel up: ${lib.concatStringsSep " " homelabTargets} via wg0 src $VCN_IP"
     '';
   };
 

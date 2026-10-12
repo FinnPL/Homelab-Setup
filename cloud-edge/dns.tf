@@ -35,3 +35,13 @@ resource "cloudflare_dns_record" "cloud_dns_check_blackhole" {
   content = "192.0.2.1"
   proxied = false
 }
+
+# static homepage
+resource "cloudflare_dns_record" "apex_homepage" {
+  zone_id = data.cloudflare_zone.main.id
+  name    = "@"
+  type    = "A"
+  ttl     = 1
+  content = oci_core_instance.edge.public_ip
+  proxied = true
+}

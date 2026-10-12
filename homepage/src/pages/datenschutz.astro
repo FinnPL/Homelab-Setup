@@ -1,0 +1,70 @@
+---
+import Base from "../layouts/Base.astro";
+import { IDENTITY } from "../lib/identity";
+---
+
+<Base
+  title={`Datenschutz · ${IDENTITY.shortName}`}
+  description="Datenschutzerklärung für lippok.dev."
+  heading="Datenschutz"
+>
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Verantwortlich</span></div>
+      <div>
+        <p class="muted">
+          Verantwortlicher im Sinne der DSGVO ist {IDENTITY.name}, Aachen, Deutschland.
+        </p>
+        <dl class="deflist">
+          <dt>E-Mail</dt>
+          <dd><a href={`mailto:${IDENTITY.privacyEmail}`}>{IDENTITY.privacyEmail}</a></dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Verarbeitung</span></div>
+      <div>
+        <p class="muted">
+          Diese Website ist statisch: keine Cookies, keine Analyse- oder Tracking-Dienste, keine
+          Inhalte von Drittanbietern, kein Kontaktformular, keine Benutzerkonten.
+        </p>
+        <p class="muted">
+          Beim Abruf protokolliert der Webserver IP-Adresse, Zeitpunkt, angeforderte Ressource,
+          Statuscode und User-Agent, um die Seite auszuliefern und Missbrauch abzuwehren.
+          Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Die Protokolle werden gelöscht, sobald
+          sie für diese Zwecke nicht mehr erforderlich sind.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Cloudflare</span></div>
+      <div>
+        <p class="muted">
+          Die Website wird über Cloudflare, Inc. (USA) als Auftragsverarbeiter ausgeliefert, das
+          dabei Verbindungsdaten wie die IP-Adresse verarbeitet (Art. 6 Abs. 1 lit. f DSGVO).
+          Grundlage der Übermittlung in die USA ist das EU-US Data Privacy Framework.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Ihre Rechte</span></div>
+      <div>
+        <p class="muted">
+          Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung,
+          Datenübertragbarkeit und Widerspruch sowie ein Beschwerderecht bei einer
+          Datenschutzaufsichtsbehörde. Anfragen richten Sie bitte an die oben genannte
+          E-Mail-Adresse.
+        </p>
+      </div>
+    </div>
+  </section>
+</Base>

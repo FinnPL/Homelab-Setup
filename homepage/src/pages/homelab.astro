@@ -1,0 +1,229 @@
+---
+import Base from "../layouts/Base.astro";
+import { Image } from "astro:assets";
+import { components, counts } from "../lib/lab";
+import { IDENTITY } from "../lib/identity";
+import { BUILD, stamp } from "../lib/build";
+import rackFront from "../../../docs/Vieta-Front.png";
+import rackBack from "../../../docs/Vieta-Back.png";
+
+const groups = components();
+const n = counts();
+
+const hardware = [
+  ["Cluster host", "Intel NUC running Proxmox VE"],
+  ["Out-of-band", "JetKVM on the NUC, including power control"],
+  ["Cluster", "Talos Linux: one control-plane VM and four workers"],
+  ["Workers", "Three Raspberry Pi 4, plus one VM on the NUC for database workloads"],
+  ["Storage", "NFS from a dedicated container; node-local volumes on the database VM"],
+  ["Second site", "Raspberry Pi 3 running Docker Compose"],
+  ["Cloud edge", "Oracle Cloud ARM instance running NixOS"],
+];
+
+const network = [
+  ["Gateway and switching", "Ubiquiti UniFi, with VLANs and zone-based firewall rules declared in Terraform"],
+  ["Cluster networking", "Cilium, replacing kube-proxy; Gateway API for ingress"],
+  ["DNS", "Blocky for filtering, Unbound for DNSSEC validation and DoT upstream"],
+  ["Tunnels", "WireGuard between the edge and home; Tailscale for CI runners and remote access"],
+  ["Public DNS and certificates", "Cloudflare, Let's Encrypt DNS-01"],
+];
+
+const tooling = [
+  ["Infrastructure", "Terraform for networking and machines; Ansible and Nix for VM and LXC configuration"],
+  ["Delivery", "GitHub Actions, ArgoCD, Renovate"],
+  [
+    "Secrets",
+    "HashiCorp Vault. Action runners authenticate with a GitHub OIDC token to get a short-lived token scoped to that workflow, the cluster authenticates with a ServiceAccount token, and SSH host and client certificates are signed by Vault CAs.",
+  ],
+  [
+    "Policy",
+    "Kyverno at admission in enforce mode, with the same policy set and exceptions run against every rendered chart in CI. Tetragon for eBPF runtime tracing. Trivy scans code in CI.",
+  ],
+  ["Observability", "Prometheus and Alertmanager, Loki for logs, Alloy for collection, Grafana, Gatus"],
+];
+---
+
+<Base
+  title={`Homelab · ${IDENTITY.shortName}`}
+  description="A three-site homelab: what it runs on, and why it is shaped the way it is."
+  heading="Homelab"
+  parent={{ href: "/projects", label: "Projects" }}
+  tagline="Three sites: a Kubernetes cluster at home, a container host on a secondary site, and a public-facing server in Oracle Cloud."
+>
+  <a slot="head-aside" href="https://github.com/FinnPL/Homelab-Setup">github.com/FinnPL/Homelab-Setup →</a>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Hardware</span></div>
+      <div>
+        <dl class="deflist sheet">
+          {hardware.map(([k, v]) => (
+            <>
+              <dt>{k}</dt>
+              <dd>{v}</dd>
+            </>
+          ))}
+        </dl>
+        <div class="shots">
+          <figure>
+            <Image src={rackFront} alt="Front of the homelab rack" widths={[420, 840]} sizes="(max-width: 560px) 92vw, 300px" loading="lazy" />
+            <figcaption class="dim small">Front</figcaption>
+          </figure>
+          <figure>
+            <Image src={rackBack} alt="Rear cabling of the homelab rack" widths={[420, 840]} sizes="(max-width: 560px) 92vw, 300px" loading="lazy" />
+            <figcaption class="dim small">Back</figcaption>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Network</span></div>
+      <dl class="deflist sheet">
+        {network.map(([k, v]) => (
+          <>
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Tooling</span></div>
+      <dl class="deflist sheet">
+        {tooling.map(([k, v]) => (
+          <>
+            <dt>{k}</dt>
+            <dd>{v}</dd>
+          </>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Design decisions</span></div>
+      <div class="stack-lg">
+        <div>
+          <h2 class="grp">Storage</h2>
+          <p>
+            One goal when making architectural decisions was minimising SD card wear. That is why
+            the default storage class is NFS, from an HDD-backed LXC on the NUC. The databases,
+            which need block storage, run on a tainted worker that is also a VM on the Intel NUC,
+            backed by an SSD.
+          </p>
+          <p>
+            These are temporary solutions. Once I get a new NAS, both move to Democratic CSI on
+            TrueNAS.
+          </p>
+        </div>
+
+        <div>
+          <h2 class="grp">DNS</h2>
+          <p>
+            Clients have a DoH profile pointing them at a domain that resolves to the public edge.
+            HAProxy does not terminate the TLS; instead it relays the encrypted traffic across the
+            WireGuard tunnel, and the handshake completes against the homelab.
+          </p>
+          <p>
+            Blocky terminates the session and filters using blocklists, then hands off to Unbound
+            for DNSSEC validation. Unbound's upstream query leaves over DoT to 1.1.1.1,
+            inside a ProtonVPN tunnel.
+          </p>
+          <p>
+            Cloudflare answers the query but sees a ProtonVPN exit address. ProtonVPN carries the
+            traffic but the payload is DoT, so it sees only that a DNS connection happened. Neither
+            side holds both halves, which is the same separation Oblivious DNS was built to
+            provide, but self-hosted.
+          </p>
+          <p class="muted small">
+            A canary name serves as the check. Public DNS points it at a dead IP, and a custom zone
+            in Blocky points it somewhere real, so it only resolves correctly when the query
+            actually went through this path.
+          </p>
+          <figure class="plate">
+            <img src="/diagrams/dns-resolution.svg" alt="DNS resolution path: end devices send DoH to the cloud edge, which passes TLS through a WireGuard tunnel to Blocky, then Unbound, which forwards over DoT through a VPN tunnel to Cloudflare." width="2150" height="373" loading="lazy" decoding="async" />
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label">
+        <span class="eyebrow">Inventory</span>
+        <p class="dim small">Generated from <code>apps/</code>, <code>charts/</code> and the
+        Terraform layers.</p>
+        <p class="sourced" style="margin-top:6px">
+          from {BUILD.commitUrl ? <a href={BUILD.commitUrl}>{BUILD.sha}</a> : "the working tree"} ·
+          <time datetime={BUILD.at.toISOString()}>{stamp(BUILD.at)}</time>
+        </p>
+      </div>
+      <div class="stack-lg">
+        <dl class="deflist">
+          <dt>applications</dt><dd>{n.apps} reconciled by ArgoCD</dd>
+          <dt>platform</dt><dd>{n.platform} charts installed by Terraform</dd>
+          <dt>charts</dt><dd>{n.wrappers} wrapper charts, {n.pinned} upstream versions pinned</dd>
+        </dl>
+        {groups.map((g) => (
+          <div>
+            <h2 class="grp">{g.group}</h2>
+            <ul class="plain inv">
+              {g.items.map((c) => (
+                <li>
+                  <div class="inv-head">
+                    <span class="inv-name">{c.name}</span>
+                    {c.namespace && <span class="tag">{c.namespace}</span>}
+                    {c.pins.map((p) => (
+                      <span class="dim small mono">{p.chart} {p.version}</span>
+                    ))}
+                  </div>
+                  {c.blurb && <p class="muted small">{c.blurb}</p>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .sheet dt { padding-top: 4px; }
+  .sheet dd { padding-bottom: 4px; }
+
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; max-width: 620px; margin-top: 34px; }
+  .shots figure { margin: 0; }
+  .shots img {
+    display: block; width: 100%; height: 340px; object-fit: cover;
+    border: 1px solid var(--rule); border-radius: 8px; background: var(--paper-2);
+  }
+  @media (max-width: 560px) { .shots img { height: 300px; } }
+  .shots figcaption { margin-top: 7px; }
+  @media (max-width: 560px) { .shots { grid-template-columns: 1fr; } }
+
+  .plate {
+    margin: 34px 0 0;
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--paper);
+    padding: 18px;
+  }
+  .plate img { display: block; width: 100%; height: auto; }
+
+  .grp { font-size: 0.95rem; padding-bottom: 8px; border-bottom: 1px solid var(--rule); margin-bottom: 14px; }
+  .inv > li { padding-block: 15px; border-bottom: 1px solid var(--rule); }
+  .inv > li:last-child { border-bottom: 0; }
+  .inv-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+  .inv-name { font-family: var(--mono); font-size: 0.875rem; font-weight: 500; }
+  .inv p { margin: 7px 0 0; max-width: 68ch; }
+</style>

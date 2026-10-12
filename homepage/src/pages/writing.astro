@@ -1,0 +1,95 @@
+---
+import Base from "../layouts/Base.astro";
+import { IDENTITY } from "../lib/identity";
+
+const works = [
+  {
+    title: "Introduction to Kotlin",
+    venue: "Proseminar “Advanced Programming Concepts”, RWTH Aachen",
+    year: "2025",
+    authors: ["Christian Konersmann", "Finn Paul Lippok", "Paul Lukas"],
+    supervision: "Organiser: Prof. Dr. Jürgen Giesl · Supervisor: Jan-Christoph Kassing",
+    abstract:
+      "An introduction to Kotlin for readers coming from Java: null safety in the type system, interoperability with Java in both directions, and the multiplatform tooling.",
+    links: [
+      { label: "Report (PDF)", href: "https://finnpl.github.io/Introduction-to-Kotlin/Introduction-to-Kotlin.pdf", primary: true },
+      { label: "Slides (PDF)", href: "https://finnpl.github.io/Introduction-to-Kotlin/presentation.pdf", primary: true },
+      { label: "Source", href: "https://github.com/FinnPL/Introduction-to-Kotlin", primary: false },
+    ],
+  },
+];
+
+const upcoming = [
+  {
+    title: "Secure Multiparty Communication Systems",
+    venue: "Seminar, COMSYS, RWTH Aachen",
+    note: "In progress.",
+    links: [
+      { label: "Survey paper (PDF)", href: "https://finnpl.github.io/Secure-Multiparty-Communication-Systems/paper/seminar-paper.pdf", primary: true },
+      { label: "Slides (PDF)", href: "https://finnpl.github.io/Secure-Multiparty-Communication-Systems/talk/slides.pdf", primary: true },
+      { label: "Source", href: "https://github.com/FinnPL/Secure-Multiparty-Communication-Systems", primary: false },
+    ],
+  },
+];
+---
+
+<Base
+  title={`Writing · ${IDENTITY.shortName}`}
+  description="Seminar reports and talks."
+  heading="Writing"
+  tagline="Seminar reports and talks."
+>
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Seminar work</span></div>
+      <div class="stack-lg">
+        {works.map((w) => (
+          <article>
+            <h2>{w.title}</h2>
+            <p class="authors">{w.authors.join(", ")}</p>
+            <p class="dim small mono venue">{w.venue} · {w.year}</p>
+            <p class="muted">{w.abstract}</p>
+            <p class="dim small" style="margin:0">{w.supervision}</p>
+            <p class="links">
+              {w.links.map((l) => (
+                <a href={l.href} class={l.primary ? "primary" : ""}>{l.label}</a>
+              ))}
+            </p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Upcoming</span></div>
+      <div class="stack-lg">
+        {upcoming.map((w) => (
+          <article>
+            <h2 class="muted">{w.title}</h2>
+            <p class="dim small mono venue">{w.venue}</p>
+            <p class="muted">{w.note}</p>
+            <p class="links">
+              {w.links.map((l) => (
+                <a href={l.href} class={l.primary ? "primary" : ""}>{l.label}</a>
+              ))}
+            </p>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .authors { margin: 8px 0 0; font-size: 0.95rem; color: var(--ink-2); }
+  .venue { margin: 6px 0 14px; }
+  .links { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0 0; }
+  .links a {
+    font-size: 0.86rem; text-decoration: none; padding: 5px 12px;
+    border: 1px solid var(--rule-2); border-radius: 5px; color: var(--ink-2);
+  }
+  .links a:hover { border-color: var(--accent); color: var(--accent); }
+  .links a.primary { border-color: var(--accent); color: var(--accent); font-weight: 520; }
+</style>

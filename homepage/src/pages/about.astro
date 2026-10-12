@@ -1,0 +1,151 @@
+---
+import Base from "../layouts/Base.astro";
+import { IDENTITY, PROFILES, AWARDS } from "../lib/identity";
+
+const experience = [
+  {
+    when: "Oct 2024 – present",
+    what: "System and network administrator, Beyond Communications",
+    where: "Aachen · part-time",
+    detail:
+      "Responsible for the networks of two student dorms.",
+  },
+  {
+    when: "2021",
+    what: "Intern, information systems",
+    where: "TDK-Micronas, Freiburg",
+    detail: "Voluntary school internship.",
+  },
+  {
+    when: "2020",
+    what: "Intern, eScience and computing centre",
+    where: "University of Freiburg",
+    detail: "Voluntary school internship.",
+  },
+  {
+    when: "2019",
+    what: "Intern, IT and systems integration",
+    where: "Max Planck Institute of Immunobiology and Epigenetics",
+    detail: "Voluntary school internship.",
+  },
+];
+
+const education = [
+  {
+    when: "Oct 2024 – 2027",
+    what: "B.Sc. Computer Science, RWTH Aachen University",
+    detail: "",
+  },
+  {
+    when: "Jul 2024",
+    what: "Abitur, GHSE Emmendingen",
+    detail: "",
+  },
+];
+
+
+const links = [
+  { label: "Email", text: IDENTITY.email, href: `mailto:${IDENTITY.email}` },
+  ...PROFILES,
+];
+---
+
+<Base
+  title={`About · ${IDENTITY.name}`}
+  description="Computer science student at RWTH Aachen and system and network administrator in Aachen."
+  heading="About"
+>
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label">
+        <span class="eyebrow">Profile</span>
+        <img src="/portrait.jpg" alt={IDENTITY.name} width="549" height="518" class="portrait" />
+        <p class="portrait-name">{IDENTITY.name}</p>
+      </div>
+      <div>
+        <p>
+          I am a computer science student at RWTH Aachen. In addition to my studies I work as a
+          system and network administrator for two student dorms.
+        </p>
+        <p>
+          I like declarative and reproducible systems: infrastructure as code, NixOS, Git as the
+          single source of truth, and automated deployments. I am also very interested in
+          networking, security, and cryptography.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Education</span></div>
+      <ol class="plain timeline">
+        {education.map((e) => (
+          <li>
+            <p class="when mono dim small">{e.when}</p>
+            <p class="what">{e.what}</p>
+            {e.detail && <p class="muted small detail">{e.detail}</p>}
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Experience</span></div>
+      <ol class="plain timeline">
+        {experience.map((e) => (
+          <li>
+            <p class="when mono dim small">{e.when}</p>
+            <p class="what">{e.what}</p>
+            <p class="where dim small">{e.where}</p>
+            {e.detail && <p class="muted small detail">{e.detail}</p>}
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Awards</span></div>
+      <dl class="deflist">
+        {AWARDS.map((a) => (
+          <>
+            <dt style="font-family:var(--sans);font-size:0.93rem;color:var(--ink)">{a.name}</dt>
+            <dd class="muted small" style="padding-top:2px">{a.body}</dd>
+          </>
+        ))}
+      </dl>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Elsewhere</span></div>
+      <dl class="deflist">
+        {links.map((l) => (
+          <>
+            <dt>{l.label}</dt>
+            <dd><a href={l.href} rel="me">{l.text}</a></dd>
+          </>
+        ))}
+      </dl>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .portrait {
+    width: 150px; height: auto; border-radius: 8px;
+    display: block; margin-top: 4px; border: 1px solid var(--rule);
+  }
+  @media (max-width: 760px) { .portrait { width: 120px; } }
+
+  .timeline { display: grid; gap: 30px; }
+  .timeline p { margin: 0; }
+  .timeline .what { font-size: 1rem; margin-top: 4px; }
+  .timeline .where { margin-top: 2px; }
+  .timeline .detail { margin-top: 9px; max-width: 62ch; }
+</style>

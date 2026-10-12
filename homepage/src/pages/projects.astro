@@ -1,0 +1,59 @@
+---
+import Base from "../layouts/Base.astro";
+import { projects } from "../lib/projects";
+import { IDENTITY } from "../lib/identity";
+import { stamp } from "../lib/build";
+
+const { featured, fetchedAt } = await projects();
+---
+
+<Base
+  title={`Projects · ${IDENTITY.shortName}`}
+  description={`Projects by ${IDENTITY.name}.`}
+  heading="Projects"
+>
+  <section class="wrap section">
+    <div class="stack-lg" style="gap:0">
+      {featured.map((p) => (
+        <article class="proj">
+          <div class="cols">
+            <div class="label">
+              <span class="eyebrow" style="margin-bottom:8px">
+                {p.meta.language ?? "Repository"}
+              </span>
+              <p class="dim small" style="margin:0">
+                {p.meta.stars > 0 && <>{p.meta.stars} ★ · </>}updated {p.meta.pushed}
+              </p>
+            </div>
+            <div>
+              <div class="proj-head">
+                <h2>{p.title}</h2>
+                <span class="proj-links">
+                  <a href={`https://github.com/${p.slug}`}>GitHub →</a>
+                  {p.page && <a href={p.page.href}>Write-up →</a>}
+                </span>
+              </div>
+              <p class="muted" style="margin-top:10px">{p.summary}</p>
+              <div class="chips">{p.topics.map((s) => <span class="tag">{s}</span>)}</div>
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+    <p class="sourced" style="margin-top:8px">
+      from the GitHub API · <time datetime={fetchedAt.toISOString()}>{stamp(fetchedAt)}</time>
+    </p>
+  </section>
+
+</Base>
+
+<style>
+  .proj { padding-block: 40px; border-bottom: 1px solid var(--rule); }
+  .proj:first-child { padding-top: 0; }
+  .proj:last-child { border-bottom: 0; }
+  .proj-head { display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+  .proj-links { display: flex; gap: 14px; font-family: var(--mono); font-size: 0.8rem; }
+  .proj-links a { text-decoration: none; white-space: nowrap; }
+  .proj-links a:hover { text-decoration: underline; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+</style>
