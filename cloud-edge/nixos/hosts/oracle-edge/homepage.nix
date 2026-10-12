@@ -37,7 +37,7 @@
         "= /status.json" = {
           alias = "/var/lib/homepage-status/status.json";
           extraConfig = ''
-            add_header Cache-Control "no-store";
+            add_header Cache-Control "no-store" always;
           '';
         };
       };
