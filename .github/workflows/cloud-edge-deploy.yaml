@@ -87,6 +87,7 @@ jobs:
             homepage:
               - 'homepage/**'
               - 'docs/diagrams/**'
+              - '.github/workflows/cloud-edge-deploy.yaml'
 
   terraform:
     needs: changes
@@ -575,16 +576,18 @@ jobs:
           name: homepage-dist
           path: homepage/dist
 
+      # Also exports VAULT_TOKEN, which the certificate mint below needs.
+      - name: Setup Terraform + AWS
+        uses: ./.github/actions/tf-aws-setup
+        with:
+          vault-role: cloud-edge
+          export-token: true
+
       - name: Mint edge SSH certificate
         uses: ./.github/actions/vault-ssh-client-cert
         with:
           role: oci-edge
           key-path: "~/.ssh/edge_key"
-
-      - name: Setup Terraform + AWS
-        uses: ./.github/actions/tf-aws-setup
-        with:
-          vault-role: cloud-edge
 
       - name: Prepare edge host context
         id: edge

@@ -1,4 +1,4 @@
-_:
+{config, ...}:
 #   *.relay.lippok.dev:   SNI passthrough to homelab (E2E TLS preserved)
 #   *.cloud.lippok.dev:   terminate locally, host-route to a cloud-edge backend
 #   lippok.dev:           terminate locally, serve the static homepage
@@ -7,6 +7,7 @@ _:
   systemd.services.haproxy = {
     after = ["acme-finished-cloud.lippok.dev.target"];
     wants = ["acme-finished-cloud.lippok.dev.target"];
+    reloadTriggers = [config.environment.etc."haproxy.cfg".source];
   };
 
   services.haproxy = {
