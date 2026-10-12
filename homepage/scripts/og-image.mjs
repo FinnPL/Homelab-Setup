@@ -1,10 +1,11 @@
 import sharp from "sharp";
 import opentype from "opentype.js";
+import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const out = fileURLToPath(new URL("../public/og.png", import.meta.url));
 const portrait = fileURLToPath(new URL("../public/portrait.jpg", import.meta.url));
-const font = (f) => opentype.loadSync(fileURLToPath(new URL(`./fonts/${f}`, import.meta.url)));
+const font = (f) => opentype.parse(readFileSync(new URL(`./fonts/${f}`, import.meta.url)));
 
 // Text is drawn as paths from bundled fonts: no system font lookup, so macOS and CI render the same.
 const sans = font("texgyreheros-regular.otf");
