@@ -46,6 +46,7 @@ jobs:
             while IFS= read -r f; do
               case "$f" in
                 .github/workflows/charts-validate.yaml) render_all=1 ;;
+                charts/kyverno/*) render_all=1 ;;
                 charts/*/*) WANT["$(echo "$f" | cut -d/ -f2)"]=1 ;;
                 apps/*.yaml) WANT["$(basename "$f" .yaml)"]=1 ;;
               esac
@@ -109,7 +110,7 @@ jobs:
           [ -f "$d/Chart.yaml" ] || { echo "plain manifest dir — skipping lint"; exit 0; }
           helm lint "$d"
 
-      # Render into the real destination namespace
+      # Render into the real destination namespace. Nulls are dropped as the apiserver does before admission.
       - name: Render
         run: |
           d="charts/${{ matrix.chart.name }}"
@@ -123,6 +124,7 @@ jobs:
                 select(.kind != null)
                 | select((.metadata.annotations."helm.sh/hook" // "") | test("test") | not)
                 | .metadata.namespace = (.metadata.namespace // strenv(NS))
+                | del(.. | select(tag == "!!null"))
               ' - \
             > "rendered-${{ matrix.chart.name }}.yaml"
 
@@ -171,7 +173,7 @@ jobs:
         run: |
           helm dependency build charts/kyverno || helm dependency update charts/kyverno
           helm template kyverno charts/kyverno --namespace kyverno > kyverno-rendered.yaml
-          yq eval 'select(.kind == "ClusterPolicy" or .kind == "Policy")' kyverno-rendered.yaml > policies.yaml
+          yq eval 'select(.kind == "ClusterPolicy" or .kind == "Policy" or .kind == "ValidatingPolicy")' kyverno-rendered.yaml > policies.yaml
           yq eval 'select(.kind == "PolicyException")' kyverno-rendered.yaml > exceptions.yaml
           echo "Policies:";   grep -c '^kind:' policies.yaml || true
           echo "Exceptions:"; grep -c '^kind:' exceptions.yaml || true
