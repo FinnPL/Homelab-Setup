@@ -17,6 +17,7 @@ _:
       environmentFile = "/etc/cloudflare/credentials";
       group = "haproxy";
       reloadServices = ["haproxy.service"];
+      dnsResolver = "1.1.1.1:53";
     };
   };
 }
