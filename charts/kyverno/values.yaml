@@ -1,5 +1,280 @@
 kyverno-policies:
-  policyType: ClusterPolicy
   validationFailureAction: Enforce
   background: false
   podSecurityStandard: restricted
+
+policyExceptions:
+  - name: local-path-storage-helper-pod
+    description: >-
+      On-demand busybox helper pods spawned by local-path-provisioner mount the
+      node's local-path directory (hostPath), run mkdir/chown as root with a
+      writable rootfs, and have no resources/securityContext fields set by the
+      provisioner script. The controller pod itself is policy-compliant via chart
+      values.
+    namespace: local-path-storage
+    kinds: [Pod]
+    names: ["helper-pod-*"]
+    policies:
+      - require-resource-limits
+      - require-ro-rootfs
+      - disallow-host-path
+      - restrict-volume-types
+      - disallow-capabilities-strict
+      - disallow-privilege-escalation
+      - require-run-as-nonroot
+      - restrict-seccomp-strict
+  - name: kube-system-cilium-agent
+    description: >-
+      cilium-agent is the CNI and requires hostNetwork, hostPID, privileged,
+      CAP_NET_ADMIN/SYS_ADMIN, hostPath mounts (/sys/fs/bpf, /var/run/cilium,
+      /proc), seccomp and AppArmor Unconfined for bpf syscalls, and writable
+      rootfs for in-place config updates. Resource limits are intentionally
+      omitted.
+    namespace: kube-system
+    kinds: [Pod, DaemonSet]
+    labels:
+      k8s-app: cilium
+    policies:
+      - restrict-apparmor-profiles
+      - disallow-capabilities
+      - disallow-host-namespaces
+      - disallow-host-path
+      - disallow-host-ports
+      - disallow-privileged-containers
+      - disallow-selinux
+      - require-resource-limits
+      - require-ro-rootfs
+      - restrict-seccomp
+      - disallow-capabilities-strict
+      - disallow-privilege-escalation
+      - require-run-as-nonroot
+      - restrict-seccomp-strict
+      - restrict-volume-types
+  - name: kube-system-cilium-envoy
+    description: >-
+      cilium-envoy is the L7 data plane DaemonSet.
+    namespace: kube-system
+    kinds: [Pod, DaemonSet]
+    labels:
+      k8s-app: cilium-envoy
+    policies:
+      - restrict-apparmor-profiles
+      - disallow-capabilities
+      - disallow-host-namespaces
+      - disallow-host-path
+      - disallow-host-ports
+      - disallow-selinux
+      - require-resource-limits
+      - require-ro-rootfs
+      - disallow-capabilities-strict
+      - disallow-privilege-escalation
+      - require-run-as-nonroot
+      - restrict-seccomp-strict
+      - restrict-volume-types
+  - name: kube-system-cilium-operator
+    description: >-
+      cilium-operator runs the CNI control loop. Binds host-port 9963 for its
+      metrics/healthz endpoint on the host network.
+    namespace: kube-system
+    kinds: [Pod, ReplicaSet, Deployment]
+    labels:
+      io.cilium/app: operator
+    policies:
+      - disallow-host-namespaces
+      - disallow-host-ports
+      - require-resource-limits
+      - require-ro-rootfs
+      - require-run-as-nonroot
+  - name: kube-system-hubble
+    description: >-
+      hubble-relay and hubble-ui ship without resources/readOnlyRootFilesystem set
+      by the cilium chart. Exempted as part of the cilium exemption.
+    namespace: kube-system
+    kinds: [Pod, ReplicaSet, Deployment]
+    labels:
+      k8s-app: [hubble-relay, hubble-ui]
+    policies:
+      - require-resource-limits
+      - require-ro-rootfs
+      - disallow-capabilities-strict
+      - require-run-as-nonroot
+      - restrict-seccomp-strict
+  - name: kube-system-csi-nfs
+    description: >-
+      csi-nfs-node mounts NFS shares onto the host (hostPath, privileged,
+      CAP_SYS_ADMIN, mount propagation Bidirectional). csi-nfs-controller needs
+      hostNetwork to talk to the kubelet. Required for a working RWX CSI driver.
+    namespace: kube-system
+    kinds: [Pod, ReplicaSet, Deployment, DaemonSet]
+    names: [csi-nfs-node, "csi-nfs-node-*", csi-nfs-controller, "csi-nfs-controller-*"]
+    policies:
+      - disallow-capabilities
+      - disallow-host-namespaces
+      - disallow-host-path
+      - disallow-host-ports
+      - disallow-privileged-containers
+      - require-ro-rootfs
+      - disallow-capabilities-strict
+      - disallow-privilege-escalation
+      - require-run-as-nonroot
+      - restrict-volume-types
+  - name: kube-system-talos-static-pods
+    description: >-
+      kube-apiserver, kube-controller-manager and kube-scheduler are Talos static
+      pods. They run with hostNetwork, mount /etc/kubernetes from the host, and
+      lack memory limits or readOnlyRootFilesystem.
+    namespace: kube-system
+    kinds: [Pod]
+    names: ["kube-apiserver-*", "kube-controller-manager-*", "kube-scheduler-*"]
+    policies:
+      - disallow-host-namespaces
+      - disallow-host-path
+      - require-resource-limits
+      - require-ro-rootfs
+      - restrict-volume-types
+  - name: argocd-repo-server
+    description: >-
+      The fix-nfs-permissions init container runs as root with CAP_CHOWN +
+      CAP_FOWNER to chown an RWX NFS volume to uid 999 before the repo-server can
+      write to it. NFS exports don't honor fsGroup, so the chown must happen
+      in-pod. The init and main containers ship without a seccompProfile set.
+    namespace: argocd
+    kinds: [Pod, ReplicaSet, Deployment]
+    names: [argocd-repo-server, "argocd-repo-server-*"]
+    policies:
+      - disallow-capabilities-strict
+      - require-run-as-nonroot
+      - require-run-as-non-root-user
+      - restrict-seccomp-strict
+  - name: monitoring-alloy-agent
+    description: >-
+      alloy-agent is a hostNetwork DaemonSet that binds syslog hostPorts
+      (5140/5141/5142) and mounts /var/log + /var/log/pods to tail container logs
+      for Loki. The alloy container runs as root because a non-root uid cannot
+      reliably read the root-owned host log files.
+    namespace: monitoring
+    kinds: [Pod, DaemonSet]
+    labels:
+      app.kubernetes.io/name: alloy-agent
+      app.kubernetes.io/instance: alloy
+    policies:
+      - disallow-host-namespaces
+      - disallow-host-path
+      - disallow-host-ports
+      - require-run-as-nonroot
+      - require-run-as-non-root-user
+      - restrict-volume-types
+  - name: monitoring-node-exporter
+    description: >-
+      prometheus-node-exporter runs with hostNetwork + hostPID and mounts host
+      /proc, /sys, / to scrape node metrics. Required for its function.
+    namespace: monitoring
+    kinds: [Pod, DaemonSet]
+    labels:
+      app.kubernetes.io/name: prometheus-node-exporter
+    policies:
+      - disallow-host-namespaces
+      - disallow-host-path
+      - disallow-host-ports
+      - restrict-volume-types
+  - name: dns-pod
+    description: >-
+      The generate-root-key init container runs `apk add unbound curl` as root
+      (needs writable rootfs + CAP_CHOWN) on every pod start to fetch the DNSSEC
+      trust anchor. The blocky container binds port 53 and needs
+      CAP_NET_BIND_SERVICE.
+    namespace: dns
+    kinds: [Pod, ReplicaSet, Deployment]
+    names: [dns, "dns-*"]
+    policies:
+      - require-ro-rootfs
+      - disallow-capabilities-strict
+      - require-run-as-nonroot
+      - require-run-as-non-root-user
+  - name: authentik
+    description: >-
+      authentik-server and authentik-worker write runtime state under /tmp and
+      import blueprints to working dirs that live on the container rootfs.
+    namespace: authentik
+    kinds: [Pod, ReplicaSet, Deployment]
+    names: [authentik-server, "authentik-server-*", authentik-worker, "authentik-worker-*"]
+    policies:
+      - require-ro-rootfs
+  - name: tailscale
+    description: >-
+      tailscale operator and the exit-node statefulset need a writable rootfs for
+      tailscaled state (/var/lib/tailscale, /tmp/tailscaled.sock).
+    namespace: tailscale
+    kinds: [Pod, ReplicaSet, StatefulSet, Deployment]
+    names: [operator, "operator-*", "ts-*"]
+    policies:
+      - require-ro-rootfs
+      - disallow-privileged-containers
+      - require-resource-limits
+      - disallow-capabilities-strict
+      - disallow-privilege-escalation
+      - require-run-as-nonroot
+      - restrict-seccomp-strict
+  - name: kube-system-coredns
+    description: >-
+      coredns from the Talos in-cluster manifests runs without runAsNonRoot and
+      without a seccompProfile set.
+    namespace: kube-system
+    kinds: [Pod, ReplicaSet, Deployment]
+    labels:
+      k8s-app: kube-dns
+    policies:
+      - require-run-as-nonroot
+      - restrict-seccomp-strict
+  - name: gateway-external-proxy
+    description: >-
+      Cilium Gateway external-proxy Deployments are envoy instances generated by
+      the Gateway API controller; they ship without resource limits or
+      readOnlyRootFilesystem and we have no chart values to set on them.
+    namespace: gateway
+    kinds: [Pod, ReplicaSet, Deployment]
+    names: ["*-external-proxy", "*-external-proxy-*"]
+    policies:
+      - require-resource-limits
+      - require-ro-rootfs
+  - name: cnpg-pooler
+    description: >-
+      CNPG injects a bootstrap-controller init container into every pgbouncer
+      Pooler pod to copy the manager binary. It is generated by the operator with
+      no resources set and the Pooler API exposes no way to configure it (the
+      operator overwrites template initContainers). The pgbouncer container itself
+      is compliant via the Pooler template.
+    namespace: cnpg-system
+    kinds: [Pod, ReplicaSet, Deployment]
+    names: ["*-pooler-rw", "*-pooler-rw-*"]
+    policies:
+      - require-resource-limits
+  - name: tetragon-agent
+    description: >-
+      The tetragon agent is a privileged eBPF DaemonSet: it needs hostNetwork, a
+      privileged container (raw bpf syscalls), hostPath mounts (/sys/fs/bpf,
+      /proc, /var/run/cilium, /var/run/tetragon) and a writable rootfs, and runs
+      as root. The export-stdout sidecar and the tetragon-operator are hardened
+      via chart values and need no exception; this is scoped to the agent only.
+    namespace: tetragon
+    kinds: [Pod, DaemonSet]
+    labels:
+      app.kubernetes.io/name: tetragon
+      app.kubernetes.io/component: agent
+    policies:
+      - disallow-host-namespaces
+      - disallow-host-path
+      - disallow-host-ports
+      - disallow-host-process
+      - disallow-privileged-containers
+      - disallow-proc-mount
+      - disallow-selinux
+      - restrict-seccomp
+      - restrict-seccomp-strict
+      - disallow-capabilities-strict
+      - disallow-privilege-escalation
+      - require-run-as-nonroot
+      - require-run-as-non-root-user
+      - require-ro-rootfs
+      - require-resource-limits
+      - restrict-volume-types
