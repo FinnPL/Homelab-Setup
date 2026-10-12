@@ -81,7 +81,30 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
         -i '${local.mesh_router_ip},' \
         --private-key '${var.ansible_ssh_key_file}' \
         --user root \
-        --extra-vars '{"wg_private_key":"${var.mesh_wg_private_key}","wg_peer_pubkey":"${var.mesh_wg_peer_pubkey}","wg_peer_endpoint":"${local.mesh_wg_peer_endpoint}","cloud_vcn_cidr":"${var.cloud_vcn_cidr}","cloud_edge_allowed_dest":"${var.cloud_edge_allowed_dest}","cloud_edge_allowed_port":"${var.cloud_edge_allowed_port}"}' \
+        --extra-vars '{"wg_private_key":"${var.mesh_wg_private_key}","wg_peer_pubkey":"${var.mesh_wg_peer_pubkey}","wg_peer_endpoint":"${local.mesh_wg_peer_endpoint}","cloud_vcn_cidr":"${var.cloud_vcn_cidr}","cloud_edge_allowed_dests":${jsonencode(var.cloud_edge_allowed_dests)},"cloud_edge_allowed_port":"${var.cloud_edge_allowed_port}"}' \
+        '${path.module}/ansible/mesh-router.yml'
+    EOT
+  }
+}
+
+resource "terraform_data" "mesh_router_fw" {
+  triggers_replace = [
+    proxmox_virtual_environment_container.mesh_router.id,
+    var.cloud_vcn_cidr,
+    var.cloud_edge_allowed_dests,
+    var.cloud_edge_allowed_port,
+  ]
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      ANSIBLE_HOST_KEY_CHECKING=True \
+      ANSIBLE_SSH_EXTRA_ARGS='-o StrictHostKeyChecking=accept-new' \
+      ansible-playbook \
+        -i '${local.mesh_router_ip},' \
+        --private-key '${var.ansible_ssh_key_file}' \
+        --user root \
+        --tags mesh-fw \
+        --extra-vars '{"cloud_vcn_cidr":"${var.cloud_vcn_cidr}","cloud_edge_allowed_dests":${jsonencode(var.cloud_edge_allowed_dests)},"cloud_edge_allowed_port":"${var.cloud_edge_allowed_port}"}' \
         '${path.module}/ansible/mesh-router.yml'
     EOT
   }
