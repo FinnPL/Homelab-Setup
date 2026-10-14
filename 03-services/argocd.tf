@@ -47,6 +47,12 @@ resource "helm_release" "argocd" {
           requests = { cpu = "10m", memory = "32Mi" }
           limits   = { memory = "64Mi" }
         }
+        initImage = {
+          resources = {
+            requests = { cpu = "10m", memory = "32Mi" }
+            limits   = { memory = "256Mi" }
+          }
+        }
       }
       configs = {
         params = {
