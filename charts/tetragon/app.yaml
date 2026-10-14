@@ -1,0 +1,11 @@
+namespace: tetragon
+syncOptions:
+  - ServerSideApply=true
+ignoreDifferences:
+  - group: cilium.io
+    kind: TracingPolicy
+    jqPathExpressions:
+      - '.spec.kprobes[].return'
+      - '.spec.kprobes[].args[]?.maxData'
+      - '.spec.kprobes[].args[]?.resolve'
+      - '.spec.kprobes[].args[]?.returnCopy'

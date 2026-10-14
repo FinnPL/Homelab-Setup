@@ -38,36 +38,31 @@ jobs:
           EVENT: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          # On a PR, render only charts whose own files (or matching apps/<name>.yaml)
-          # changed. On push to main — or when this workflow itself changes — render all.
+          # On a PR, render only charts whose own files changed. On push to main, or when
+          # this workflow or the ApplicationSet changes, render all.
           render_all=0
           declare -A WANT
           if [ "$EVENT" = "pull_request" ]; then
             while IFS= read -r f; do
               case "$f" in
-                .github/workflows/charts-validate.yaml) render_all=1 ;;
+                .github/workflows/charts-validate.yaml|apps/*) render_all=1 ;;
                 charts/kyverno/*) render_all=1 ;;
                 charts/*/*) WANT["$(echo "$f" | cut -d/ -f2)"]=1 ;;
-                apps/*.yaml) WANT["$(basename "$f" .yaml)"]=1 ;;
               esac
             done < <(git diff --name-only "$BASE_SHA" HEAD)
           else
             render_all=1
           fi
 
-          declare -A NS
-          for app in apps/*.yaml; do
-            ns=$(yq e '.spec.destination.namespace // ""' "$app")
-            paths=$(yq e '([.spec.source.path] + (.spec.sources // [] | map(.path))) | .[] | select(. != null)' "$app")
-            for p in $paths; do NS["$(basename "$p")"]="$ns"; done
-          done
-
+          # Namespace and release name as the ApplicationSet derives them from app.yaml
           entries=()
           for dir in charts/*/; do
             c=$(basename "$dir")
             if [ "$render_all" = "0" ] && [ -z "${WANT[$c]:-}" ]; then continue; fi
-            ns="${NS[$c]:-$c}"; [ -z "$ns" ] && ns="$c"
-            entries+=("$(jq -nc --arg n "$c" --arg s "$ns" '{name:$n, ns:$s}')")
+            [ -f "$dir/app.yaml" ] || { echo "::error file=$dir::missing app.yaml, the ApplicationSet will not deploy this chart"; exit 1; }
+            ns=$(yq e '.namespace // ""' "$dir/app.yaml"); [ -z "$ns" ] && ns="$c"
+            release=$(yq e ".name // \"$c\"" "$dir/app.yaml")
+            entries+=("$(jq -nc --arg n "$c" --arg s "$ns" --arg r "$release" '{name:$n, ns:$s, release:$r}')")
           done
           if [ ${#entries[@]} -eq 0 ]; then
             charts='[]'
@@ -115,9 +110,9 @@ jobs:
         run: |
           d="charts/${{ matrix.chart.name }}"
           if [ -f "$d/Chart.yaml" ]; then
-            helm template "${{ matrix.chart.name }}" "$d" --namespace "${{ matrix.chart.ns }}"
+            helm template "${{ matrix.chart.release }}" "$d" --namespace "${{ matrix.chart.ns }}"
           else
-            find "$d" -type f \( -name '*.yaml' -o -name '*.yml' \) \
+            find "$d" -type f \( -name '*.yaml' -o -name '*.yml' \) ! -path "$d/app.yaml" \
               -exec sh -c 'for f; do cat "$f"; echo; echo "---"; done' _ {} +
           fi \
             | NS="${{ matrix.chart.ns }}" yq eval '

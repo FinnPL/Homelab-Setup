@@ -1,0 +1,3 @@
+name: cluster-namespaces
+cascadeDelete: false
+directoryRecurse: true

@@ -1,0 +1,21 @@
+crossplane:
+  podSecurityContextCrossplane:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  securityContextCrossplane:
+    runAsNonRoot: true
+    capabilities:
+      drop: [ALL]
+    seccompProfile:
+      type: RuntimeDefault
+  podSecurityContextRBACManager:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+  securityContextRBACManager:
+    runAsNonRoot: true
+    capabilities:
+      drop: [ALL]
+    seccompProfile:
+      type: RuntimeDefault

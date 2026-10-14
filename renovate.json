@@ -21,11 +21,6 @@
   "pre-commit": {
     "enabled": true
   },
-  "argocd": {
-    "managerFilePatterns": [
-      "/(^|/)apps/.+\\.ya?ml$/"
-    ]
-  },
   "kubernetes": {
     "managerFilePatterns": [
       "/(^|/)charts/.+\\.ya?ml$/"
@@ -92,8 +87,7 @@
         "0[0-3]-*/**",
         "cloud-edge/**",
         "vault/**",
-        "tailscale/**",
-        "apps/**"
+        "tailscale/**"
       ],
       "automerge": false
     },
