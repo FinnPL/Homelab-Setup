@@ -1,0 +1,84 @@
+kyverno:
+  crds:
+    annotations:
+      argocd.argoproj.io/sync-options: ServerSideApply=true
+  features:
+    policyExceptions:
+      enabled: true
+      namespace: kyverno
+  config:
+    webhookAnnotations:
+      admissions.enforcer/disabled: "true"
+    webhookLabels: {}
+    excludeUsernames:
+      - "system:serviceaccount:kube-system:generic-garbage-collector"
+  admissionController:
+    replicas: 1
+    priorityClassName: system-cluster-critical
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        memory: 384Mi
+    container:
+      # Flip forceFailurePolicyIgnore to "false" once confident in the policy set.
+      extraArgs:
+        webhookTimeout: "10"
+        forceFailurePolicyIgnore: "true"
+        v: "0"
+  backgroundController:
+    replicas: 1
+    priorityClassName: system-cluster-critical
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+    extraArgs:
+      v: "0"
+  cleanupController:
+    replicas: 1
+    priorityClassName: system-cluster-critical
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        memory: 256Mi
+    extraArgs:
+      v: "0"
+  reportsController:
+    replicas: 1
+    priorityClassName: system-cluster-critical
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        memory: 512Mi
+    extraArgs:
+      v: "0"
+    rbac:
+      clusterRole:
+        extraResources:
+          - apiGroups: ["networking.k8s.io"]
+            resources: ["ingressclasses"]
+            verbs: ["get", "list", "watch"]

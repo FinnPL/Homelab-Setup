@@ -1,0 +1,66 @@
+# One Application per charts/<name>/app.yaml. Keys in app.yaml (all optional):
+#   name               Application name (default: directory name)
+#   namespace          destination namespace
+#   cascadeDelete      false drops the resources finalizer, so deleting the Application leaves its resources
+#   directoryRecurse   plain manifest directory instead of a Helm chart
+#   syncOptions        appended to CreateNamespace=true
+#   ignoreDifferences  passed through verbatim
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: charts
+  namespace: argocd
+  annotations:
+    # Deleting this object deletes every Application it owns, so the root app must never prune or delete it.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: https://github.com/FinnPL/Homelab-Setup.git
+        revision: main
+        files:
+          - path: charts/*/app.yaml
+  template:
+    metadata:
+      name: '{{ dig "name" .path.basename . }}'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/FinnPL/Homelab-Setup.git
+        targetRevision: main
+        path: '{{ .path.path }}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{ dig "namespace" "" . }}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        # No cross-app ordering: a sync that fails on a missing CRD or namespace retries until its dependency has synced.
+        retry:
+          limit: 10
+          backoff:
+            duration: 30s
+            factor: 2
+            maxDuration: 10m
+  templatePatch: |
+    {{- if dig "cascadeDelete" true . }}
+    metadata:
+      finalizers:
+        - resources-finalizer.argocd.argoproj.io
+    {{- end }}
+    spec:
+      {{- if dig "directoryRecurse" false . }}
+      source:
+        directory:
+          recurse: true
+          exclude: app.yaml
+      {{- end }}
+      syncPolicy:
+        syncOptions: {{ prepend (dig "syncOptions" (list) .) "CreateNamespace=true" | toJson }}
+      {{- with dig "ignoreDifferences" (list) . }}
+      ignoreDifferences: {{ toJson . }}
+      {{- end }}

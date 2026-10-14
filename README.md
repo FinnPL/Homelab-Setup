@@ -48,7 +48,7 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 |:-------|:------|
 | **IaC & CI/CD** | Terraform (S3-backed state), Ansible, GitHub Actions, Tailscale runner, Renovate |
 | **Compute** | Proxmox (Intel NUC), Talos Linux, NixOS, Raspberry Pi workers |
-| **Orchestration** | Kubernetes, ArgoCD (App of Apps), Helm |
+| **Orchestration** | Kubernetes, ArgoCD (ApplicationSet), Helm |
 | **Networking** | Cilium (CNI, kube-proxy replacement, Gateway API, Hubble), UniFi, Cloudflare, HAProxy, WireGuard, Tailscale |
 | **Storage** | NFS CSI, local-path-provisioner *(planned: Democratic CSI on TrueNAS)* |
 | **Data** | CloudNativePG, Crossplane (DBaaS) |
@@ -232,13 +232,13 @@ Distributes secrets from Vault into the namespaces that need them.
 
 ### ArgoCD & Applications
 
-ArgoCD is deployed via Helm in `03-services`. Everything beyond the platform services is managed through ArgoCD's **App of Apps** pattern: a root Application watches the `apps/` directory in this repo and automatically syncs each application definition to the cluster.
+ArgoCD is deployed via Helm in `03-services`. Everything beyond the platform services is managed by ArgoCD: a root Application syncs `apps/`, which holds a single **ApplicationSet** that generates one Application per `charts/<name>/app.yaml`. Adding a service is adding a chart directory.
 
 #### Platform
 
 | Service | Role |
 |:--------|:-----|
-| **ArgoCD** | GitOps controller: self-managed via App of Apps |
+| **ArgoCD** | GitOps controller: self-managed via the ApplicationSet |
 | **CloudNative-PG** | PostgreSQL operator; provides databases for services |
 | **Crossplane** | DBaaS: provisions Postgres databases, PgBouncer, and credentials |
 | **Kyverno** | Admission policy engine; PSS Restricted via `kyverno-policies` + custom rules, in Enforce mode |

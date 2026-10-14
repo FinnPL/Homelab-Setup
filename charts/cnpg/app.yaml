@@ -1,0 +1,4 @@
+namespace: cnpg-system
+syncOptions:
+  - ServerSideApply=true
+  - ClientSideApplyMigration=false

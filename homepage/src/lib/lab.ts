@@ -17,7 +17,7 @@ const COPY: Record<string, { group: string; blurb: string }> = {
   "argocd-config": {
     group: "Platform",
     blurb:
-      "App of Apps pattern: Reconciles the cluster against this repository.",
+      "ApplicationSet: Reconciles the cluster against this repository.",
   },
   crossplane: {
     group: "Platform",
@@ -149,11 +149,9 @@ function platformComponents(): Component[] {
   return out;
 }
 
-function appFiles(): string[] {
-  const dir = join(REPO, "apps");
-  return readdirSync(dir)
-    .filter((f) => f.endsWith(".yaml"))
-    .map((f) => join(dir, f));
+// Every charts/<dir>/app.yaml becomes one Application via the ApplicationSet in apps/charts.yaml
+function appDirs(): string[] {
+  return readdirSync(join(REPO, "charts")).filter((d) => existsSync(join(REPO, "charts", d, "app.yaml")));
 }
 
 function chartPins(chartPath: string): Component["pins"] {
@@ -170,19 +168,12 @@ function chartPins(chartPath: string): Component["pins"] {
 export function components(): { group: string; items: Component[] }[] {
   const all: Component[] = platformComponents();
 
-  for (const file of appFiles()) {
-    const doc = parse(readFileSync(file, "utf8")) ?? {};
-    if (doc?.kind !== "Application") continue;
+  for (const dir of appDirs()) {
+    const app = parse(readFileSync(join(REPO, "charts", dir, "app.yaml"), "utf8")) ?? {};
 
-    const name = doc.metadata?.name as string;
-    const src = doc.spec?.source ?? {};
-    const namespace = (doc.spec?.destination?.namespace as string) ?? "";
-
-    const pins = src.path
-      ? chartPins(src.path)
-      : src.chart
-        ? [{ chart: String(src.chart), version: String(src.targetRevision) }]
-        : [];
+    const name = (app.name as string) ?? dir;
+    const namespace = (app.namespace as string) ?? "";
+    const pins = chartPins(join("charts", dir));
 
     const copy = COPY[name];
     all.push({
