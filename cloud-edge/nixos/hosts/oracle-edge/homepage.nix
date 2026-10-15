@@ -22,11 +22,22 @@
       # HAProxy already logs every request.
       extraConfig = ''
         access_log off;
+        absolute_redirect off;
       '';
 
       locations = {
+        "= /index".return = "301 /$is_args$args";
+        "= /index.html".return = "301 /$is_args$args";
+        "~ ^(?<page>/.+)\\.html$".return = "301 $page$is_args$args";
+        "~ ^(?<page>/.+)/$".return = "301 $page$is_args$args";
+        "= /" = {
+          tryFiles = "/index.html =404";
+          extraConfig = ''
+            add_header Cache-Control "public, max-age=300";
+          '';
+        };
         "/" = {
-          tryFiles = "$uri $uri.html $uri/ =404";
+          tryFiles = "$uri $uri.html =404";
           extraConfig = ''
             add_header Cache-Control "public, max-age=300";
           '';
