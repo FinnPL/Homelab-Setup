@@ -28,8 +28,8 @@
       locations = {
         "= /index".return = "301 /$is_args$args";
         "= /index.html".return = "301 /$is_args$args";
-        "~ ^(?<page>/.+)\\.html$".return = "301 $page$is_args$args";
-        "~ ^(?<page>/.+)/$".return = "301 $page$is_args$args";
+        "~ ^(?<page>/[^\\r\\n]+)\\.html$".return = "301 $page$is_args$args";
+        "~ ^(?<page>/[^\\r\\n]+)/$".return = "301 $page$is_args$args";
         "= /" = {
           tryFiles = "/index.html =404";
           extraConfig = ''
