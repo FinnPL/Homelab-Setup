@@ -13,7 +13,7 @@ interface Props {
 }
 
 const { title, description, heading, tagline, parent } = Astro.props;
-const path = Astro.url.pathname.replace(/\.html$/, "").replace(/\/$/, "") || "/";
+const path = Astro.url.pathname.replace(/\.html$/, "").replace(/(^|\/)index$/, "").replace(/\/$/, "") || "/";
 
 const nav: { href: string; label: string; children?: { href: string; label: string }[] }[] = [
   { href: "/projects", label: "projects", children: [{ href: "/homelab", label: "homelab" }] },
@@ -32,13 +32,13 @@ const nav: { href: string; label: string; children?: { href: string; label: stri
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={IDENTITY.name} />
-    <meta property="og:url" content={new URL(path === "/" ? "/" : path, Astro.site)} />
+    <meta property="og:url" content={new URL(path, Astro.site)} />
     <meta property="og:image" content={new URL("/og.png", Astro.site)} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={`${IDENTITY.name}, ${IDENTITY.headline}`} />
     <meta name="twitter:card" content="summary_large_image" />
-    <link rel="canonical" href={new URL(path === "/" ? "/" : path, Astro.site)} />
+    <link rel="canonical" href={new URL(path, Astro.site)} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <meta name="author" content={IDENTITY.name} />
     <script type="application/ld+json" set:html={JSON.stringify(personJsonLd())} is:inline />
