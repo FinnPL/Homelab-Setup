@@ -1,11 +1,48 @@
 # WireGuard subnet router for the cloud-edge and homelab relay path.
 
-resource "terraform_data" "mesh_wg_peer_endpoint_marker" {
-  triggers_replace = local.mesh_wg_peer_endpoint
+locals {
+  mesh_router_extra_vars = jsonencode({
+    wg_peer_pubkey           = var.mesh_wg_peer_pubkey
+    wg_peer_endpoint         = local.mesh_wg_peer_endpoint
+    cloud_vcn_cidr           = var.cloud_vcn_cidr
+    cloud_edge_allowed_dests = var.cloud_edge_allowed_dests
+    cloud_edge_allowed_port  = var.cloud_edge_allowed_port
+  })
+}
+
+resource "proxmox_download_file" "debian_13_lxc_template" {
+  content_type = "vztmpl"
+  datastore_id = var.proxmox_iso_storage
+  node_name    = var.proxmox_node
+
+  file_name = "debian-13-standard_13.6-1_amd64.tar.zst"
+
+  # http://download.proxmox.com/images/aplinfo-pve-9.dat
+  url                = "http://download.proxmox.com/images/system/debian-13-standard_13.6-1_amd64.tar.zst"
+  checksum           = "4c0c27ca6ceab5ef0b84db57825a00f26157ef1854bafe97297813e1cbe8ecb8cc9c453cab6b3b0efe1ba193a50c47ece1e41d950e411b8730b835b71e9e754b"
+  checksum_algorithm = "sha512"
+
+  overwrite = false
+}
+
+resource "proxmox_virtual_environment_file" "mesh_router_hookscript" {
+  content_type = "snippets"
+  datastore_id = var.proxmox_snippets_storage
+  node_name    = var.proxmox_node
+  file_mode    = "0700"
+
+  source_raw {
+    file_name = "mesh-router-hook.sh"
+    data      = <<-EOT
+      #!/bin/sh
+      [ "$2" = "pre-start" ] || exit 0
+      exec modprobe -a wireguard nf_tables nft_compat nft_chain_nat nft_masq nft_ct xt_MASQUERADE xt_conntrack
+    EOT
+  }
 }
 
 resource "proxmox_virtual_environment_container" "mesh_router" {
-  description = "WireGuard subnet router for clustermesh"
+  description = "WireGuard router for the cloud-edge tunnel"
 
   node_name = var.proxmox_node
   vm_id     = var.mesh_router_config.vmid
@@ -51,7 +88,7 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
   }
 
   operating_system {
-    template_file_id = proxmox_virtual_environment_download_file.debian_lxc_template.id
+    template_file_id = proxmox_download_file.debian_13_lxc_template.id
     type             = "debian"
   }
 
@@ -63,17 +100,21 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
     nesting = true
   }
 
-  started      = true
-  unprivileged = false
+  started             = true
+  unprivileged        = true
+  hook_script_file_id = proxmox_virtual_environment_file.mesh_router_hookscript.id
 
-  tags = sort(["terraform", "wireguard", "clustermesh"])
+  tags = sort(["terraform", "wireguard"])
 
   lifecycle {
-    replace_triggered_by = [terraform_data.mesh_wg_peer_endpoint_marker]
-    ignore_changes       = [initialization[0].user_account[0].keys]
+    ignore_changes = [initialization[0].user_account[0].keys]
   }
 
+  # First boot only
   provisioner "local-exec" {
+    environment = {
+      WG_PRIVATE_KEY = var.mesh_wg_private_key
+    }
     command = <<-EOT
       ANSIBLE_HOST_KEY_CHECKING=True \
       ANSIBLE_SSH_EXTRA_ARGS='-o StrictHostKeyChecking=accept-new' \
@@ -81,30 +122,35 @@ resource "proxmox_virtual_environment_container" "mesh_router" {
         -i '${local.mesh_router_ip},' \
         --private-key '${var.ansible_ssh_key_file}' \
         --user root \
-        --extra-vars '{"wg_private_key":"${var.mesh_wg_private_key}","wg_peer_pubkey":"${var.mesh_wg_peer_pubkey}","wg_peer_endpoint":"${local.mesh_wg_peer_endpoint}","cloud_vcn_cidr":"${var.cloud_vcn_cidr}","cloud_edge_allowed_dests":${jsonencode(var.cloud_edge_allowed_dests)},"cloud_edge_allowed_port":"${var.cloud_edge_allowed_port}"}' \
+        --extra-vars '${local.mesh_router_extra_vars}' \
         '${path.module}/ansible/mesh-router.yml'
     EOT
   }
 }
 
-resource "terraform_data" "mesh_router_fw" {
+# Re-converges the running router when its inputs or playbook change.
+resource "terraform_data" "mesh_router_config" {
   triggers_replace = [
     proxmox_virtual_environment_container.mesh_router.id,
-    var.cloud_vcn_cidr,
-    var.cloud_edge_allowed_dests,
-    var.cloud_edge_allowed_port,
+    local.mesh_router_extra_vars,
+    sha256(var.mesh_wg_private_key),
+    filesha256("${path.module}/ansible/mesh-router.yml"),
+    filesha256("${path.module}/ansible/templates/wg0.conf.j2"),
+    filesha256("${path.module}/ansible/templates/wg-mesh-nat.service.j2"),
   ]
 
   provisioner "local-exec" {
+    environment = {
+      WG_PRIVATE_KEY = var.mesh_wg_private_key
+    }
     command = <<-EOT
       ANSIBLE_HOST_KEY_CHECKING=True \
-      ANSIBLE_SSH_EXTRA_ARGS='-o StrictHostKeyChecking=accept-new' \
       ansible-playbook \
         -i '${local.mesh_router_ip},' \
         --private-key '${var.ansible_ssh_key_file}' \
         --user root \
-        --tags mesh-fw \
-        --extra-vars '{"cloud_vcn_cidr":"${var.cloud_vcn_cidr}","cloud_edge_allowed_dests":${jsonencode(var.cloud_edge_allowed_dests)},"cloud_edge_allowed_port":"${var.cloud_edge_allowed_port}"}' \
+        --skip-tags ssh-ca \
+        --extra-vars '${local.mesh_router_extra_vars}' \
         '${path.module}/ansible/mesh-router.yml'
     EOT
   }
