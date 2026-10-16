@@ -61,7 +61,7 @@ jobs:
           url: https://vault.cloud.lippok.dev
           method: jwt
           path: github-actions
-          role: vieta-layers
+          role: ${{ github.ref == 'refs/heads/main' && 'vieta-layers' || 'vieta-layers-plan' }}
           jwtGithubAudience: https://vault.cloud.lippok.dev
           secrets: |
             kv/data/cloudflare api-token | TF_VAR_cloudflare_api_token ;
@@ -99,22 +99,23 @@ jobs:
       - name: Setup Terraform + AWS
         uses: ./.github/actions/tf-aws-setup
         with:
-          vault-role: vieta-layers
+          vault-role: ${{ github.ref == 'refs/heads/main' && 'vieta-layers' || 'vieta-layers-plan' }}
           export-token: ${{ inputs.needs_ansible }}
 
       # Throwaway keypair signed by the Vault user CA the LXCs trust.
+      # Only the main-bound role may sign
       - name: Mint Ansible SSH certificate
-        id: ssh_cert
-        if: inputs.needs_ansible
+        if: inputs.needs_ansible && github.ref == 'refs/heads/main'
         uses: ./.github/actions/vault-ssh-client-cert
         with:
           role: homelab
+          key-path: ${{ runner.temp }}/vault_ssh_key
           host-ca-file: 02-infrastructure/ansible/files/vault_host_ca.pub
           host-patterns: "10.10.1.*,*.athena"
 
       - name: Hand the certificate to the Ansible provisioners
         if: inputs.needs_ansible
-        run: echo "TF_VAR_ansible_ssh_key_file=${{ steps.ssh_cert.outputs.key-path }}" >> "$GITHUB_ENV"
+        run: echo "TF_VAR_ansible_ssh_key_file=${RUNNER_TEMP}/vault_ssh_key" >> "$GITHUB_ENV"
 
       - name: Terraform Init
         run: terraform init
@@ -141,6 +142,6 @@ jobs:
 
       - name: Terraform Apply
         if: |
-          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
-          (github.event_name == 'workflow_dispatch' && inputs.apply)
+          github.ref == 'refs/heads/main' &&
+          (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.apply))
         run: terraform apply -lock-timeout=10m -auto-approve -input=false .planfile

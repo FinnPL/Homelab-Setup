@@ -49,7 +49,7 @@ jobs:
       - name: Setup Terraform + AWS
         uses: ./.github/actions/tf-aws-setup
         with:
-          vault-role: tailscale-deploy
+          vault-role: ${{ github.ref == 'refs/heads/main' && 'tailscale-deploy' || 'tailscale-plan' }}
           export-token: true
 
       - name: Terraform Init
@@ -71,6 +71,6 @@ jobs:
 
       - name: Terraform Apply
         if: |
-          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
-          (github.event_name == 'workflow_dispatch' && inputs.apply)
+          github.ref == 'refs/heads/main' &&
+          (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.apply))
         run: terraform apply -lock-timeout=10m -auto-approve -input=false .planfile
