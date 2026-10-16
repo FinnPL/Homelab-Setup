@@ -77,12 +77,6 @@ variable "proxmox_iso_storage" {
   default     = "local"
 }
 
-variable "proxmox_snippets_storage" {
-  description = "Proxmox storage pool for snippets (hook scripts)"
-  type        = string
-  default     = "local"
-}
-
 # =============================================================================
 # Windows Server VM Configuration
 # =============================================================================
@@ -208,7 +202,7 @@ variable "nfs_root_password" {
 }
 
 # =============================================================================
-# Mesh Router Configuration (WireGuard router to the cloud edge)
+# Mesh Router Configuration (Tailscale subnet router for clustermesh)
 # =============================================================================
 
 variable "mesh_router_config" {

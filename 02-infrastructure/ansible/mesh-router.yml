@@ -1,7 +1,7 @@
 - hosts: all
   become: true
   vars:
-    wg_private_key: "{{ lookup('env', 'WG_PRIVATE_KEY') }}"
+    wg_private_key: ""
     wg_peer_pubkey: ""
     wg_peer_endpoint: ""
     cloud_vcn_cidr: ""
@@ -18,19 +18,6 @@
     - name: Configure Vault SSH CA trust
       import_tasks: tasks/vault-ssh-ca.yml
       tags: [ssh-ca]
-
-    - name: Install unattended-upgrades
-      apt:
-        name: unattended-upgrades
-        update_cache: true
-
-    - name: Apply security updates daily
-      copy:
-        content: |
-          APT::Periodic::Update-Package-Lists "1";
-          APT::Periodic::Unattended-Upgrade "1";
-        dest: /etc/apt/apt.conf.d/20auto-upgrades
-        mode: "0644"
 
     - name: Enable IP forwarding
       sysctl:
