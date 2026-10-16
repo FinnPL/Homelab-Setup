@@ -113,6 +113,12 @@ jobs:
           host-ca-file: 02-infrastructure/ansible/files/vault_host_ca.pub
           host-patterns: "10.10.1.*,*.athena"
 
+      - name: Pin the Proxmox host key
+        if: inputs.needs_homelab
+        run: |
+          mkdir -p ~/.ssh
+          cat 02-infrastructure/ansible/files/proxmox_known_hosts >> ~/.ssh/known_hosts
+
       - name: Hand the certificate to the Ansible provisioners
         if: inputs.needs_ansible
         run: echo "TF_VAR_ansible_ssh_key_file=${RUNNER_TEMP}/vault_ssh_key" >> "$GITHUB_ENV"

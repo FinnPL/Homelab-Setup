@@ -84,10 +84,10 @@
     or (vault_ssh_host_cert_key.changed | default(false))
     or vault_ssh_host_cert_conf.changed
 
-- name: Reload sshd
+- name: Restart sshd
   systemd:
     name: ssh
-    state: reloaded
+    state: restarted
   when: >-
     vault_ssh_ca_key.changed or vault_ssh_ca_conf.changed
     or (vault_ssh_host_cert_key.changed | default(false))
