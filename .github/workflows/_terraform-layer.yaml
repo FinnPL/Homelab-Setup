@@ -117,7 +117,7 @@ jobs:
         if: inputs.needs_homelab
         run: |
           mkdir -p ~/.ssh
-          cat 02-infrastructure/ansible/files/proxmox_known_hosts >> ~/.ssh/known_hosts
+          cat "${GITHUB_WORKSPACE}/02-infrastructure/ansible/files/proxmox_known_hosts" >> ~/.ssh/known_hosts
 
       - name: Hand the certificate to the Ansible provisioners
         if: inputs.needs_ansible
