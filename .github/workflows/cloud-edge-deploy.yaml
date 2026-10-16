@@ -123,7 +123,7 @@ jobs:
           url: https://vault.cloud.lippok.dev
           method: jwt
           path: github-actions
-          role: cloud-edge
+          role: cloud-edge-plan
           jwtGithubAudience: https://vault.cloud.lippok.dev
           secrets: |
             kv/data/cloud-edge/oci tenancy-ocid | TF_VAR_oci_tenancy_ocid ;
@@ -136,7 +136,7 @@ jobs:
       - name: Setup Terraform + AWS
         uses: ./.github/actions/tf-aws-setup
         with:
-          vault-role: cloud-edge
+          vault-role: cloud-edge-plan
 
       - name: Terraform Init
         run: terraform init
@@ -174,8 +174,8 @@ jobs:
 
       - name: Terraform Apply
         if: |
-          (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
-          (github.event_name == 'workflow_dispatch' && inputs.apply == true)
+          github.ref == 'refs/heads/main' &&
+          (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.apply == true))
         env:
           EDGE_INSTANCE_NEW: ${{ steps.edge_plan.outputs.instance_new }}
         run: |
@@ -235,6 +235,7 @@ jobs:
     needs: [changes, terraform, validate-nixos]
     if: |
       always() &&
+      github.ref == 'refs/heads/main' &&
       (needs.terraform.result == 'success' || needs.terraform.result == 'skipped') &&
       (needs['validate-nixos'].result == 'success' || needs['validate-nixos'].result == 'skipped') &&
       (
@@ -553,6 +554,7 @@ jobs:
     needs: [changes, terraform, deploy-nixos, homepage-build]
     if: |
       always() &&
+      github.ref == 'refs/heads/main' &&
       needs['homepage-build'].result == 'success' &&
       (needs.terraform.result == 'success' || needs.terraform.result == 'skipped') &&
       (needs['deploy-nixos'].result == 'success' || needs['deploy-nixos'].result == 'skipped') &&

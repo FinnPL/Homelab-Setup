@@ -5,6 +5,9 @@ resource "vault_jwt_auth_backend" "github_actions" {
   bound_issuer       = "https://token.actions.githubusercontent.com"
 }
 
+# Roles bound to a workflow on refs/heads/main carry the apply/deploy rights.
+# The *-plan roles match any ref (PRs) and only read what a plan needs.
+
 # Self-manages this vault TF config from CI.
 resource "vault_jwt_auth_backend_role" "vault_deploy" {
   backend         = vault_jwt_auth_backend.github_actions.path
@@ -32,10 +35,9 @@ resource "vault_jwt_auth_backend_role" "tailscale_deploy" {
   user_claim      = "job_workflow_ref"
   bound_audiences = [var.vault_address]
 
-  bound_claims_type = "glob"
   bound_claims = {
     repository       = var.github_repository
-    job_workflow_ref = "${var.github_repository}/.github/workflows/tailscale-deploy.yaml@*"
+    job_workflow_ref = "${var.github_repository}/.github/workflows/tailscale-deploy.yaml@refs/heads/main"
     environment      = "tailscale"
   }
 
@@ -45,9 +47,48 @@ resource "vault_jwt_auth_backend_role" "tailscale_deploy" {
   token_max_ttl  = 1200
 }
 
+resource "vault_jwt_auth_backend_role" "tailscale_plan" {
+  backend         = vault_jwt_auth_backend.github_actions.path
+  role_name       = "tailscale-plan"
+  role_type       = "jwt"
+  user_claim      = "job_workflow_ref"
+  bound_audiences = [var.vault_address]
+
+  bound_claims_type = "glob"
+  bound_claims = {
+    repository       = var.github_repository
+    job_workflow_ref = "${var.github_repository}/.github/workflows/tailscale-deploy.yaml@*"
+    environment      = "tailscale"
+  }
+
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.tailscale_plan.name]
+  token_type     = "service"
+  token_ttl      = 1200
+  token_max_ttl  = 1200
+}
+
 resource "vault_jwt_auth_backend_role" "vieta_layers" {
   backend         = vault_jwt_auth_backend.github_actions.path
   role_name       = "vieta-layers"
+  role_type       = "jwt"
+  user_claim      = "job_workflow_ref"
+  bound_audiences = [var.vault_address]
+
+  bound_claims = {
+    repository       = var.github_repository
+    job_workflow_ref = "${var.github_repository}/.github/workflows/_terraform-layer.yaml@refs/heads/main"
+    environment      = "vieta"
+  }
+
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.vieta.name, vault_policy.vieta_ssh.name]
+  token_type     = "service"
+  token_ttl      = 1200
+  token_max_ttl  = 1200
+}
+
+resource "vault_jwt_auth_backend_role" "vieta_layers_plan" {
+  backend         = vault_jwt_auth_backend.github_actions.path
+  role_name       = "vieta-layers-plan"
   role_type       = "jwt"
   user_claim      = "job_workflow_ref"
   bound_audiences = [var.vault_address]
@@ -73,14 +114,13 @@ resource "vault_jwt_auth_backend_role" "vieta_ssh_converge" {
   user_claim      = "job_workflow_ref"
   bound_audiences = [var.vault_address]
 
-  bound_claims_type = "glob"
   bound_claims = {
     repository       = var.github_repository
-    job_workflow_ref = "${var.github_repository}/.github/workflows/ssh-cert-converge.yaml@*"
+    job_workflow_ref = "${var.github_repository}/.github/workflows/ssh-cert-converge.yaml@refs/heads/main"
     environment      = "vieta"
   }
 
-  token_policies = [vault_policy.aws_tfstate.name, vault_policy.vieta.name]
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.vieta_ssh.name]
   token_type     = "service"
   token_ttl      = 1200
   token_max_ttl  = 1200
@@ -93,14 +133,13 @@ resource "vault_jwt_auth_backend_role" "edge_ssh_converge" {
   user_claim      = "job_workflow_ref"
   bound_audiences = [var.vault_address]
 
-  bound_claims_type = "glob"
   bound_claims = {
     repository       = var.github_repository
-    job_workflow_ref = "${var.github_repository}/.github/workflows/ssh-cert-converge.yaml@*"
+    job_workflow_ref = "${var.github_repository}/.github/workflows/ssh-cert-converge.yaml@refs/heads/main"
     environment      = "cloud-edge"
   }
 
-  token_policies = [vault_policy.aws_tfstate.name, vault_policy.cloud_edge.name]
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.cloud_edge_ssh.name]
   token_type     = "service"
   token_ttl      = 1200
   token_max_ttl  = 1200
@@ -113,6 +152,25 @@ resource "vault_jwt_auth_backend_role" "cloud_edge" {
   user_claim      = "job_workflow_ref"
   bound_audiences = [var.vault_address]
 
+  bound_claims = {
+    repository       = var.github_repository
+    job_workflow_ref = "${var.github_repository}/.github/workflows/cloud-edge-deploy.yaml@refs/heads/main"
+    environment      = "cloud-edge"
+  }
+
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.cloud_edge.name, vault_policy.cloud_edge_ssh.name]
+  token_type     = "service"
+  token_ttl      = 1200
+  token_max_ttl  = 1200
+}
+
+resource "vault_jwt_auth_backend_role" "cloud_edge_plan" {
+  backend         = vault_jwt_auth_backend.github_actions.path
+  role_name       = "cloud-edge-plan"
+  role_type       = "jwt"
+  user_claim      = "job_workflow_ref"
+  bound_audiences = [var.vault_address]
+
   bound_claims_type = "glob"
   bound_claims = {
     repository       = var.github_repository
@@ -120,7 +178,7 @@ resource "vault_jwt_auth_backend_role" "cloud_edge" {
     environment      = "cloud-edge"
   }
 
-  token_policies = [vault_policy.aws_tfstate.name, vault_policy.cloud_edge.name]
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.cloud_edge_plan.name]
   token_type     = "service"
   token_ttl      = 1200
   token_max_ttl  = 1200
