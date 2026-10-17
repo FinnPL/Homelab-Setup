@@ -6,7 +6,12 @@ metadata:
   labels:
     app: dns
 spec:
-  replicas: 1
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: dns
@@ -32,6 +37,13 @@ spec:
                 matchExpressions:
                   - key: node-role.kubernetes.io/control-plane
                     operator: DoesNotExist
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: dns
 
       securityContext:
         fsGroup: 1000
