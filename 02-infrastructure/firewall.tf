@@ -9,7 +9,8 @@ locals {
   nfs_client_ips = concat(
     [
       local.proxmox_host_ip, # nuc
-      local.talos_controlplane_ip
+      local.talos_controlplane_ip,
+      local.talos_db_worker_ip,
     ],
 
     local.talos_worker_ips

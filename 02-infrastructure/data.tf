@@ -44,9 +44,6 @@ locals {
     local.host_ips.talos_worker_1,
     local.host_ips.talos_worker_2,
     local.host_ips.talos_worker_3,
-    local.host_ips.talos_worker_4,
-    local.host_ips.talos_worker_5,
-    local.host_ips.talos_worker_6,
   ]
 
   # Mesh router

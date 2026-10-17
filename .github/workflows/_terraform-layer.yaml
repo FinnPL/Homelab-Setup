@@ -66,11 +66,8 @@ jobs:
           secrets: |
             kv/data/cloudflare api-token | TF_VAR_cloudflare_api_token ;
             kv/data/vieta/unifi api-key | TF_VAR_unifi_api_key ;
-            kv/data/vieta/proxmox api-token | TF_VAR_proxmox_api_token ;
             kv/data/vieta/proxmox ssh-password | TF_VAR_proxmox_ssh_password ;
             kv/data/vieta/nfs root-password | TF_VAR_nfs_root_password ;
-            kv/data/vieta/postgres root-password | TF_VAR_postgres_root_password ;
-            kv/data/vieta/postgres admin-password | TF_VAR_postgres_admin_password ;
             kv/data/vieta/mesh-router root-password | TF_VAR_mesh_router_root_password ;
             kv/data/vieta/mesh-router wg-private-key | TF_VAR_mesh_wg_private_key
 
@@ -94,7 +91,10 @@ jobs:
 
       - name: Install Ansible
         if: inputs.needs_ansible
-        run: pip install ansible
+        env:
+          # renovate: datasource=pypi depName=ansible
+          ANSIBLE_VERSION: "14.5.0"
+        run: pip install "ansible==${ANSIBLE_VERSION}"
 
       - name: Setup Terraform + AWS
         uses: ./.github/actions/tf-aws-setup
