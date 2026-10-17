@@ -12,7 +12,9 @@ data "talos_machine_configuration" "db_worker" {
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
 
-  config_patches = [
+  config_patches = concat(local.talos_base_patches, [
+    local.talos_vm_install_patch,
+    local.talos_nic_patch.vm,
     yamlencode({
       machine = {
         nodeLabels = {
@@ -31,50 +33,9 @@ data "talos_machine_configuration" "db_worker" {
             }
           ]
         }
-        features = {
-          kubePrism = {
-            enabled = true
-            port    = 7445
-          }
-        }
-        install = {
-          image = "factory.talos.dev/installer/${talos_image_factory_schematic.this.id}:${var.talos_version}"
-        }
       }
     }),
-    yamlencode({
-      cluster = {
-        network = {
-          cni = {
-            name = "none"
-          }
-        }
-        proxy = {
-          disabled = true
-        }
-      }
-    }),
-    yamlencode({
-      machine = {
-        logging = {
-          destinations = [
-            {
-              endpoint = "udp://127.0.0.1:5140"
-              format   = "json_lines"
-            }
-          ]
-        }
-        network = {
-          interfaces = [
-            {
-              interface = "ens18"
-              dhcp      = true
-            }
-          ]
-        }
-      }
-    })
-  ]
+  ])
 }
 
 resource "proxmox_virtual_environment_vm" "talos_db_worker" {

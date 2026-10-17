@@ -147,12 +147,6 @@ variable "talos_controlplane_config" {
   }
 }
 
-variable "talos_workers_enabled" {
-  description = "Enable flags for each worker node (indices 0-4 map to workers 1-5)"
-  type        = list(bool)
-  default     = [true, true, true, false, false]
-}
-
 variable "talos_db_worker_config" {
   description = "Dedicated Talos DB worker VM configuration"
   type = object({

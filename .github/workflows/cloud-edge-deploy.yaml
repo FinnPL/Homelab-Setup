@@ -208,17 +208,20 @@ jobs:
           extra_nix_config: |
             experimental-features = nix-command flakes
 
+      - name: Resolve locked nixpkgs
+        run: echo "NIXPKGS=github:NixOS/nixpkgs/$(jq -er '.nodes.nixpkgs.locked.rev' ./cloud-edge/nixos/flake.lock)" >> "$GITHUB_ENV"
+
       - name: alejandra (format check)
         working-directory: cloud-edge/nixos
-        run: nix run nixpkgs#alejandra -- --check .
+        run: nix run "${NIXPKGS}#alejandra" -- --check .
 
       - name: statix (lint)
         working-directory: cloud-edge/nixos
-        run: nix run nixpkgs#statix -- check .
+        run: nix run "${NIXPKGS}#statix" -- check .
 
       - name: deadnix (dead code)
         working-directory: cloud-edge/nixos
-        run: nix run nixpkgs#deadnix -- --fail .
+        run: nix run "${NIXPKGS}#deadnix" -- --fail .
 
       - name: Validate Nix flake
         run: nix flake show ./cloud-edge/nixos --no-write-lock-file >/dev/null

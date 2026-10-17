@@ -7,62 +7,18 @@ data "talos_machine_configuration" "worker" {
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
 
-  config_patches = [
-    yamlencode({
-      machine = {
-        features = {
-          kubePrism = {
-            enabled = true
-            port    = 7445
-          }
-        }
-      }
-    }),
-    yamlencode({
-      cluster = {
-        network = {
-          cni = {
-            name = "none"
-          }
-        }
-        proxy = {
-          disabled = true
-        }
-      }
-    }),
-    yamlencode({
-      machine = {
-        logging = {
-          destinations = [
-            {
-              endpoint = "udp://127.0.0.1:5140"
-              format   = "json_lines"
-            }
-          ]
-        }
-        network = {
-          interfaces = [
-            {
-              interface = "end0"
-              dhcp      = true
-            }
-          ]
-        }
-      }
-    })
-  ]
+  config_patches = concat(local.talos_base_patches, [
+    local.talos_nic_patch.pi,
+  ])
 }
 
 resource "talos_machine_configuration_apply" "workers" {
-  for_each = {
-    for worker in local.talos_workers : worker.name => worker
-    if worker.enabled
-  }
+  for_each = local.talos_workers
 
   client_configuration        = talos_machine_secrets.this.client_configuration
   machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
-  node                        = each.value.ip_address
-  endpoint                    = each.value.ip_address
+  node                        = each.value
+  endpoint                    = each.value
 
   depends_on = [
     talos_machine_bootstrap.this

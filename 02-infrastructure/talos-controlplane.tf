@@ -1,14 +1,10 @@
 locals {
   cluster_endpoint = "https://${local.talos_controlplane_ip}:6443"
 
-  # Worker nodes with IPs from 01-network
-  talos_workers = [
-    for idx, enabled in var.talos_workers_enabled : {
-      name       = "talos-worker-${idx + 1}"
-      ip_address = local.talos_worker_ips[idx]
-      enabled    = enabled
-    }
-  ]
+  # Pi workers with IPs from 01-network
+  talos_workers = {
+    for idx, ip in local.talos_worker_ips : "talos-worker-${idx + 1}" => ip
+  }
 }
 
 resource "talos_machine_secrets" "this" {}
@@ -101,30 +97,11 @@ data "talos_machine_configuration" "controlplane" {
   talos_version      = var.talos_version
   kubernetes_version = var.kubernetes_version
 
-  config_patches = [
-    yamlencode({
-      machine = {
-        features = {
-          kubePrism = {
-            enabled = true
-            port    = 7445
-          }
-        }
-        install = {
-          image = "factory.talos.dev/installer/${talos_image_factory_schematic.this.id}:${var.talos_version}"
-        }
-      }
-    }),
+  config_patches = concat(local.talos_base_patches, [
+    local.talos_vm_install_patch,
+    local.talos_nic_patch.vm,
     yamlencode({
       cluster = {
-        network = {
-          cni = {
-            name = "none"
-          }
-        }
-        proxy = {
-          disabled = true
-        }
         controllerManager = {
           extraArgs = {
             "bind-address" = "0.0.0.0"
@@ -144,27 +121,7 @@ data "talos_machine_configuration" "controlplane" {
         }
       }
     }),
-    yamlencode({
-      machine = {
-        logging = {
-          destinations = [
-            {
-              endpoint = "udp://127.0.0.1:5140"
-              format   = "json_lines"
-            }
-          ]
-        }
-        network = {
-          interfaces = [
-            {
-              interface = "ens18"
-              dhcp      = true
-            }
-          ]
-        }
-      }
-    })
-  ]
+  ])
 }
 
 data "talos_client_configuration" "this" {

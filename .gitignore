@@ -3,11 +3,6 @@
 .env.local
 .env.*.local
 
-# Generated config files (created from templates during deployment)
-src/Pi4/prometheus/prometheus.yml
-src/Pi4/traefik/traefik.yml
-src/Pi4/alertmanager/alertmanager.yml
-
 # Node modules
 node_modules/
 
