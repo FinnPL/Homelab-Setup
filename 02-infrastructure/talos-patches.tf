@@ -4,10 +4,10 @@ locals {
     # Accept Vault-issued client certificates.
     yamlencode({
       machine = {
-        acceptedCAs = [{ crt = base64encode(data.terraform_remote_state.vault.outputs.cluster_client_ca_pem.talos) }]
+        acceptedCAs = [{ crt = base64encode("${chomp(data.terraform_remote_state.vault.outputs.cluster_client_ca_pem.talos)}\n") }]
       }
       cluster = {
-        acceptedCAs = [{ crt = base64encode(data.terraform_remote_state.vault.outputs.cluster_client_ca_pem.k8s) }]
+        acceptedCAs = [{ crt = base64encode("${chomp(data.terraform_remote_state.vault.outputs.cluster_client_ca_pem.k8s)}\n") }]
       }
     }),
     yamlencode({
