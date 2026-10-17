@@ -1,0 +1,51 @@
+name: "Vault Kubernetes client certificate"
+description: "Mint a short-lived Vieta API client certificate from Vault pki-k8s and hand it to Terraform"
+
+inputs:
+  vault-addr:
+    description: "Vault server URL"
+    default: "https://vault.cloud.lippok.dev"
+  role:
+    description: "pki-k8s role: admin (homelab:admins) or reader (homelab:readers)"
+    required: true
+  ttl:
+    description: "Certificate lifetime"
+    default: "1h"
+
+runs:
+  using: composite
+  steps:
+    - name: Mint certificate
+      shell: bash
+      env:
+        VAULT_ADDR: ${{ inputs.vault-addr }}
+        ROLE: ${{ inputs.role }}
+        TTL: ${{ inputs.ttl }}
+      run: |
+        set -euo pipefail
+
+        if [ -z "$ROLE" ]; then
+          echo "::error::role is required (composite actions do not enforce required inputs)"
+          exit 1
+        fi
+
+        issued=$(jq -n --arg cn "gha-${GITHUB_REPOSITORY}-${GITHUB_RUN_ID}" --arg ttl "$TTL" \
+            '{common_name: $cn, ttl: $ttl}' \
+          | curl -sS -f -X PUT \
+              -H "X-Vault-Token: ${VAULT_TOKEN}" \
+              --data-binary @- \
+              "${VAULT_ADDR}/v1/pki-k8s/issue/${ROLE}")
+
+        cert=$(jq -r '.data.certificate' <<< "$issued" | base64 | tr -d '\n')
+        key=$(jq -r '.data.private_key' <<< "$issued" | base64 | tr -d '\n')
+        if [ -z "$cert" ] || [ -z "$key" ]; then
+          echo "::error::Vault did not issue a certificate for pki-k8s role $ROLE"
+          exit 1
+        fi
+
+        echo "::add-mask::$key"
+        {
+          echo "TF_VAR_k8s_client_certificate=$cert"
+          echo "TF_VAR_k8s_client_key=$key"
+        } >> "$GITHUB_ENV"
+        jq -r '.data.certificate' <<< "$issued" | openssl x509 -noout -subject -enddate

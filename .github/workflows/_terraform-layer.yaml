@@ -22,6 +22,10 @@ on:
         description: "Apply on manual dispatch (push-to-main applies regardless)"
         type: boolean
         default: false
+      needs_cluster_cert:
+        description: "Authenticate to the Kubernetes API with a Vault pki-k8s certificate"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -100,7 +104,15 @@ jobs:
         uses: ./.github/actions/tf-aws-setup
         with:
           vault-role: ${{ github.ref == 'refs/heads/main' && 'vieta-layers' || 'vieta-layers-plan' }}
-          export-token: ${{ inputs.needs_ansible }}
+          export-token: ${{ inputs.needs_ansible || inputs.needs_cluster_cert }}
+
+      # The Talos admin kubeconfig in 02's state stays as break-glass.
+      # Each role can only issue its own: admin under vieta-layers, reader under vieta-layers-plan.
+      - name: Mint Kubernetes client certificate
+        if: inputs.needs_cluster_cert
+        uses: ./.github/actions/vault-k8s-client-cert
+        with:
+          role: ${{ github.ref == 'refs/heads/main' && 'admin' || 'reader' }}
 
       # Throwaway keypair signed by the Vault user CA the LXCs trust.
       # Only the main-bound role may sign
@@ -149,5 +161,6 @@ jobs:
       - name: Terraform Apply
         if: |
           github.ref == 'refs/heads/main' &&
-          (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.apply))
+          (github.event_name == 'push' || github.event_name == 'schedule' ||
+            (github.event_name == 'workflow_dispatch' && inputs.apply))
         run: terraform apply -lock-timeout=10m -auto-approve -input=false .planfile
