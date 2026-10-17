@@ -33,6 +33,14 @@ resource "vault_policy" "vault_deploy" {
     path "ssh-host-signer/config/ca" { capabilities = ["create", "read", "update", "delete"] }
     path "ssh-host-signer/roles/*" { capabilities = ["create", "read", "update", "delete", "list"] }
 
+    # Cluster client CAs: config and roles only, never issuing
+    path "pki-talos/*" { capabilities = ["create", "read", "update", "delete", "list"] }
+    path "pki-k8s/*" { capabilities = ["create", "read", "update", "delete", "list"] }
+    path "pki-talos/issue/*" { capabilities = ["deny"] }
+    path "pki-k8s/issue/*" { capabilities = ["deny"] }
+    path "pki-talos/sign/*" { capabilities = ["deny"] }
+    path "pki-k8s/sign/*" { capabilities = ["deny"] }
+
     path "auth/token/lookup-self" { capabilities = ["read"] }
   EOT
 }
