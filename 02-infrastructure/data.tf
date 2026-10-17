@@ -18,16 +18,6 @@ data "terraform_remote_state" "cloud_edge" {
   }
 }
 
-data "terraform_remote_state" "vault" {
-  backend = "s3"
-
-  config = {
-    bucket = "finnpl-homelab-tfstate-1766068376"
-    key    = "vault/terraform.tfstate"
-    region = "eu-central-1"
-  }
-}
-
 locals {
   # Network configuration from 01-network
   athena_network = data.terraform_remote_state.network.outputs.athena_network

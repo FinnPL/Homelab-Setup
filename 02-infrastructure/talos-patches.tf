@@ -1,15 +1,6 @@
 # Machine-config patches shared by the node types
 locals {
   talos_base_patches = [
-    # Accept Vault-issued client certificates.
-    yamlencode({
-      machine = {
-        acceptedCAs = [{ crt = base64encode(data.terraform_remote_state.vault.outputs.cluster_client_ca_pem.talos) }]
-      }
-      cluster = {
-        acceptedCAs = [{ crt = base64encode(data.terraform_remote_state.vault.outputs.cluster_client_ca_pem.k8s) }]
-      }
-    }),
     yamlencode({
       machine = {
         features = {
