@@ -137,6 +137,11 @@ data "talos_machine_configuration" "controlplane" {
             "secure-port"  = "10259"
           }
         }
+        etcd = {
+          extraArgs = {
+            "listen-metrics-urls" = "http://0.0.0.0:2381"
+          }
+        }
       }
     }),
     yamlencode({

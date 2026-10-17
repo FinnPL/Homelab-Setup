@@ -12,6 +12,10 @@ kube-prometheus-stack:
   kubeProxy:
     enabled: false
 
+  kubeEtcd:
+    endpoints:
+      - 10.10.1.60
+
   # This reads /proc/sys/kernel/hung_task_detect_count that Talos current kernel doesn't expose.
   prometheus-node-exporter:
     extraArgs:
