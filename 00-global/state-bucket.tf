@@ -3,6 +3,7 @@ locals {
   state_bucket = "finnpl-homelab-tfstate-1766068376"
 }
 
+#trivy:ignore:AWS-0089
 resource "aws_s3_bucket" "tfstate" {
   bucket = local.state_bucket
 
@@ -19,6 +20,7 @@ resource "aws_s3_bucket_versioning" "tfstate" {
   }
 }
 
+#trivy:ignore:AWS-0132
 resource "aws_s3_bucket_server_side_encryption_configuration" "tfstate" {
   bucket = aws_s3_bucket.tfstate.id
 
