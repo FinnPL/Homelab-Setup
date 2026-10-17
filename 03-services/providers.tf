@@ -52,29 +52,32 @@ locals {
   kubeconfig = yamldecode(data.terraform_remote_state.infrastructure.outputs.kubeconfig)
   cluster    = local.kubeconfig.clusters[0].cluster
   user       = local.kubeconfig.users[0].user
+
+  client_certificate = var.k8s_client_certificate != "" ? base64decode(var.k8s_client_certificate) : base64decode(local.user["client-certificate-data"])
+  client_key         = var.k8s_client_key != "" ? base64decode(var.k8s_client_key) : base64decode(local.user["client-key-data"])
 }
 
 provider "kubernetes" {
   host                   = local.cluster.server
   cluster_ca_certificate = base64decode(local.cluster["certificate-authority-data"])
-  client_certificate     = base64decode(local.user["client-certificate-data"])
-  client_key             = base64decode(local.user["client-key-data"])
+  client_certificate     = local.client_certificate
+  client_key             = local.client_key
 }
 
 provider "helm" {
   kubernetes = {
     host                   = local.cluster.server
     cluster_ca_certificate = base64decode(local.cluster["certificate-authority-data"])
-    client_certificate     = base64decode(local.user["client-certificate-data"])
-    client_key             = base64decode(local.user["client-key-data"])
+    client_certificate     = local.client_certificate
+    client_key             = local.client_key
   }
 }
 
 provider "kubectl" {
   host                   = local.cluster.server
   cluster_ca_certificate = base64decode(local.cluster["certificate-authority-data"])
-  client_certificate     = base64decode(local.user["client-certificate-data"])
-  client_key             = base64decode(local.user["client-key-data"])
+  client_certificate     = local.client_certificate
+  client_key             = local.client_key
   load_config_file       = false
 }
 

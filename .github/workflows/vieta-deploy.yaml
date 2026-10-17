@@ -24,6 +24,10 @@ on:
       - "03-services/**"
       - ".github/workflows/vieta-deploy.yaml"
       - ".github/workflows/_terraform-layer.yaml"
+  # The talos provider renews its own client certificate and the admin kubeconfig only when
+  # the infra layer runs in their final month, so make sure it runs at least monthly.
+  schedule:
+    - cron: "17 3 1 * *"
   workflow_dispatch:
     inputs:
       layer:
@@ -60,6 +64,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        if: github.event_name != 'schedule'
         id: filter
         with:
           filters: |
@@ -105,6 +110,7 @@ jobs:
       always() &&
       (needs.deploy-network.result == 'success' || needs.deploy-network.result == 'skipped') &&
       (
+        github.event_name == 'schedule' ||
         (github.event_name != 'workflow_dispatch' && needs.changes.outputs.infra == 'true') ||
         (github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == '02-infrastructure'))
       )
@@ -130,4 +136,5 @@ jobs:
     with:
       layer: 03-services
       needs_homelab: true
+      needs_cluster_cert: true
       apply: ${{ github.event_name == 'workflow_dispatch' && inputs.apply || false }}

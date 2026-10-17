@@ -22,3 +22,17 @@ variable "vault_address" {
   type        = string
   default     = "https://vault.cloud.lippok.dev"
 }
+
+variable "k8s_client_certificate" {
+  description = "Base64 PEM client certificate from Vault pki-k8s"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "k8s_client_key" {
+  description = "Base64 PEM key for k8s_client_certificate"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
