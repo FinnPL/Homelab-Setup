@@ -80,10 +80,15 @@ resource "vault_jwt_auth_backend_role" "vieta_layers" {
     environment      = "vieta"
   }
 
-  token_policies = [vault_policy.aws_tfstate.name, vault_policy.vieta.name, vault_policy.vieta_ssh.name]
-  token_type     = "service"
-  token_ttl      = 1200
-  token_max_ttl  = 1200
+  token_policies = [
+    vault_policy.aws_tfstate.name,
+    vault_policy.vieta.name,
+    vault_policy.vieta_ssh.name,
+    vault_policy.cluster_certs["admin"].name,
+  ]
+  token_type    = "service"
+  token_ttl     = 1200
+  token_max_ttl = 1200
 }
 
 resource "vault_jwt_auth_backend_role" "vieta_layers_plan" {
@@ -100,10 +105,14 @@ resource "vault_jwt_auth_backend_role" "vieta_layers_plan" {
     environment      = "vieta"
   }
 
-  token_policies = [vault_policy.aws_tfstate.name, vault_policy.vieta.name]
-  token_type     = "service"
-  token_ttl      = 1200
-  token_max_ttl  = 1200
+  token_policies = [
+    vault_policy.aws_tfstate.name,
+    vault_policy.vieta.name,
+    vault_policy.cluster_certs["reader"].name,
+  ]
+  token_type    = "service"
+  token_ttl     = 1200
+  token_max_ttl = 1200
 }
 
 # Weekly host-certificate renewal
