@@ -100,7 +100,7 @@ alloy-agent:
             syslog_format = "raw"
             labels        = { job = "talos-syslog" }
           }
-          forward_to = [loki.process.talos_json.receiver]
+          forward_to = [loki.relabel.talos_node.receiver]
         }
 
         loki.relabel "talos_node" {
@@ -263,6 +263,8 @@ alloy-agent:
     type: daemonset
     hostNetwork: true
     dnsPolicy: ClusterFirstWithHostNet
+    tolerations:
+      - operator: Exists
     volumes:
       extra:
         - name: alloy-data
