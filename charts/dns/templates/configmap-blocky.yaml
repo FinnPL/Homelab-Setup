@@ -67,6 +67,7 @@ data:
 
       blockType: nxDomain
       loading:
+        strategy: fast
         refreshPeriod: 24h
         concurrency: 4
         downloads:
