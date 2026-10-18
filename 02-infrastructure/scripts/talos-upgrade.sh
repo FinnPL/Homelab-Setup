@@ -17,6 +17,10 @@ t() {
 older() { [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n1)" = "$1" ]; }
 oldest() { sort -V | head -n1; }
 
+on_target() {
+  [ "$(k get node "$1" -o jsonpath='{.status.nodeInfo.osImage}/{.status.conditions[?(@.type=="Ready")].status}' 2>/dev/null)" = "Talos ($talos)/True" ]
+}
+
 # Kubernetes moves one minor per upgrade and Talos is only tested between adjacent minors.
 refuse_minor_skip() {
   local from to
@@ -60,12 +64,16 @@ while IFS=$'\t' read -r name ip running <&3; do
   }
 
   echo "::group::$name: Talos $running -> $talos"
-  t "$ip" upgrade --image "factory.talos.dev/installer/$schematic:$talos" --wait --timeout 30m
-  t "$cp_ip" health --wait-timeout 10m
-  [ "$(k get node "$name" -o jsonpath='{.status.nodeInfo.osImage}')" = "Talos ($talos)" ] || {
-    echo "::error::$name came back on $(k get node "$name" -o jsonpath='{.status.nodeInfo.osImage}')"
+  t "$ip" upgrade --image "factory.talos.dev/installer/$schematic:$talos" --wait=false
+  for _ in $(seq 120); do
+    on_target "$name" && break
+    sleep 10
+  done
+  on_target "$name" || {
+    echo "::error::$name is not Ready on Talos $talos after 20 minutes ($(k get node "$name" -o jsonpath='{.status.nodeInfo.osImage}' 2>/dev/null))"
     exit 1
   }
+  t "$cp_ip" health --wait-timeout 10m
   echo "::endgroup::"
 done 3<<<"$nodes"
 
