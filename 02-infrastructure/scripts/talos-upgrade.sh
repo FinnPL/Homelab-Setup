@@ -64,6 +64,9 @@ while IFS=$'\t' read -r name ip running <&3; do
   }
 
   echo "::group::$name: Talos $running -> $talos"
+  curl -fsS -o /dev/null -I --max-time 900 \
+    -H 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json' \
+    "https://factory.talos.dev/v2/installer/$schematic/manifests/$talos"
   t "$ip" upgrade --image "factory.talos.dev/installer/$schematic:$talos" --wait=false
   for _ in $(seq 120); do
     on_target "$name" && break
