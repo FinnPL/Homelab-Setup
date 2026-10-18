@@ -86,9 +86,6 @@ resource "proxmox_virtual_environment_vm" "talos_controlplane" {
     ignore_changes = [
       started,
     ]
-    replace_triggered_by = [
-      proxmox_virtual_environment_download_file.talos_iso.id
-    ]
   }
 }
 
