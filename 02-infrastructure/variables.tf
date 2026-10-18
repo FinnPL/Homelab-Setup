@@ -110,7 +110,7 @@ variable "windows_vm_config" {
 # =============================================================================
 
 variable "talos_version" {
-  description = "Talos Linux version to use"
+  description = "Talos version in the machine configs. Running nodes move with talosctl upgrade, not apply."
   type        = string
   # renovate: datasource=github-releases depName=siderolabs/talos
   default = "v1.12.1"
