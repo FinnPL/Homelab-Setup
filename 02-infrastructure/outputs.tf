@@ -15,8 +15,8 @@ output "cluster_info" {
   value = {
     name               = var.cluster_name
     endpoint           = local.cluster_endpoint
-    talos_version      = var.talos_version
-    kubernetes_version = var.kubernetes_version
+    talos_version      = local.talos_version
+    kubernetes_version = local.kubernetes_version
     controlplane_ip    = local.talos_controlplane_ip
   }
 }

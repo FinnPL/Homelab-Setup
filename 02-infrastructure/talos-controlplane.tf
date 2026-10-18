@@ -1,6 +1,10 @@
 locals {
   cluster_endpoint = "https://${local.talos_controlplane_ip}:6443"
 
+  talos_versions     = yamldecode(file("${path.module}/talos-versions.yaml"))
+  talos_version      = local.talos_versions.talos
+  kubernetes_version = local.talos_versions.kubernetes
+
   # Pi workers with IPs from 01-network
   talos_workers = {
     for idx, ip in local.talos_worker_ips : "talos-worker-${idx + 1}" => ip
@@ -91,11 +95,11 @@ data "talos_machine_configuration" "controlplane" {
   machine_type     = "controlplane"
   machine_secrets  = talos_machine_secrets.this.machine_secrets
 
-  talos_version      = var.talos_version
-  kubernetes_version = var.kubernetes_version
+  talos_version      = local.talos_version
+  kubernetes_version = local.kubernetes_version
 
   config_patches = concat(local.talos_base_patches, [
-    local.talos_vm_install_patch,
+    local.talos_install_patch.vm,
     local.talos_nic_patch.vm,
     yamlencode({
       cluster = {

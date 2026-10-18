@@ -1,0 +1,7 @@
+# Target versions for the cluster. Read by Terraform (machine configs, boot ISO) and by the
+# "Upgrade Talos and Kubernetes" step in _terraform-layer.yaml, which moves the running nodes
+# here before Terraform applies.
+# renovate: datasource=github-releases depName=siderolabs/talos
+talos: v1.12.1
+# renovate: datasource=github-releases depName=kubernetes/kubernetes versioning=semver extractVersion=^v(?<version>.*)$
+kubernetes: 1.35.0

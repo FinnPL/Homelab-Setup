@@ -46,14 +46,16 @@ locals {
     }),
   ]
 
-  # Image Factory installer with the qemu-guest-agent extension, for the Proxmox VMs only.
-  talos_vm_install_patch = yamlencode({
-    machine = {
-      install = {
-        image = "factory.talos.dev/installer/${talos_image_factory_schematic.this.id}:${var.talos_version}"
+  # Image Factory installer: qemu-guest-agent on the Proxmox VMs, the Raspberry Pi overlay on the Pis.
+  talos_install_patch = {
+    for kind, schematic in { vm = talos_image_factory_schematic.this.id, pi = talos_image_factory_schematic.pi.id } : kind => yamlencode({
+      machine = {
+        install = {
+          image = "factory.talos.dev/installer/${schematic}:${local.talos_version}"
+        }
       }
-    }
-  })
+    })
+  }
 
   # Uplink NIC: virtio on the Proxmox VMs, onboard ethernet on the Pis.
   talos_nic_patch = {

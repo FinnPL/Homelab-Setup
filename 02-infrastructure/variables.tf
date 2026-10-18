@@ -109,20 +109,6 @@ variable "windows_vm_config" {
 # Talos Kubernetes Configuration
 # =============================================================================
 
-variable "talos_version" {
-  description = "Talos version in the machine configs. Running nodes move with talosctl upgrade, not apply."
-  type        = string
-  # renovate: datasource=github-releases depName=siderolabs/talos
-  default = "v1.12.1"
-}
-
-variable "kubernetes_version" {
-  description = "Kubernetes version for Talos cluster"
-  type        = string
-  # renovate: datasource=github-releases depName=kubernetes/kubernetes versioning=semver extractVersion=^v(?<version>.*)$
-  default = "1.35.0"
-}
-
 variable "cluster_name" {
   description = "Name of the Kubernetes cluster"
   type        = string

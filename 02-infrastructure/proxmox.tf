@@ -42,13 +42,29 @@ resource "talos_image_factory_schematic" "this" {
   })
 }
 
+resource "talos_image_factory_schematic" "pi" {
+  schematic = yamlencode({
+    overlay = {
+      image = "siderolabs/sbc-raspberrypi"
+      name  = "rpi_generic"
+    }
+    customization = {
+      systemExtensions = {
+        officialExtensions = [
+          "siderolabs/util-linux-tools"
+        ]
+      }
+    }
+  })
+}
+
 resource "proxmox_virtual_environment_download_file" "talos_iso" {
   content_type = "iso"
   datastore_id = var.proxmox_iso_storage
   node_name    = var.proxmox_node
 
-  file_name = "talos-${var.talos_version}-nocloud-amd64.iso"
-  url       = "https://factory.talos.dev/image/${talos_image_factory_schematic.this.id}/${var.talos_version}/nocloud-amd64.iso"
+  file_name = "talos-${local.talos_version}-nocloud-amd64.iso"
+  url       = "https://factory.talos.dev/image/${talos_image_factory_schematic.this.id}/${local.talos_version}/nocloud-amd64.iso"
 
   overwrite = false
 

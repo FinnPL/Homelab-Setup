@@ -1,0 +1,77 @@
+name: "Vault cluster client certificate"
+description: "Mint a short-lived Vieta Talos or Kubernetes API client certificate from Vault pki-talos / pki-k8s"
+
+inputs:
+  vault-addr:
+    description: "Vault server URL"
+    default: "https://vault.cloud.lippok.dev"
+  api:
+    description: "talos (pki-talos: os:admin / os:reader) or k8s (pki-k8s: homelab:admins / homelab:readers)"
+    required: true
+  role:
+    description: "admin or reader"
+    required: true
+  ttl:
+    description: "Certificate lifetime (the pki roles allow up to 8h)"
+    default: "1h"
+  out-dir:
+    description: "Write <api>.crt and <api>.key here. Empty: hand a k8s certificate to Terraform as TF_VAR_k8s_client_*"
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Mint certificate
+      shell: bash
+      env:
+        VAULT_ADDR: ${{ inputs.vault-addr }}
+        API: ${{ inputs.api }}
+        ROLE: ${{ inputs.role }}
+        TTL: ${{ inputs.ttl }}
+        OUT_DIR: ${{ inputs.out-dir }}
+      run: |
+        set -euo pipefail
+
+        case "$API" in
+          talos | k8s) ;;
+          *)
+            echo "::error::api must be talos or k8s, got '$API'"
+            exit 1
+            ;;
+        esac
+        if [ -z "$ROLE" ]; then
+          echo "::error::role is required (composite actions do not enforce required inputs)"
+          exit 1
+        fi
+        if [ -z "$OUT_DIR" ] && [ "$API" != k8s ]; then
+          echo "::error::Only a k8s certificate goes to Terraform; set out-dir for $API"
+          exit 1
+        fi
+
+        issued=$(jq -n --arg cn "gha-${GITHUB_REPOSITORY}-${GITHUB_RUN_ID}" --arg ttl "$TTL" \
+            '{common_name: $cn, ttl: $ttl}' \
+          | curl -sS -f -X PUT \
+              -H "X-Vault-Token: ${VAULT_TOKEN}" \
+              --data-binary @- \
+              "${VAULT_ADDR}/v1/pki-${API}/issue/${ROLE}")
+
+        if ! cert=$(jq -er '.data.certificate' <<< "$issued") || ! key=$(jq -er '.data.private_key' <<< "$issued"); then
+          echo "::error::Vault did not issue a certificate for pki-${API} role $ROLE"
+          exit 1
+        fi
+
+        if [ -n "$OUT_DIR" ]; then
+          mkdir -p "$OUT_DIR"
+          chmod 700 "$OUT_DIR"
+          printf '%s\n' "$cert" > "$OUT_DIR/$API.crt"
+          (umask 077 && printf '%s\n' "$key" > "$OUT_DIR/$API.key")
+        else
+          cert_b64=$(base64 -w0 <<< "$cert")
+          key_b64=$(base64 -w0 <<< "$key")
+          echo "::add-mask::$key_b64"
+          {
+            echo "TF_VAR_k8s_client_certificate=$cert_b64"
+            echo "TF_VAR_k8s_client_key=$key_b64"
+          } >> "$GITHUB_ENV"
+        fi
+        openssl x509 -noout -subject -enddate <<< "$cert"
