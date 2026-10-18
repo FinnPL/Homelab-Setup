@@ -26,6 +26,10 @@ on:
         description: "Authenticate to the Kubernetes API with a Vault pki-k8s certificate"
         type: boolean
         default: false
+      upgrade_cluster:
+        description: "Before an apply, upgrade the running nodes to talos-versions.yaml"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -46,6 +50,10 @@ jobs:
     env:
       TF_IN_AUTOMATION: "true"
       TF_INPUT: "false"
+      UPGRADE_CLUSTER: >-
+        ${{ inputs.upgrade_cluster && github.ref == 'refs/heads/main' &&
+        (github.event_name == 'push' || github.event_name == 'schedule' ||
+        (github.event_name == 'workflow_dispatch' && inputs.apply)) }}
       TF_VAR_unifi_api_url: ${{ vars.UNIFI_API_URL }}
       TF_VAR_unifi_insecure: ${{ vars.UNIFI_INSECURE }}
       TF_VAR_proxmox_ssh_user: ${{ vars.PROXMOX_SSH_USER }}
@@ -104,15 +112,34 @@ jobs:
         uses: ./.github/actions/tf-aws-setup
         with:
           vault-role: ${{ github.ref == 'refs/heads/main' && 'vieta-layers' || 'vieta-layers-plan' }}
-          export-token: ${{ inputs.needs_ansible || inputs.needs_cluster_cert }}
+          export-token: ${{ inputs.needs_ansible || inputs.needs_cluster_cert || inputs.upgrade_cluster }}
 
       # The Talos admin kubeconfig in 02's state stays as break-glass.
       # Each role can only issue its own: admin under vieta-layers, reader under vieta-layers-plan.
       - name: Mint Kubernetes client certificate
         if: inputs.needs_cluster_cert
-        uses: ./.github/actions/vault-k8s-client-cert
+        uses: ./.github/actions/vault-cluster-client-cert
         with:
+          api: k8s
           role: ${{ github.ref == 'refs/heads/main' && 'admin' || 'reader' }}
+
+      - name: Mint Talos client certificate for the upgrade
+        if: env.UPGRADE_CLUSTER == 'true'
+        uses: ./.github/actions/vault-cluster-client-cert
+        with:
+          api: talos
+          role: admin
+          ttl: 4h
+          out-dir: ${{ runner.temp }}/cluster-certs
+
+      - name: Mint Kubernetes client certificate for the upgrade
+        if: env.UPGRADE_CLUSTER == 'true'
+        uses: ./.github/actions/vault-cluster-client-cert
+        with:
+          api: k8s
+          role: admin
+          ttl: 4h
+          out-dir: ${{ runner.temp }}/cluster-certs
 
       # Throwaway keypair signed by the Vault user CA the LXCs trust.
       # Only the main-bound role may sign
@@ -140,6 +167,36 @@ jobs:
 
       - name: Terraform Validate
         run: terraform validate
+
+      - name: Upgrade Talos and Kubernetes
+        if: env.UPGRADE_CLUSTER == 'true'
+        timeout-minutes: 150
+        run: |
+          set -euo pipefail
+          if ! terraform output -json | jq -e 'has("talosconfig")' > /dev/null; then
+            echo "No cluster in state yet; nothing to upgrade."
+            exit 0
+          fi
+
+          # Endpoints and server CAs from state, credentials from Vault.
+          certs="$RUNNER_TEMP/cluster-certs"
+          export TALOSCONFIG="$RUNNER_TEMP/talosconfig" KUBECONFIG="$RUNNER_TEMP/kubeconfig"
+          umask 077
+          terraform output -raw talosconfig |
+            CRT=$(base64 -w0 "$certs/talos.crt") KEY=$(base64 -w0 "$certs/talos.key") \
+              yq '.contexts[].crt = strenv(CRT) | .contexts[].key = strenv(KEY)' > "$TALOSCONFIG"
+          terraform output -raw kubeconfig |
+            CRT=$(base64 -w0 "$certs/k8s.crt") KEY=$(base64 -w0 "$certs/k8s.key") \
+              yq '.users[].user."client-certificate-data" = strenv(CRT) | .users[].user."client-key-data" = strenv(KEY)' > "$KUBECONFIG"
+
+          release="https://github.com/siderolabs/talos/releases/download/$(yq -r '.talos' talos-versions.yaml)"
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -fsSLo "$RUNNER_TEMP/bin/talosctl" "$release/talosctl-linux-amd64"
+          sum=$(curl -fsSL "$release/sha256sum.txt" | awk '$2 == "talosctl-linux-amd64" { print $1 }')
+          echo "$sum  $RUNNER_TEMP/bin/talosctl" | sha256sum -c -
+          chmod +x "$RUNNER_TEMP/bin/talosctl"
+
+          PATH="$RUNNER_TEMP/bin:$PATH" ./scripts/talos-upgrade.sh talos-versions.yaml
 
       - name: Terraform Plan
         id: plan

@@ -239,6 +239,7 @@
         "siderolabs/talos",
         "kubernetes/kubernetes"
       ],
+      "separateMultipleMinor": true,
       "automerge": false,
       "addLabels": [
         "infrastructure-critical"
