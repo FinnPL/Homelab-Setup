@@ -233,8 +233,11 @@
       "automerge": false
     },
     {
-      "description": "Platform core: Talos OS, Talos provider and Kubernetes share one support matrix",
+      "description": "Talos OS and Kubernetes upgrade one minor at a time, so every intermediate minor gets its own PR",
       "groupName": "talos + kubernetes",
+      "matchDatasources": [
+        "github-releases"
+      ],
       "matchPackageNames": [
         "siderolabs/talos",
         "kubernetes/kubernetes"
@@ -243,9 +246,7 @@
       "automerge": false,
       "addLabels": [
         "infrastructure-critical"
-      ],
-      "additionalBranchPrefix": "",
-      "commitMessageSuffix": ""
+      ]
     },
     {
       "matchPackageNames": [

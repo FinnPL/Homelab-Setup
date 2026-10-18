@@ -15,6 +15,18 @@ t() {
 }
 
 older() { [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n1)" = "$1" ]; }
+oldest() { sort -V | head -n1; }
+
+# Kubernetes moves one minor per upgrade and Talos is only tested between adjacent minors.
+refuse_minor_skip() {
+  local from to
+  from=$(cut -d. -f2 <<<"$2")
+  to=$(cut -d. -f2 <<<"$3")
+  if ((to > from + 1)); then
+    echo "::error::$1 $2 -> $3 skips a minor version; merge the intermediate minor first"
+    exit 1
+  fi
+}
 
 nodes=$(k get nodes -o json | jq -r '
   .items
@@ -29,6 +41,11 @@ nodes=$(k get nodes -o json | jq -r '
       (.status.nodeInfo.osImage | capture("\\((?<v>[^)]+)\\)").v) ]
   | @tsv')
 cp_ip=$(head -n1 <<<"$nodes" | cut -f2)
+oldest_kubelet=$(k get nodes -o jsonpath='{range .items[*]}{.status.nodeInfo.kubeletVersion}{"\n"}{end}' |
+  sed 's/^v//' | oldest)
+
+refuse_minor_skip Talos "$(cut -f3 <<<"$nodes" | oldest)" "$talos"
+refuse_minor_skip Kubernetes "$oldest_kubelet" "$k8s"
 
 while IFS=$'\t' read -r name ip running <&3; do
   if ! older "$running" "$talos"; then
@@ -52,8 +69,6 @@ while IFS=$'\t' read -r name ip running <&3; do
   echo "::endgroup::"
 done 3<<<"$nodes"
 
-oldest_kubelet=$(k get nodes -o jsonpath='{range .items[*]}{.status.nodeInfo.kubeletVersion}{"\n"}{end}' |
-  sed 's/^v//' | sort -V | head -n1)
 if older "$oldest_kubelet" "$k8s"; then
   echo "::group::Kubernetes $oldest_kubelet -> $k8s"
   t "$cp_ip" upgrade-k8s --to "$k8s"
