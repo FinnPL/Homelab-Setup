@@ -1,6 +1,6 @@
 ---
 import Base from "../layouts/Base.astro";
-import { IDENTITY, PROFILES, AWARDS } from "../lib/identity";
+import { IDENTITY, PROFILES, INATURALIST, AWARDS } from "../lib/identity";
 
 const experience = [
   {
@@ -47,6 +47,7 @@ const education = [
 const links = [
   { label: "Email", text: IDENTITY.email, href: `mailto:${IDENTITY.email}` },
   ...PROFILES,
+  INATURALIST,
 ];
 ---
 

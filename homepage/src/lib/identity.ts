@@ -13,9 +13,11 @@ export const PROFILES: { label: string; text: string; href: string }[] = [
   { label: "LinkedIn", text: "finn-paul-lippok", href: "https://www.linkedin.com/in/finn-paul-lippok" },
 ];
 
+export const INATURALIST = { label: "iNaturalist", text: "finnpl", href: "https://www.inaturalist.org/people/finnpl" };
+
 const IDENTITY_PAGES: string[] = [
   "https://www.badische-zeitung.de/person/Finn+Lippok",
-  "https://www.inaturalist.org/people/finnpl",
+  INATURALIST.href,
 ];
 
 export const AWARDS: { name: string; body: string }[] = [
