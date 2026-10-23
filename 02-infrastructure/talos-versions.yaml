@@ -2,6 +2,6 @@
 # "Upgrade Talos and Kubernetes" step in _terraform-layer.yaml, which moves the running nodes
 # here before Terraform applies.
 # renovate: datasource=github-releases depName=siderolabs/talos
-talos: v1.13.11
+talos: v1.14.4
 # renovate: datasource=github-releases depName=kubernetes/kubernetes versioning=semver extractVersion=^v(?<version>.*)$
 kubernetes: 1.36.5
