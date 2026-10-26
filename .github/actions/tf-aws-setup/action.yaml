@@ -5,7 +5,7 @@ inputs:
   terraform_version:
     description: "Terraform version to install"
     # renovate: datasource=github-releases depName=hashicorp/terraform extractVersion=^v(?<version>.*)$
-    default: "1.16.7"
+    default: "1.17.0"
   aws-region:
     description: "AWS region of the state bucket"
     default: "eu-central-1"
