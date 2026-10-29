@@ -16,11 +16,23 @@ data "talos_machine_configuration" "db_worker" {
     local.talos_install_patch.vm,
     local.talos_nic_patch.vm,
     yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "KubeNodeConfig"
+      labels = {
+        "dedicated" = "database"
+      }
+    }),
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "KubeletConfig"
+      "$patch"   = "delete"
+    }),
+    yamlencode({
       machine = {
-        nodeLabels = {
-          "dedicated" = "database"
-        }
         kubelet = {
+          image                               = "ghcr.io/siderolabs/kubelet:v${local.kubernetes_version}"
+          defaultRuntimeSeccompProfileEnabled = true
+          disableManifestsDirectory           = true
           extraArgs = {
             "register-with-taints" = "dedicated=database:NoSchedule"
           }
