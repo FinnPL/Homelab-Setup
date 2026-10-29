@@ -18,6 +18,14 @@
       ]
     }
   },
+  "npm": {
+    "lockFileMaintenance": {
+      "enabled": true,
+      "schedule": [
+        "before 6am on monday"
+      ]
+    }
+  },
   "pre-commit": {
     "enabled": true
   },
