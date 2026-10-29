@@ -42,7 +42,8 @@ nodes=$(k get nodes -o json | jq -r '
   | .[]
   | [ .metadata.name,
       ([.status.addresses[] | select(.type == "InternalIP") | .address][0]),
-      (.status.nodeInfo.osImage | capture("\\((?<v>[^)]+)\\)").v) ]
+      (.status.nodeInfo.osImage | capture("\\((?<v>[^)]+)\\)").v),
+      (if .metadata.labels.dedicated == "database" then "false" else "true" end) ]
   | @tsv')
 cp_ip=$(head -n1 <<<"$nodes" | cut -f2)
 oldest_kubelet=$(k get nodes -o jsonpath='{range .items[*]}{.status.nodeInfo.kubeletVersion}{"\n"}{end}' |
@@ -51,7 +52,7 @@ oldest_kubelet=$(k get nodes -o jsonpath='{range .items[*]}{.status.nodeInfo.kub
 refuse_minor_skip Talos "$(cut -f3 <<<"$nodes" | oldest)" "$talos"
 refuse_minor_skip Kubernetes "$oldest_kubelet" "$k8s"
 
-while IFS=$'\t' read -r name ip running <&3; do
+while IFS=$'\t' read -r name ip running drain <&3; do
   if ! older "$running" "$talos"; then
     continue
   fi
@@ -67,7 +68,11 @@ while IFS=$'\t' read -r name ip running <&3; do
   curl -fsS -o /dev/null -I --max-time 900 \
     -H 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json' \
     "https://factory.talos.dev/v2/installer/$schematic/manifests/$talos"
-  t "$ip" upgrade --image "factory.talos.dev/installer/$schematic:$talos" --wait=false
+  talosctl -e "$cp_ip" -n "$ip" upgrade --image "factory.talos.dev/installer/$schematic:$talos" --drain="$drain" || {
+    k uncordon "$name" || true
+    echo "::error::$name: talosctl upgrade failed"
+    exit 1
+  }
   for _ in $(seq 120); do
     on_target "$name" && break
     sleep 10
