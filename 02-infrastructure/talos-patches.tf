@@ -6,31 +6,16 @@ locals {
       machine = {
         acceptedCAs = [{ crt = base64encode("${chomp(data.terraform_remote_state.vault.outputs.cluster_client_ca_pem.talos)}\n") }]
       }
-      cluster = {
-        acceptedCAs = [{ crt = base64encode("${chomp(data.terraform_remote_state.vault.outputs.cluster_client_ca_pem.k8s)}\n") }]
-      }
     }),
     yamlencode({
-      machine = {
-        features = {
-          kubePrism = {
-            enabled = true
-            port    = 7445
-          }
-        }
-      }
+      apiVersion  = "v1alpha1"
+      kind        = "KubeAPIServerCAConfig"
+      acceptedCAs = ["${chomp(data.terraform_remote_state.vault.outputs.cluster_client_ca_pem.k8s)}\n"]
     }),
     yamlencode({
-      cluster = {
-        network = {
-          cni = {
-            name = "none"
-          }
-        }
-        proxy = {
-          disabled = true
-        }
-      }
+      apiVersion = "v1alpha1"
+      kind       = "KubeFlannelCNIConfig"
+      "$patch"   = "delete"
     }),
     yamlencode({
       machine = {
@@ -49,9 +34,14 @@ locals {
   # Image Factory installer: qemu-guest-agent on the Proxmox VMs, the Raspberry Pi overlay on the Pis.
   talos_install_patch = {
     for kind, schematic in { vm = talos_image_factory_schematic.this.id, pi = talos_image_factory_schematic.pi.id } : kind => yamlencode({
-      machine = {
-        install = {
-          image = "factory.talos.dev/installer/${schematic}:${local.talos_version}"
+      apiVersion = "v1alpha1"
+      kind       = "UnattendedInstallConfig"
+      installer = {
+        image = "factory.talos.dev/installer/${schematic}:${local.talos_version}"
+      }
+      provisioning = {
+        diskSelector = {
+          match = "disk.dev_path == \"/dev/sda\""
         }
       }
     })

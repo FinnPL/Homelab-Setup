@@ -102,19 +102,28 @@ data "talos_machine_configuration" "controlplane" {
     local.talos_install_patch.vm,
     local.talos_nic_patch.vm,
     yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "KubeProxyConfig"
+      enabled    = false
+    }),
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "KubeControllerManagerConfig"
+      extraArgs = {
+        "bind-address" = "0.0.0.0"
+        "secure-port"  = "10257"
+      }
+    }),
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "KubeSchedulerConfig"
+      extraArgs = {
+        "bind-address" = "0.0.0.0"
+        "secure-port"  = "10259"
+      }
+    }),
+    yamlencode({
       cluster = {
-        controllerManager = {
-          extraArgs = {
-            "bind-address" = "0.0.0.0"
-            "secure-port"  = "10257"
-          }
-        }
-        scheduler = {
-          extraArgs = {
-            "bind-address" = "0.0.0.0"
-            "secure-port"  = "10259"
-          }
-        }
         etcd = {
           extraArgs = {
             "listen-metrics-urls" = "http://0.0.0.0:2381"
