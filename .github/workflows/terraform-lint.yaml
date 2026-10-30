@@ -10,6 +10,7 @@ on:
       - "cloud-edge/**"
       - "vault/**"
       - "tailscale/**"
+      - "fplnet/terraform/**"
       - ".tflint.hcl"
       - ".github/workflows/terraform-lint.yaml"
   push:
@@ -23,6 +24,7 @@ on:
       - "cloud-edge/**"
       - "vault/**"
       - "tailscale/**"
+      - "fplnet/terraform/**"
       - ".tflint.hcl"
       - ".github/workflows/terraform-lint.yaml"
 
@@ -50,7 +52,7 @@ jobs:
 
       - name: Terraform fmt
         run: |
-          for d in 00-global 01-network 02-infrastructure 03-services cloud-edge vault tailscale; do
+          for d in 00-global 01-network 02-infrastructure 03-services cloud-edge vault tailscale fplnet/terraform; do
             terraform fmt -check -recursive "$d"
           done
 
@@ -68,6 +70,7 @@ jobs:
           - cloud-edge
           - vault
           - tailscale
+          - fplnet/terraform
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 

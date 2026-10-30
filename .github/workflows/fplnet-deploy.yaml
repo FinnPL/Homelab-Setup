@@ -1,6 +1,6 @@
 name: "FPLNET: deploy"
 
-# Validation only for now. Vault deploy roles will bind job_workflow_ref to this file, so keep its name.
+# Routers are still installed by hand. Vault roles bind job_workflow_ref to this file, so keep its name.
 on:
   pull_request:
     paths:
@@ -12,6 +12,11 @@ on:
       - "fplnet/**"
       - ".github/workflows/fplnet-deploy.yaml"
   workflow_dispatch:
+    inputs:
+      apply:
+        description: "Run terraform apply (dangerous)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -53,3 +58,64 @@ jobs:
             echo
             echo "::endgroup::"
           done
+
+  terraform:
+    name: "Terraform"
+    runs-on: ubuntu-latest
+    environment: fplnet
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
+    concurrency:
+      group: fplnet-terraform
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: ./fplnet/terraform
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_INPUT: "false"
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Read secrets from Vault
+        uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
+        with:
+          url: https://vault.cloud.lippok.dev
+          method: jwt
+          path: github-actions
+          role: ${{ github.ref == 'refs/heads/main' && 'fplnet-deploy' || 'fplnet-plan' }}
+          jwtGithubAudience: https://vault.cloud.lippok.dev
+          secrets: |
+            kv/data/fplnet/cloudflare api-token | TF_VAR_cloudflare_api_token
+
+      - name: Setup Terraform + AWS
+        uses: ./.github/actions/tf-aws-setup
+        with:
+          vault-role: ${{ github.ref == 'refs/heads/main' && 'fplnet-deploy' || 'fplnet-plan' }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -lock-timeout=10m -out .planfile -input=false
+
+      - name: Comment Terraform Plan
+        if: github.event_name == 'pull_request'
+        uses: ./.github/actions/terraform-plan-comment
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          working-directory: ./fplnet/terraform
+          header: "Terraform Plan (fplnet)"
+
+      - name: Terraform Apply
+        if: |
+          github.ref == 'refs/heads/main' &&
+          (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.apply))
+        run: terraform apply -lock-timeout=10m -auto-approve -input=false .planfile
