@@ -8,6 +8,7 @@
     ./hardware.nix
     ./bgp.nix
     ./route64.nix
+    ./locix.nix
     ../../modules/ssh-ca.nix
   ];
 
