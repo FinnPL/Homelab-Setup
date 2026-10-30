@@ -94,6 +94,7 @@
       "matchFileNames": [
         "0[0-3]-*/**",
         "cloud-edge/**",
+        "fplnet/**",
         "vault/**",
         "tailscale/**"
       ],
