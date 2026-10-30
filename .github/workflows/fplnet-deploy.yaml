@@ -1,0 +1,55 @@
+name: "FPLNET: deploy"
+
+# Validation only for now. Vault deploy roles will bind job_workflow_ref to this file, so keep its name.
+on:
+  pull_request:
+    paths:
+      - "fplnet/**"
+      - ".github/workflows/fplnet-deploy.yaml"
+  push:
+    branches: [main]
+    paths:
+      - "fplnet/**"
+      - ".github/workflows/fplnet-deploy.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-nixos:
+    name: "Validate NixOS"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: fplnet/nixos
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Resolve locked nixpkgs
+        run: echo "NIXPKGS=github:NixOS/nixpkgs/$(jq -er '.nodes.nixpkgs.locked.rev' flake.lock)" >> "$GITHUB_ENV"
+
+      - name: alejandra (format check)
+        run: nix run "${NIXPKGS}#alejandra" -- --check .
+
+      - name: statix (lint)
+        run: nix run "${NIXPKGS}#statix" -- check .
+
+      - name: deadnix (dead code)
+        run: nix run "${NIXPKGS}#deadnix" -- --fail .
+
+      - name: Evaluate host configurations
+        run: |
+          for host in $(nix eval .#nixosConfigurations --apply builtins.attrNames --json --no-write-lock-file | jq -r '.[]'); do
+            echo "::group::${host}"
+            nix eval ".#nixosConfigurations.${host}.config.system.build.toplevel.drvPath" --raw --no-write-lock-file
+            echo
+            echo "::endgroup::"
+          done
