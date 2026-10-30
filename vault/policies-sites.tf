@@ -79,3 +79,12 @@ resource "vault_policy" "minerva" {
     path "kv/data/minerva/*" { capabilities = ["read"] }
   EOT
 }
+
+# Plan and deploy read the same token until the routers are deployed from CI.
+resource "vault_policy" "fplnet" {
+  name = "fplnet"
+
+  policy = <<-EOT
+    path "kv/data/fplnet/*" { capabilities = ["read"] }
+  EOT
+}

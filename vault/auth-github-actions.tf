@@ -211,3 +211,42 @@ resource "vault_jwt_auth_backend_role" "minerva" {
   token_ttl      = 1200
   token_max_ttl  = 1200
 }
+
+resource "vault_jwt_auth_backend_role" "fplnet_deploy" {
+  backend         = vault_jwt_auth_backend.github_actions.path
+  role_name       = "fplnet-deploy"
+  role_type       = "jwt"
+  user_claim      = "job_workflow_ref"
+  bound_audiences = [var.vault_address]
+
+  bound_claims = {
+    repository       = var.github_repository
+    job_workflow_ref = "${var.github_repository}/.github/workflows/fplnet-deploy.yaml@refs/heads/main"
+    environment      = "fplnet"
+  }
+
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.fplnet.name]
+  token_type     = "service"
+  token_ttl      = 1200
+  token_max_ttl  = 1200
+}
+
+resource "vault_jwt_auth_backend_role" "fplnet_plan" {
+  backend         = vault_jwt_auth_backend.github_actions.path
+  role_name       = "fplnet-plan"
+  role_type       = "jwt"
+  user_claim      = "job_workflow_ref"
+  bound_audiences = [var.vault_address]
+
+  bound_claims_type = "glob"
+  bound_claims = {
+    repository       = var.github_repository
+    job_workflow_ref = "${var.github_repository}/.github/workflows/fplnet-deploy.yaml@*"
+    environment      = "fplnet"
+  }
+
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.fplnet.name]
+  token_type     = "service"
+  token_ttl      = 1200
+  token_max_ttl  = 1200
+}
