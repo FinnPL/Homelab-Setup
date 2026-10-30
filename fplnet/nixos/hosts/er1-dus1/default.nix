@@ -44,7 +44,11 @@
       ];
       routes = [
         {Gateway = "194.28.99.190";}
-        {Gateway = "2a0c:b640:11::ffff";}
+        # Source from the loopback so traceroute shows er1.dus1.fplnet.net.
+        {
+          Gateway = "2a0c:b640:11::ffff";
+          PreferredSource = "2a0c:b641:f90::1";
+        }
       ];
       networkConfig = {
         IPv6AcceptRA = false;
