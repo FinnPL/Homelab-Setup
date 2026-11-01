@@ -5,7 +5,7 @@ crossplane:
 gatus:
   image:
     repository: twinproduction/gatus
-    tag: v5.37.0
+    tag: v5.38.0
 
   podSecurityContext:
     fsGroup: 65534
