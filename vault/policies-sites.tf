@@ -88,3 +88,23 @@ resource "vault_policy" "fplnet" {
     path "kv/data/fplnet/*" { capabilities = ["read"] }
   EOT
 }
+
+resource "vault_policy" "fplnet_ssh" {
+  name = "fplnet-ssh"
+
+  policy = <<-EOT
+    path "ssh-client-signer/sign/${vault_ssh_secret_backend_role.fplnet.name}" {
+      capabilities = ["create", "update"]
+    }
+  EOT
+}
+
+resource "vault_policy" "fplnet_ssh_host" {
+  name = "fplnet-ssh-host"
+
+  policy = <<-EOT
+    path "ssh-host-signer/sign/${vault_ssh_secret_backend_role.fplnet_host.name}" {
+      capabilities = ["create", "update"]
+    }
+  EOT
+}

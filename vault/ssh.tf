@@ -57,6 +57,24 @@ resource "vault_ssh_secret_backend_role" "homelab" {
   key_id_format = local.ssh_cert_key_id
 }
 
+resource "vault_ssh_secret_backend_role" "fplnet" {
+  backend = vault_mount.ssh_client_signer.path
+  name    = "fplnet"
+
+  key_type                = "ca"
+  allow_user_certificates = true
+  allowed_users           = "root"
+  default_user            = "root"
+
+  default_extensions = local.ssh_cert_extensions
+  allowed_extensions = join(",", keys(local.ssh_cert_extensions))
+
+  ttl     = local.ssh_cert_ttl
+  max_ttl = local.ssh_cert_ttl
+
+  key_id_format = local.ssh_cert_key_id
+}
+
 output "ssh_client_ca_public_key" {
   value = vault_ssh_secret_backend_ca.client_signer.public_key
 }
@@ -82,6 +100,11 @@ locals {
     "10.10.1.80", "nfs.athena",
     "10.10.1.90", "mesh-router.athena",
   ]
+
+  # The FPLNET router addresses and names
+  fplnet_host_principals = distinct(flatten([
+    for host in jsondecode(file("${path.module}/../fplnet/hosts.json")) : host.principals
+  ]))
 }
 
 resource "vault_ssh_secret_backend_role" "oci_edge_host" {
@@ -112,6 +135,23 @@ resource "vault_ssh_secret_backend_role" "homelab_host" {
   allow_user_certificates = false
 
   allowed_domains    = join(",", local.homelab_host_principals)
+  allow_bare_domains = true
+
+  ttl     = local.ssh_host_cert_ttl
+  max_ttl = local.ssh_host_cert_ttl
+
+  key_id_format = local.ssh_cert_key_id
+}
+
+resource "vault_ssh_secret_backend_role" "fplnet_host" {
+  backend = vault_mount.ssh_host_signer.path
+  name    = "fplnet-host"
+
+  key_type                = "ca"
+  allow_host_certificates = true
+  allow_user_certificates = false
+
+  allowed_domains    = join(",", local.fplnet_host_principals)
   allow_bare_domains = true
 
   ttl     = local.ssh_host_cert_ttl

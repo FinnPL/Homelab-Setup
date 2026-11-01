@@ -154,6 +154,25 @@ resource "vault_jwt_auth_backend_role" "edge_ssh_converge" {
   token_max_ttl  = 1200
 }
 
+resource "vault_jwt_auth_backend_role" "fplnet_ssh_converge" {
+  backend         = vault_jwt_auth_backend.github_actions.path
+  role_name       = "fplnet-ssh-converge"
+  role_type       = "jwt"
+  user_claim      = "job_workflow_ref"
+  bound_audiences = [var.vault_address]
+
+  bound_claims = {
+    repository       = var.github_repository
+    job_workflow_ref = "${var.github_repository}/.github/workflows/ssh-cert-converge.yaml@refs/heads/main"
+    environment      = "fplnet"
+  }
+
+  token_policies = [vault_policy.fplnet_ssh.name, vault_policy.fplnet_ssh_host.name]
+  token_type     = "service"
+  token_ttl      = 1200
+  token_max_ttl  = 1200
+}
+
 resource "vault_jwt_auth_backend_role" "cloud_edge" {
   backend         = vault_jwt_auth_backend.github_actions.path
   role_name       = "cloud-edge"
@@ -225,7 +244,7 @@ resource "vault_jwt_auth_backend_role" "fplnet_deploy" {
     environment      = "fplnet"
   }
 
-  token_policies = [vault_policy.aws_tfstate.name, vault_policy.fplnet.name]
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.fplnet.name, vault_policy.fplnet_ssh.name]
   token_type     = "service"
   token_ttl      = 1200
   token_max_ttl  = 1200
