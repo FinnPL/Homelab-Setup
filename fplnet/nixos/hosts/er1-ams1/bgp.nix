@@ -5,6 +5,7 @@
       router id 188.65.164.27;
 
       define OWN_AS = 218255;
+      define OWN_V6 = [ 2a0c:b641:f90::/48 ];
 
       protocol device {}
 
@@ -21,6 +22,11 @@
         };
       }
 
+      filter to_upstream {
+        if net ~ OWN_V6 then accept;
+        reject;
+      }
+
       # The /48 is learned here, not originated: an upstream export of it ends with the tunnel.
       protocol bgp ibgp_dus1 {
         description "er1-dus1";
@@ -33,11 +39,31 @@
           export where proto = "loopback";
         };
       }
+
+      # Paradox Networks route collectors, on-link in the uplink /48. No MD5.
+      template bgp paradox {
+        description "Paradox Networks AS52025";
+        local 2602:fa7e:17::3f as OWN_AS;
+        hold time 90;
+        ipv6 {
+          import all;
+          export filter to_upstream;
+        };
+      }
+
+      protocol bgp paradox_rc1 from paradox {
+        neighbor 2602:fa7e:17::125 as 52025;
+      }
+
+      protocol bgp paradox_rc2 from paradox {
+        neighbor 2602:fa7e:17::126 as 52025;
+      }
     '';
   };
 
   networking.firewall.extraInputRules = ''
     iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f90:1001:: tcp dport 179 accept
+    ip6 saddr { 2602:fa7e:17::125, 2602:fa7e:17::126 } tcp dport 179 accept
   '';
 
   systemd.network.networks."05-lo" = {
