@@ -1,6 +1,7 @@
 # Forward-confirmed rDNS: every name gets an AAAA, and a PTR when its address is in our /44.
 locals {
   hosts = {
+    "er1.ams1"             = "2a0c:b641:f90::2"
     "er1.dus1"             = "2a0c:b641:f90::1"
     "wg-r64-fra4.er1.dus1" = "2a11:6c7:f00:2b4::2"
   }

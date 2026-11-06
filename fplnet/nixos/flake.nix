@@ -45,6 +45,16 @@
           ./hosts/er1-dus1
         ];
       };
+
+      # getvps.net Amsterdam BGP edge
+      er1-ams1 = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = {inherit inputs;};
+        modules = [
+          disko.nixosModules.disko
+          ./hosts/er1-ams1
+        ];
+      };
     };
 
     # CI deploys every router in ../hosts.json
