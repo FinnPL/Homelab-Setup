@@ -22,6 +22,10 @@
         22 # SSH
       ];
       checkReversePath = "loose";
+      # Answer UDP traceroute so it ends at the router instead of in stars.
+      extraInputRules = ''
+        udp dport 33434-33534 reject
+      '';
     };
   };
 
