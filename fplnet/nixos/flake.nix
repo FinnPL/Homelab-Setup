@@ -8,13 +8,33 @@
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    deploy-rs = {
+      url = "github:serokell/deploy-rs";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
+    self,
     nixpkgs,
     disko,
+    deploy-rs,
     ...
-  } @ inputs: {
+  } @ inputs: let
+    deployPkgs = import nixpkgs {
+      system = "x86_64-linux";
+      overlays = [
+        deploy-rs.overlays.default
+        (_: super: {
+          deploy-rs = {
+            inherit (nixpkgs.legacyPackages.x86_64-linux) deploy-rs;
+            inherit (super.deploy-rs) lib;
+          };
+        })
+      ];
+    };
+  in {
     nixosConfigurations = {
       # Servperso Düsseldorf BGP edge
       er1-dus1 = nixpkgs.lib.nixosSystem {
@@ -26,5 +46,14 @@
         ];
       };
     };
+
+    # CI deploys every router in ../hosts.json
+    deploy.nodes =
+      builtins.mapAttrs (name: host: {
+        hostname = host.ssh;
+        sshUser = "root";
+        profiles.system.path = deployPkgs.deploy-rs.lib.activate.nixos self.nixosConfigurations.${name};
+      })
+      (builtins.fromJSON (builtins.readFile ../hosts.json));
   };
 }

@@ -6,7 +6,7 @@ inputs:
     description: "Vault server URL"
     default: "https://vault.cloud.lippok.dev"
   role:
-    description: "ssh-client-signer role to sign the keypair with (homelab, oci-edge)"
+    description: "ssh-client-signer role to sign the keypair with (homelab, oci-edge, fplnet)"
     required: true
   key-path:
     description: "Where to write the key and .pub. Defaults to a run-scoped temp path."
