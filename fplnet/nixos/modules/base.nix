@@ -30,6 +30,10 @@
     wait-online.enable = false;
   };
 
+  systemd.tmpfiles.rules = ["d /var/lib/wireguard 0750 root systemd-network -"];
+
+  boot.kernel.sysctl."net.ipv6.conf.all.forwarding" = 1;
+
   services.openssh = {
     enable = true;
     settings = {
@@ -60,5 +64,6 @@
     git
     mtr
     tcpdump
+    wireguard-tools
   ];
 }

@@ -5,6 +5,7 @@
     ./bgp.nix
     ./route64.nix
     ./locix.nix
+    ./backbone.nix
     ../../modules/base.nix
   ];
 

@@ -14,9 +14,34 @@
         route 2a0c:b641:f90::/48 unreachable;
       }
 
+      protocol static loopback {
+        ipv6;
+        route 2a0c:b641:f90::1/128 unreachable;
+      }
+
+      # Only the peer's loopback reaches the kernel.
+      protocol kernel {
+        ipv6 {
+          import none;
+          export where proto = "ibgp_ams1";
+        };
+      }
+
       filter to_upstream {
         if net ~ OWN_V6 then accept;
         reject;
+      }
+
+      protocol bgp ibgp_ams1 {
+        description "er1-ams1";
+        local 2a0c:b641:f90:1001:: as OWN_AS;
+        neighbor 2a0c:b641:f90:1001::1 as OWN_AS;
+        direct;
+        ipv6 {
+          next hop self;
+          import where net = 2a0c:b641:f90::2/128;
+          export where proto = "loopback" || proto = "own_v6";
+        };
       }
 
       # Servperso session D_818_218255_6 on access2-dus-my.de.
@@ -64,6 +89,7 @@
   networking.firewall.extraInputRules = ''
     ip6 saddr 2a0c:b640:11::ffff tcp dport 179 accept
     iifname "wg-r64-fra4" ip6 saddr 2a11:6c7:f00:2b4::1 tcp dport 179 accept
+    iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f90:1001::1 tcp dport 179 accept
     iifname "ens19" ip6 saddr { 2a0c:b641:701::a5:20:2409:1, 2a0c:b641:701::a5:20:2409:2 } tcp dport 179 accept
   '';
 

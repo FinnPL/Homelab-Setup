@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # CI steps for the FPLNET routers in fplnet/hosts.json.
 #   converge  verify each host by its Vault host certificate, re-sign it, assert the expiry
-#   deploy    verify each host, deploy-rs it, then require its BGP sessions back
+#   deploy    verify each host, restore its backbone key, deploy-rs it, then require its BGP sessions back
 set -euo pipefail
 
 ROOT="${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}"
@@ -77,6 +77,28 @@ established() {
   ssh_host "$1" birdc show protocols | awk '$2 == "BGP" && /Established/ { print $1 }'
 }
 
+# Vault holds the backbone WireGuard key, so a reinstalled router comes back with the same public key.
+restore_wg_key() {
+  local host="$1"
+  # shellcheck disable=SC2016 # expands on the router
+  curl -sSf -H "X-Vault-Token: ${VAULT_TOKEN:?}" "$VAULT_ADDR/v1/kv/data/fplnet/wireguard/$host" \
+    | jq -er '.data.data["private-key"]' \
+    | ssh_host "$host" 'set -e
+        key=/var/lib/wireguard/backbone.key
+        install -d -m 750 -g systemd-network "${key%/*}"
+        new=$(mktemp "$key.XXXXXX")
+        cat > "$new"
+        if cmp -s "$new" "$key"; then rm "$new"; exit 0; fi
+        chgrp systemd-network "$new"
+        chmod 640 "$new"
+        mv "$new" "$key"
+        for link in /sys/class/net/wg-er1-*; do
+          [ -e "$link" ] && ip link delete "${link##*/}"
+        done
+        networkctl reload' \
+    || error "Could not restore the backbone WireGuard key on $host."
+}
+
 deploy_host() {
   local host="$1" before
   before=$(established "$host")
@@ -112,6 +134,7 @@ case "${1:-}" in
   deploy)
     for host in $(hosts); do
       verify_host "$host"
+      restore_wg_key "$host"
       deploy_host "$host"
     done
     ;;

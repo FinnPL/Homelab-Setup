@@ -3,6 +3,7 @@
     ./disk-config.nix
     ./hardware.nix
     ./bgp.nix
+    ./backbone.nix
     ../../modules/base.nix
   ];
 
