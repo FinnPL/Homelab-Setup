@@ -8,5 +8,15 @@
       "er1-dus1",
       "er1.dus1.fplnet.net"
     ]
+  },
+  "er1-ams1": {
+    "ssh": "188.65.164.27",
+    "principals": [
+      "188.65.164.27",
+      "2602:fa7e:17::3f",
+      "2a0c:b641:f90::2",
+      "er1-ams1",
+      "er1.ams1.fplnet.net"
+    ]
   }
 }
