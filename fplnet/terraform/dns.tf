@@ -3,7 +3,15 @@ locals {
   hosts = {
     "er1.ams1"             = "2a0c:b641:f90::2"
     "er1.dus1"             = "2a0c:b641:f90::1"
+    "ens18.er1.ams1"       = "2602:fa7e:17::3f"
+    "wg-er1-ams1.er1.dus1" = "2a0c:b641:f90:1001::"
+    "wg-er1-dus1.er1.ams1" = "2a0c:b641:f90:1001::1"
     "wg-r64-fra4.er1.dus1" = "2a11:6c7:f00:2b4::2"
+  }
+
+  # The PTR of these lives with the provider, set in its panel.
+  hosts_v4 = {
+    "ens18.er1.ams1" = "188.65.164.27"
   }
 
   reverse_zone = "9.f.0.1.4.6.b.c.0.a.2.ip6.arpa"
@@ -38,6 +46,17 @@ resource "cloudflare_dns_record" "aaaa" {
   zone_id = data.cloudflare_zone.forward.id
   name    = "${each.key}.fplnet.net"
   type    = "AAAA"
+  ttl     = 3600
+  content = each.value
+  proxied = false
+}
+
+resource "cloudflare_dns_record" "a" {
+  for_each = local.hosts_v4
+
+  zone_id = data.cloudflare_zone.forward.id
+  name    = "${each.key}.fplnet.net"
+  type    = "A"
   ttl     = 3600
   content = each.value
   proxied = false

@@ -1,7 +1,5 @@
 {
   # Route64 BGP tunnel, r4-fra-de.
-  systemd.tmpfiles.rules = ["d /var/lib/wireguard 0750 root systemd-network -"];
-
   # r4-fra-de answers from 81.18.58.23, not the 45.153.82.87 we send to, so conntrack
   # never matches the reply. WireGuard drops unauthenticated packets itself.
   networking.firewall.allowedUDPPorts = [51820];
