@@ -1,6 +1,7 @@
 name: "FPLNET: deploy"
 
-# Routers are still installed by hand. Vault roles bind job_workflow_ref to this file, so keep its name.
+# Routers are installed by hand (nixos-anywhere)
+# Vault roles bind job_workflow_ref to this file, so keep its name.
 on:
   pull_request:
     paths:
@@ -17,11 +18,33 @@ on:
         description: "Run terraform apply (dangerous)"
         type: boolean
         default: false
+      deploy_nixos:
+        description: "Deploy every router with deploy-rs"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      nixos: ${{ steps.filter.outputs.nixos }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        id: filter
+        with:
+          filters: |
+            nixos:
+              - 'fplnet/nixos/**'
+              - 'fplnet/hosts.json'
+              - 'fplnet/scripts/**'
+
   validate-nixos:
     name: "Validate NixOS"
     runs-on: ubuntu-latest
@@ -55,6 +78,8 @@ jobs:
           for host in $(nix eval .#nixosConfigurations --apply builtins.attrNames --json --no-write-lock-file | jq -r '.[]'); do
             echo "::group::${host}"
             nix eval ".#nixosConfigurations.${host}.config.system.build.toplevel.drvPath" --raw --no-write-lock-file
+            echo
+            nix eval ".#deploy.nodes.${host}.profiles.system.path.drvPath" --raw --no-write-lock-file
             echo
             echo "::endgroup::"
           done
@@ -119,3 +144,52 @@ jobs:
           github.ref == 'refs/heads/main' &&
           (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.apply))
         run: terraform apply -lock-timeout=10m -auto-approve -input=false .planfile
+
+  deploy-nixos:
+    needs: [changes, validate-nixos]
+    if: |
+      github.ref == 'refs/heads/main' &&
+      (
+        (github.event_name == 'push' && needs.changes.outputs.nixos == 'true') ||
+        (github.event_name == 'workflow_dispatch' && inputs.deploy_nixos)
+      )
+    name: "NixOS Deploy"
+    runs-on: ubuntu-latest
+    environment: fplnet
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: fplnet-hosts
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@448cde739abec1eaf0646249e3d25bb8d9bc7702 # v31.11.2
+        with:
+          extra_nix_config: |
+            experimental-features = nix-command flakes
+
+      - name: Log in to Vault
+        uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
+        with:
+          url: https://vault.cloud.lippok.dev
+          method: jwt
+          path: github-actions
+          role: fplnet-deploy
+          jwtGithubAudience: https://vault.cloud.lippok.dev
+          exportToken: true
+
+      - name: Mint router SSH certificate
+        id: ssh_cert
+        uses: ./.github/actions/vault-ssh-client-cert
+        with:
+          role: fplnet
+
+      - name: Deploy
+        env:
+          SSH_KEY: ${{ steps.ssh_cert.outputs.key-path }}
+        run: bash ./fplnet/scripts/fplnet-workflow.sh deploy

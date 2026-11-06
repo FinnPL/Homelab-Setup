@@ -1,6 +1,6 @@
 name: "SSH certs: converge"
 
-# Renews the Vault SSH host certificates on both sites
+# Renews the Vault SSH host certificates on every site
 
 on:
   schedule:
@@ -12,7 +12,7 @@ on:
         type: string
         default: ""
       allow_host_tofu:
-        description: "Both sites: adopt the host key without a valid certificate (recovery after a lapse)"
+        description: "Vieta and Cloud Edge: adopt the host key without a valid certificate (recovery after a lapse)"
         type: boolean
         default: false
   push:
@@ -21,6 +21,8 @@ on:
     paths:
       - "02-infrastructure/ansible/**"
       - "cloud-edge/scripts/gha/cloud-edge-workflow.sh"
+      - "fplnet/hosts.json"
+      - "fplnet/scripts/fplnet-workflow.sh"
       - ".github/workflows/ssh-cert-converge.yaml"
       - ".github/actions/vault-ssh-client-cert/**"
 
@@ -212,3 +214,38 @@ jobs:
         env:
           IP: ${{ steps.edge.outputs.ip }}
         run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh check-host-cert-expiry
+
+  fplnet:
+    name: "FPLNET routers"
+    runs-on: ubuntu-latest
+    environment: fplnet
+    timeout-minutes: 15
+    # Shared with the deploy-nixos job in fplnet-deploy.yaml
+    concurrency:
+      group: fplnet-hosts
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Log in to Vault
+        uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
+        with:
+          url: https://vault.cloud.lippok.dev
+          method: jwt
+          path: github-actions
+          role: fplnet-ssh-converge
+          jwtGithubAudience: https://vault.cloud.lippok.dev
+          exportToken: true
+
+      - name: Mint router SSH certificate
+        id: ssh_cert
+        uses: ./.github/actions/vault-ssh-client-cert
+        with:
+          role: fplnet
+
+      - name: Verify, renew and check every router
+        env:
+          SSH_KEY: ${{ steps.ssh_cert.outputs.key-path }}
+        run: bash ./fplnet/scripts/fplnet-workflow.sh converge
