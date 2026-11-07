@@ -92,7 +92,7 @@ restore_wg_key() {
         chgrp systemd-network "$new"
         chmod 640 "$new"
         mv "$new" "$key"
-        for link in /sys/class/net/wg-er1-*; do
+        for link in /sys/class/net/wg-er1-* /sys/class/net/wg-gw1-*; do
           [ -e "$link" ] && ip link delete "${link##*/}"
         done
         networkctl reload' \
