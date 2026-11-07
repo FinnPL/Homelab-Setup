@@ -27,6 +27,15 @@
         };
       }
 
+      # Drops iBGP within 1.5 s of the tunnel failing
+      protocol bfd {
+        interface "wg-er1-*" {
+          min rx interval 300 ms;
+          min tx interval 300 ms;
+          multiplier 5;
+        };
+      }
+
       filter to_upstream {
         if net ~ OWN_V6 then accept;
         reject;
@@ -37,6 +46,7 @@
         local 2a0c:b641:f90:1001:: as OWN_AS;
         neighbor 2a0c:b641:f90:1001::1 as OWN_AS;
         direct;
+        bfd on;
         ipv6 {
           next hop self;
           import where net = 2a0c:b641:f90::2/128;
@@ -90,6 +100,7 @@
     ip6 saddr 2a0c:b640:11::ffff tcp dport 179 accept
     iifname "wg-r64-fra4" ip6 saddr 2a11:6c7:f00:2b4::1 tcp dport 179 accept
     iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f90:1001::1 tcp dport 179 accept
+    iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f90:1001::1 udp dport 3784 accept
     iifname "ens19" ip6 saddr { 2a0c:b641:701::a5:20:2409:1, 2a0c:b641:701::a5:20:2409:2 } tcp dport 179 accept
   '';
 
