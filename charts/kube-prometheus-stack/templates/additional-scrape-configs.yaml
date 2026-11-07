@@ -1,0 +1,40 @@
+# One Secret for every extra scrape job: the operator takes a single additionalScrapeConfigs
+# source, and the bgp.tools URL carries its token in the path.
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: prometheus-additional-scrape-configs
+spec:
+  refreshInterval: 1h
+  secretStoreRef:
+    name: vault-secret-store
+    kind: ClusterSecretStore
+  target:
+    name: prometheus-additional-scrape-configs
+    creationPolicy: Owner
+    deletionPolicy: Retain
+    template:
+      engineVersion: v2
+      data:
+        additional-scrape-configs.yaml: |
+          {{- with .Values.additionalScrapeJobs }}
+          {{- toYaml . | nindent 10 }}
+          {{- end }}
+          {{- if .Values.bgpTools.enabled }}
+          - job_name: bgp-tools
+            scrape_interval: 120s
+            scheme: https
+            metrics_path: {{ "{{ (urlParse .url).path }}" }}
+            static_configs:
+              - targets: [{{ "{{ (urlParse .url).host }}" }}]
+          {{- end }}
+  {{- if .Values.bgpTools.enabled }}
+  data:
+    - secretKey: url
+      remoteRef:
+        key: {{ .Values.bgpTools.remoteKey }}
+        property: prometheus-url
+        conversionStrategy: Default
+        decodingStrategy: None
+        metadataPolicy: None
+  {{- end }}
