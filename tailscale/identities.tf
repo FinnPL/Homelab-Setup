@@ -12,6 +12,15 @@ resource "tailscale_federated_identity" "vieta" {
   tags        = ["tag:ci"]
 }
 
+# fplnet-deploy.yaml and the fplnet job of ssh-cert-converge.yaml, to reach gw1-aah1 on the Vieta LAN.
+resource "tailscale_federated_identity" "fplnet" {
+  description = "GitHub Actions fplnet environment"
+  issuer      = local.github_issuer
+  subject     = format(local.subject, "fplnet")
+  scopes      = ["auth_keys"]
+  tags        = ["tag:ci"]
+}
+
 # Mints the edge node's own join key. The runner itself never joins the tailnet.
 resource "tailscale_federated_identity" "cloud_edge" {
   description = "GitHub Actions cloud-edge environment"
@@ -53,5 +62,6 @@ output "federated_identity_client_ids" {
     vieta      = tailscale_federated_identity.vieta.id
     cloud_edge = tailscale_federated_identity.cloud_edge.id
     minerva    = tailscale_federated_identity.minerva.id
+    fplnet     = tailscale_federated_identity.fplnet.id
   }
 }
