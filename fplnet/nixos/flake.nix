@@ -55,6 +55,13 @@
           ./hosts/er1-ams1
         ];
       };
+
+      # Vieta gateway, LXC on the NUC
+      gw1-aah1 = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = {inherit inputs;};
+        modules = [./hosts/gw1-aah1];
+      };
     };
 
     # CI deploys every router in ../hosts.json

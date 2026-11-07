@@ -209,6 +209,26 @@ variable "mesh_router_config" {
   }
 }
 
+variable "gw1_aah1_config" {
+  description = "FPLNET gateway LXC configuration"
+  type = object({
+    vmid      = number
+    cores     = number
+    memory    = number
+    disk_size = number
+    mac       = string
+    template  = string
+  })
+  default = {
+    vmid      = 495
+    cores     = 1
+    memory    = 512
+    disk_size = 8
+    mac       = "bc:24:11:00:00:95"
+    template  = "gw1-aah1-nixos-26.05.tar.xz"
+  }
+}
+
 variable "mesh_router_root_password" {
   description = "Root password for the mesh router LXC container"
   type        = string
