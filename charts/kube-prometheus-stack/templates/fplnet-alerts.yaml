@@ -1,0 +1,44 @@
+{{- if .Values.bgpTools.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: fplnet-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: fplnet.bgptools
+      rules:
+        - alert: BgpToolsScrapeFailing
+          annotations:
+            summary: bgp.tools Prometheus endpoint unreachable.
+            description: The bgp-tools scrape job has failed for 30 minutes; FPLNET visibility alerts are blind.
+          expr: up{job="bgp-tools"} == 0
+          for: 30m
+          labels:
+            severity: warning
+
+        - alert: FplnetPrefixNotVisible
+          annotations:
+            summary: "{{`{{ $labels.prefix }}`}} not seen by bgp.tools."
+            description: bgp.tools sees no paths to an announced FPLNET prefix.
+          expr: |
+            (
+              label_replace(vector(0), "prefix", "{{ .Values.bgpTools.prefix }}", "", "")
+              unless on (prefix) bgptools_asn_prefix_visible{asn="{{ .Values.bgpTools.asn }}"} > 0
+            )
+            and on () up{job="bgp-tools"} == 1
+          for: 15m
+          labels:
+            severity: critical
+
+        - alert: FplnetUpstreamLost
+          annotations:
+            summary: "AS{{ .Values.bgpTools.asn }} has {{`{{ $value }}`}} upstreams, expected {{ .Values.bgpTools.expectedUpstreams }}."
+            description: bgp.tools counts fewer upstreams than configured. Its upstream data updates every 4 hours.
+          expr: bgptools_asn_upstreams{asn="{{ .Values.bgpTools.asn }}"} < {{ .Values.bgpTools.expectedUpstreams }}
+          for: 5h
+          labels:
+            severity: warning
+{{- end }}

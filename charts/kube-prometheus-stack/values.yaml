@@ -139,151 +139,11 @@ kube-prometheus-stack:
         - dorm-exporter-auth
       configMaps:
         - dorm-exporter-certs
-      additionalScrapeConfigs:
-        - job_name: dorm-switches-t16
-          scrape_interval: 120s
-          scrape_timeout: 110s
-          metrics_path: /snmp
-          scheme: https
-          tls_config:
-            ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s16-cert.pem
-          basic_auth:
-            username: prometheus
-            password_file: /etc/prometheus/secrets/dorm-exporter-auth/password
-          params:
-            module: [tplink_t1600g]
-            auth: [public_v2]
-          relabel_configs:
-            - source_labels: [__address__]
-              target_label: __param_target
-            - source_labels: [__param_target]
-              target_label: instance
-            - target_label: __address__
-              replacement: 137.226.216.254:9116
-            - target_label: job
-              replacement: network_switches
-          static_configs:
-            - targets: ['192.168.42.160']
-              labels: {site: T16, switch_name: T16S0}
-            - targets: ['192.168.42.161']
-              labels: {site: T16, switch_name: T16S1}
-            - targets: ['192.168.42.162']
-              labels: {site: T16, switch_name: T16S2}
-            - targets: ['192.168.42.163']
-              labels: {site: T16, switch_name: T16S3}
-            - targets: ['192.168.42.164']
-              labels: {site: T16, switch_name: T16S4}
-            - targets: ['192.168.42.165']
-              labels: {site: T16, switch_name: T16S5}
-            - targets: ['192.168.42.166']
-              labels: {site: T16, switch_name: T16S6}
-        - job_name: dorm-switches-r6
-          scrape_interval: 120s
-          scrape_timeout: 110s
-          metrics_path: /snmp
-          scheme: https
-          tls_config:
-            ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s6-cert.pem
-          basic_auth:
-            username: prometheus
-            password_file: /etc/prometheus/secrets/dorm-exporter-auth/password
-          params:
-            module: [tplink_t1600g]
-            auth: [public_v2]
-          relabel_configs:
-            - source_labels: [__address__]
-              target_label: __param_target
-            - source_labels: [__param_target]
-              target_label: instance
-            - target_label: __address__
-              replacement: 137.226.214.254:9116
-            - target_label: job
-              replacement: network_switches
-          static_configs:
-            - targets: ['192.168.42.230']
-              labels: {site: R6, switch_name: R6S0}
-            - targets: ['192.168.42.231']
-              labels: {site: R6, switch_name: R6S1}
-            - targets: ['192.168.42.232']
-              labels: {site: R6, switch_name: R6S2}
-            - targets: ['192.168.42.233']
-              labels: {site: R6, switch_name: R6S3}
-            - targets: ['192.168.42.234']
-              labels: {site: R6, switch_name: R6S4}
-        - job_name: dorm-node-t16
-          scrape_interval: 30s
-          scheme: https
-          tls_config:
-            ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s16-cert.pem
-          basic_auth:
-            username: prometheus
-            password_file: /etc/prometheus/secrets/dorm-exporter-auth/password
-          static_configs:
-            - targets: ['137.226.216.254:9100']
-              labels: {site: T16, server_name: 'Server 16'}
-          relabel_configs:
-            - target_label: job
-              replacement: node_exporter
-        - job_name: dorm-node-r6
-          scrape_interval: 30s
-          scheme: https
-          tls_config:
-            ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s6-cert.pem
-          basic_auth:
-            username: prometheus
-            password_file: /etc/prometheus/secrets/dorm-exporter-auth/password
-          static_configs:
-            - targets: ['137.226.214.254:9100']
-              labels: {site: R6, server_name: 'Server 6'}
-          relabel_configs:
-            - target_label: job
-              replacement: node_exporter
-        - job_name: dorm-smokeping-t16
-          scrape_interval: 15s
-          metric_relabel_configs:
-            - source_labels: [host]
-              regex: '137\.226\.(?:215|217|218)\.0*(\d+)'
-              target_label: room
-              replacement: '$1'
-            - source_labels: [host]
-              regex: '137\.226\.216\.(149)'
-              target_label: room
-              replacement: '$1'
-          scheme: https
-          tls_config:
-            ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s16-cert.pem
-          basic_auth:
-            username: prometheus
-            password_file: /etc/prometheus/secrets/dorm-exporter-auth/password
-          static_configs:
-            - targets: ['137.226.216.254:9374']
-              labels: {site: T16}
-          relabel_configs:
-            - target_label: job
-              replacement: smokeping
-        - job_name: dorm-smokeping-r6
-          scrape_interval: 15s
-          metric_relabel_configs:
-            - source_labels: [host]
-              regex: '137\.226\.(?:215|217|218)\.0*(\d+)'
-              target_label: room
-              replacement: '$1'
-            - source_labels: [host]
-              regex: '137\.226\.216\.(149)'
-              target_label: room
-              replacement: '$1'
-          scheme: https
-          tls_config:
-            ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s6-cert.pem
-          basic_auth:
-            username: prometheus
-            password_file: /etc/prometheus/secrets/dorm-exporter-auth/password
-          static_configs:
-            - targets: ['137.226.214.254:9374']
-              labels: {site: R6}
-          relabel_configs:
-            - target_label: job
-              replacement: smokeping
+      # Rendered with the bgp.tools job by templates/additional-scrape-configs.yaml.
+      additionalScrapeConfigsSecret:
+        enabled: true
+        name: prometheus-additional-scrape-configs
+        key: additional-scrape-configs.yaml
   alertmanager:
     alertmanagerSpec:
       securityContext:
@@ -498,6 +358,161 @@ kube-prometheus-stack:
         mode: console
         level: warn
         filters: tsdb.loki:warn
+
+# Static scrape jobs; templates/additional-scrape-configs.yaml renders them with secret ones.
+additionalScrapeJobs:
+  - job_name: dorm-switches-t16
+    scrape_interval: 120s
+    scrape_timeout: 110s
+    metrics_path: /snmp
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s16-cert.pem
+    basic_auth:
+      username: prometheus
+      password_file: /etc/prometheus/secrets/dorm-exporter-auth/password
+    params:
+      module: [tplink_t1600g]
+      auth: [public_v2]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 137.226.216.254:9116
+      - target_label: job
+        replacement: network_switches
+    static_configs:
+      - targets: ['192.168.42.160']
+        labels: {site: T16, switch_name: T16S0}
+      - targets: ['192.168.42.161']
+        labels: {site: T16, switch_name: T16S1}
+      - targets: ['192.168.42.162']
+        labels: {site: T16, switch_name: T16S2}
+      - targets: ['192.168.42.163']
+        labels: {site: T16, switch_name: T16S3}
+      - targets: ['192.168.42.164']
+        labels: {site: T16, switch_name: T16S4}
+      - targets: ['192.168.42.165']
+        labels: {site: T16, switch_name: T16S5}
+      - targets: ['192.168.42.166']
+        labels: {site: T16, switch_name: T16S6}
+  - job_name: dorm-switches-r6
+    scrape_interval: 120s
+    scrape_timeout: 110s
+    metrics_path: /snmp
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s6-cert.pem
+    basic_auth:
+      username: prometheus
+      password_file: /etc/prometheus/secrets/dorm-exporter-auth/password
+    params:
+      module: [tplink_t1600g]
+      auth: [public_v2]
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: 137.226.214.254:9116
+      - target_label: job
+        replacement: network_switches
+    static_configs:
+      - targets: ['192.168.42.230']
+        labels: {site: R6, switch_name: R6S0}
+      - targets: ['192.168.42.231']
+        labels: {site: R6, switch_name: R6S1}
+      - targets: ['192.168.42.232']
+        labels: {site: R6, switch_name: R6S2}
+      - targets: ['192.168.42.233']
+        labels: {site: R6, switch_name: R6S3}
+      - targets: ['192.168.42.234']
+        labels: {site: R6, switch_name: R6S4}
+  - job_name: dorm-node-t16
+    scrape_interval: 30s
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s16-cert.pem
+    basic_auth:
+      username: prometheus
+      password_file: /etc/prometheus/secrets/dorm-exporter-auth/password
+    static_configs:
+      - targets: ['137.226.216.254:9100']
+        labels: {site: T16, server_name: 'Server 16'}
+    relabel_configs:
+      - target_label: job
+        replacement: node_exporter
+  - job_name: dorm-node-r6
+    scrape_interval: 30s
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s6-cert.pem
+    basic_auth:
+      username: prometheus
+      password_file: /etc/prometheus/secrets/dorm-exporter-auth/password
+    static_configs:
+      - targets: ['137.226.214.254:9100']
+        labels: {site: R6, server_name: 'Server 6'}
+    relabel_configs:
+      - target_label: job
+        replacement: node_exporter
+  - job_name: dorm-smokeping-t16
+    scrape_interval: 15s
+    metric_relabel_configs:
+      - source_labels: [host]
+        regex: '137\.226\.(?:215|217|218)\.0*(\d+)'
+        target_label: room
+        replacement: '$1'
+      - source_labels: [host]
+        regex: '137\.226\.216\.(149)'
+        target_label: room
+        replacement: '$1'
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s16-cert.pem
+    basic_auth:
+      username: prometheus
+      password_file: /etc/prometheus/secrets/dorm-exporter-auth/password
+    static_configs:
+      - targets: ['137.226.216.254:9374']
+        labels: {site: T16}
+    relabel_configs:
+      - target_label: job
+        replacement: smokeping
+  - job_name: dorm-smokeping-r6
+    scrape_interval: 15s
+    metric_relabel_configs:
+      - source_labels: [host]
+        regex: '137\.226\.(?:215|217|218)\.0*(\d+)'
+        target_label: room
+        replacement: '$1'
+      - source_labels: [host]
+        regex: '137\.226\.216\.(149)'
+        target_label: room
+        replacement: '$1'
+    scheme: https
+    tls_config:
+      ca_file: /etc/prometheus/configmaps/dorm-exporter-certs/s6-cert.pem
+    basic_auth:
+      username: prometheus
+      password_file: /etc/prometheus/secrets/dorm-exporter-auth/password
+    static_configs:
+      - targets: ['137.226.214.254:9374']
+        labels: {site: R6}
+    relabel_configs:
+      - target_label: job
+        replacement: smokeping
+
+bgpTools:
+  enabled: true
+  remoteKey: apps/bgp-tools
+  asn: "218255"
+  prefix: 2a0c:b641:f90::/48
+  # Servperso AS34872, Route64 AS212895, Paradox AS52025.
+  expectedUpstreams: 3
 
 dormMonitoring:
   enabled: true
