@@ -18,13 +18,13 @@
       protocol kernel {
         ipv6 {
           import none;
-          export where proto = "ibgp_dus1" && net = 2a0c:b641:f90::1/128;
+          export where (proto = "ibgp_dus1" && net = 2a0c:b641:f90::1/128) || proto = "ibgp_gw1_aah1";
         };
       }
 
       # Drops iBGP within 1.5 s of the tunnel failing
       protocol bfd {
-        interface "wg-er1-*" {
+        interface "wg-er1-*", "wg-gw1-*" {
           min rx interval 300 ms;
           min tx interval 300 ms;
           multiplier 5;
@@ -46,6 +46,19 @@
         ipv6 {
           next hop self;
           import where net = 2a0c:b641:f90::1/128 || net = 2a0c:b641:f90::/48;
+          export where proto = "loopback";
+        };
+      }
+
+      protocol bgp ibgp_gw1_aah1 {
+        description "gw1-aah1";
+        local 2a0c:b641:f90:1002:: as OWN_AS;
+        neighbor 2a0c:b641:f90:1002::1 as OWN_AS;
+        direct;
+        bfd on;
+        ipv6 {
+          next hop self;
+          import where net = 2a0c:b641:f90::11/128;
           export where proto = "loopback";
         };
       }
@@ -74,6 +87,8 @@
   networking.firewall.extraInputRules = ''
     iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f90:1001:: tcp dport 179 accept
     iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f90:1001:: udp dport 3784 accept
+    iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f90:1002::1 tcp dport 179 accept
+    iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f90:1002::1 udp dport 3784 accept
     ip6 saddr { 2602:fa7e:17::125, 2602:fa7e:17::126 } tcp dport 179 accept
   '';
 

@@ -7,6 +7,7 @@
   imports = [
     "${modulesPath}/virtualisation/proxmox-lxc.nix"
     ./bgp.nix
+    ./backbone.nix
     ../../modules/base.nix
   ];
 

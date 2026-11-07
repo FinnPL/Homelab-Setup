@@ -194,6 +194,14 @@ jobs:
         with:
           role: fplnet
 
+      # gw1-aah1 is only reachable on the Vieta LAN.
+      - name: Tailscale
+        uses: tailscale/github-action@99a8333667fff04fdd6cffb46dfd409f8329a7bf # v4.3.0
+        with:
+          oauth-client-id: ${{ vars.TAILSCALE_FPLNET_CLIENT_ID }}
+          audience: api.tailscale.com/${{ vars.TAILSCALE_FPLNET_CLIENT_ID }}
+          tags: tag:ci
+
       - name: Deploy
         env:
           SSH_KEY: ${{ steps.ssh_cert.outputs.key-path }}
