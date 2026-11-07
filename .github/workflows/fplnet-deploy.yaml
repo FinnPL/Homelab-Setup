@@ -79,6 +79,11 @@ jobs:
             echo "::group::${host}"
             nix eval ".#nixosConfigurations.${host}.config.system.build.toplevel.drvPath" --raw --no-write-lock-file
             echo
+            echo "::endgroup::"
+          done
+          # Host can be configured before it is deployed.
+          for host in $(jq -r 'keys[]' ../hosts.json); do
+            echo "::group::deploy ${host}"
             nix eval ".#deploy.nodes.${host}.profiles.system.path.drvPath" --raw --no-write-lock-file
             echo
             echo "::endgroup::"
