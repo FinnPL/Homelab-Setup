@@ -5,7 +5,7 @@
       router id 194.28.99.178;
 
       define OWN_AS = 218255;
-      define OWN_V6 = [ 2a0c:b641:f90::/48 ];
+      define OWN_V6 = [ 2a0c:b641:f90::/48, 2a0c:b641:f94::/48 ];
 
       protocol device {}
 
@@ -14,12 +14,18 @@
         route 2a0c:b641:f90::/48 unreachable;
       }
 
+      # Default route for the sites; this kernel keeps its own.
+      protocol static default_v6 {
+        ipv6;
+        route ::/0 unreachable;
+      }
+
       protocol static loopback {
         ipv6;
         route 2a0c:b641:f90::1/128 unreachable;
       }
 
-      # Only the peer's loopback reaches the kernel.
+      # Only peer loopbacks and site prefixes reach the kernel.
       protocol kernel {
         ipv6 {
           import none;
@@ -62,8 +68,8 @@
         bfd on;
         ipv6 {
           next hop self;
-          import where net = 2a0c:b641:f90::11/128;
-          export where proto = "loopback";
+          import where net = 2a0c:b641:f90::11/128 || net = 2a0c:b641:f94::/48;
+          export where proto = "loopback" || proto = "default_v6";
         };
       }
 
@@ -125,6 +131,10 @@
     routes = [
       {
         Destination = "2a0c:b641:f90::/48";
+        Type = "unreachable";
+      }
+      {
+        Destination = "2a0c:b641:f94::/48";
         Type = "unreachable";
       }
     ];
