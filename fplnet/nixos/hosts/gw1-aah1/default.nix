@@ -26,7 +26,7 @@
       interfaces.eth0.allowedTCPPorts = [22];
       filterForward = true;
       extraForwardRules = ''
-        iifname "eth0" oifname "wg-er1-*" ip6 saddr 2a0c:b641:f94:20::/64 accept
+        iifname "eth0" oifname "wg-er1-*" ip6 saddr { 2a0c:b641:f94:20::/64, 2a0c:b641:f94:8100::/56 } accept
       '';
     };
 

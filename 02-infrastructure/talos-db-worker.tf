@@ -33,6 +33,7 @@ data "talos_machine_configuration" "db_worker" {
           image                               = "ghcr.io/siderolabs/kubelet:v${local.kubernetes_version}"
           defaultRuntimeSeccompProfileEnabled = true
           disableManifestsDirectory           = true
+          clusterDNS                          = local.k8s_cluster_dns
           extraArgs = {
             "register-with-taints" = "dedicated=database:NoSchedule"
           }
@@ -138,6 +139,7 @@ resource "talos_machine_configuration_apply" "db_worker" {
   machine_configuration_input = data.talos_machine_configuration.db_worker.machine_configuration
   node                        = local.talos_db_worker_ip
   endpoint                    = local.talos_db_worker_ip
+  config_patches              = local.talos_v6_patches[local.talos_db_worker_ip]
 
   lifecycle {
     replace_triggered_by = [proxmox_virtual_environment_vm.talos_db_worker]

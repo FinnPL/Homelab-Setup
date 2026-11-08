@@ -146,6 +146,7 @@ resource "talos_machine_configuration_apply" "controlplane" {
   machine_configuration_input = data.talos_machine_configuration.controlplane.machine_configuration
   node                        = local.talos_controlplane_ip
   endpoint                    = local.talos_controlplane_ip
+  config_patches              = local.talos_v6_patches[local.talos_controlplane_ip]
 
   depends_on = [
     proxmox_virtual_environment_vm.talos_controlplane
