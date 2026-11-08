@@ -19,6 +19,16 @@
       "er1.ams1.fplnet.net"
     ]
   },
+  "er1-fra1": {
+    "ssh": "209.250.233.8",
+    "principals": [
+      "209.250.233.8",
+      "2a05:f480:1800:28:5400:7ff:fe06:3983",
+      "2a0c:b641:f90::3",
+      "er1-fra1",
+      "er1.fra1.fplnet.net"
+    ]
+  },
   "gw1-aah1": {
     "ssh": "10.10.1.95",
     "principals": [

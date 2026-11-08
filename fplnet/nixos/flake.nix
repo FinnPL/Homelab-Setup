@@ -56,6 +56,16 @@
         ];
       };
 
+      # Vultr Frankfurt BGP edge
+      er1-fra1 = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        specialArgs = {inherit inputs;};
+        modules = [
+          disko.nixosModules.disko
+          ./hosts/er1-fra1
+        ];
+      };
+
       # Vieta gateway, LXC on the NUC
       gw1-aah1 = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
