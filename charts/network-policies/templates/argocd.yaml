@@ -29,14 +29,6 @@ spec:
         - ports:
             - port: "6379"
               protocol: TCP
-    - toEndpoints:
-        {{- include "np.argocd" "argocd-dex-server" | nindent 8 }}
-      toPorts:
-        - ports:
-            - port: "5556"
-              protocol: TCP
-            - port: "5557"
-              protocol: TCP
     # OIDC token exchange with authentik
     {{- include "np.toGateway" (dict "root" $ "via" (list "authentik")) | nindent 4 }}
 ---
@@ -172,23 +164,4 @@ spec:
       toPorts:
         - ports:
             - port: "443"
-              protocol: TCP
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: argocd-dex-server
-  namespace: argocd
-spec:
-  endpointSelector:
-    matchLabels:
-      app.kubernetes.io/name: argocd-dex-server
-  ingress:
-    - fromEndpoints:
-        {{- include "np.argocd" "argocd-server" | nindent 8 }}
-      toPorts:
-        - ports:
-            - port: "5556"
-              protocol: TCP
-            - port: "5557"
               protocol: TCP

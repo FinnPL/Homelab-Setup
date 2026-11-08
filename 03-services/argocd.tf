@@ -46,17 +46,9 @@ resource "helm_release" "argocd" {
           limits   = { memory = "256Mi" }
         }
       }
+      # Login goes straight to authentik
       dex = {
-        resources = {
-          requests = { cpu = "10m", memory = "32Mi" }
-          limits   = { memory = "64Mi" }
-        }
-        initImage = {
-          resources = {
-            requests = { cpu = "10m", memory = "32Mi" }
-            limits   = { memory = "256Mi" }
-          }
-        }
+        enabled = false
       }
       configs = {
         params = {
