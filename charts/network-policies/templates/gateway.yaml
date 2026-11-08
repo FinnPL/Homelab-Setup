@@ -1,0 +1,21 @@
+{{- range $name, $target := dict "apollo" (list "10.10.1.195" 5000) "fritzbox" (list "192.168.178.1" 80) "proxmox" (list "10.10.1.42" 8006) "zeus" (list "10.0.1.63" 80) }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ $name }}-external-proxy
+  namespace: gateway
+spec:
+  endpointSelector:
+    matchLabels:
+      app: {{ $name }}-external-proxy
+  ingress:
+    {{- include "np.fromGateway" (list 8080) | nindent 4 }}
+  egress:
+    - toCIDR:
+        - {{ index $target 0 }}/32
+      toPorts:
+        - ports:
+            - port: {{ index $target 1 | quote }}
+              protocol: TCP
+{{- end }}

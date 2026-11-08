@@ -1,0 +1,278 @@
+{{- define "np.monitoring" -}}
+- matchLabels:
+    app.kubernetes.io/name: {{ . }}
+{{- end }}
+{{ include "np.namespaceApiserver" "monitoring" }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  ingress:
+    {{- include "np.fromGateway" (list 9090) | nindent 4 }}
+    - fromEndpoints:
+        {{- include "np.monitoring" "grafana" | nindent 8 }}
+        {{- include "np.monitoring" "prometheus" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP
+            - port: "8080"
+              protocol: TCP
+  egress:
+    # Scrape targets in pods (ServiceMonitors and PodMonitors)
+    - toEndpoints:
+        - matchExpressions:
+            - key: io.kubernetes.pod.namespace
+              operator: Exists
+      toPorts:
+        - ports:
+          {{- range list 2113 3000 4000 8000 8080 9090 9093 9130 9153 9167 9221 9300 9966 10250 }}
+            - port: {{ . | quote }}
+              protocol: TCP
+          {{- end }}
+    # Node targets: kubelet, node-exporter, cilium, tetragon, control plane
+    - toEntities:
+        - host
+        - remote-node
+        - kube-apiserver
+      toPorts:
+        - ports:
+          {{- range list 2112 6443 9100 9962 9963 9965 10250 10257 10259 }}
+            - port: {{ . | quote }}
+              protocol: TCP
+          {{- end }}
+    - toEndpoints:
+        {{- include "np.monitoring" "alertmanager" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "9093"
+              protocol: TCP
+    # Dorm exporters (additional scrape configs)
+    - toCIDR:
+        - 137.226.214.254/32
+        - 137.226.216.254/32
+      toPorts:
+        - ports:
+            - port: "9100"
+              protocol: TCP
+            - port: "9116"
+              protocol: TCP
+            - port: "9374"
+              protocol: TCP
+    {{- include "np.dnsProxy" . | nindent 4 }}
+    - toFQDNs:
+        - matchName: prometheus.bgp.tools
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: alertmanager
+  ingress:
+    {{- include "np.fromGateway" (list 9093) | nindent 4 }}
+    - fromEndpoints:
+        {{- include "np.monitoring" "prometheus" | nindent 8 }}
+        {{- include "np.monitoring" "grafana" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "9093"
+              protocol: TCP
+            - port: "8080"
+              protocol: TCP
+  egress:
+    {{- include "np.dnsProxy" . | nindent 4 }}
+    - toFQDNs:
+        - matchName: discord.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: grafana
+  namespace: monitoring
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: grafana
+  ingress:
+    {{- include "np.fromGateway" (list 3000) | nindent 4 }}
+    {{- include "np.fromPrometheus" (list 3000) | nindent 4 }}
+  egress:
+    {{- include "np.toPooler" . | nindent 4 }}
+    - toEndpoints:
+        {{- include "np.monitoring" "prometheus" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP
+    - toEndpoints:
+        {{- include "np.monitoring" "loki" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "3100"
+              protocol: TCP
+    - toEndpoints:
+        {{- include "np.monitoring" "alertmanager" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "9093"
+              protocol: TCP
+    # OIDC token exchange with authentik
+    {{- include "np.toGateway" (dict "root" $ "via" (list "authentik")) | nindent 4 }}
+    {{- include "np.dnsProxy" . | nindent 4 }}
+    # Plugin preinstall at startup (API on grafana.com, archives on GCS) and user avatars
+    - toFQDNs:
+        - matchName: grafana.com
+        - matchName: storage.googleapis.com
+        - matchName: secure.gravatar.com
+        - matchName: www.gravatar.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: loki
+  namespace: monitoring
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: loki
+  ingress:
+    # alloy-agent runs in the host network
+    - fromEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "3100"
+              protocol: TCP
+    - fromEndpoints:
+        {{- include "np.monitoring" "grafana" | nindent 8 }}
+        {{- include "np.monitoring" "alloy-receiver" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "3100"
+              protocol: TCP
+    - fromEndpoints:
+        {{- include "np.monitoring" "loki" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "7946"
+              protocol: TCP
+            - port: "9095"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        {{- include "np.monitoring" "loki" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "3100"
+              protocol: TCP
+            - port: "7946"
+              protocol: TCP
+            - port: "9095"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: alloy-receiver
+  namespace: monitoring
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: alloy-receiver
+  ingress:
+    - {}
+  egress:
+    - toEndpoints:
+        {{- include "np.monitoring" "loki" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "3100"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: kube-state-metrics
+  namespace: monitoring
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: kube-state-metrics
+  ingress:
+    {{- include "np.fromPrometheus" (list 8080 8081) | nindent 4 }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: prometheus-operator
+  namespace: monitoring
+spec:
+  endpointSelector:
+    matchLabels:
+      app: kube-prometheus-stack-operator
+  ingress:
+    {{- include "np.fromApiserver" (list 10250) | nindent 4 }}
+    {{- include "np.fromPrometheus" (list 10250) | nindent 4 }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: proxmox-exporter
+  namespace: monitoring
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: proxmox-exporter
+  ingress:
+    {{- include "np.fromPrometheus" (list 9221) | nindent 4 }}
+  egress:
+    - toCIDR:
+        - 10.10.1.42/32
+      toPorts:
+        - ports:
+            - port: "8006"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: unifi-exporter
+  namespace: monitoring
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: unifi-exporter
+  ingress:
+    {{- include "np.fromPrometheus" (list 9130) | nindent 4 }}
+  egress:
+    # Vieta and Minerva UniFi controllers
+    - toCIDR:
+        - 10.10.0.1/32
+        - 10.0.0.1/32
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

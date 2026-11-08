@@ -23,6 +23,10 @@ resource "helm_release" "cert_manager" {
         kind             = "ControllerConfiguration"
         enableGatewayAPI = true
       }
+      extraArgs = [
+        "--dns01-recursive-nameservers-only",
+        "--dns01-recursive-nameservers=https://1.1.1.1/dns-query,https://1.0.0.1/dns-query",
+      ]
       resources = {
         requests = { cpu = "10m", memory = "64Mi" }
         limits   = { memory = "128Mi" }

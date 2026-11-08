@@ -1,0 +1,58 @@
+{{ include "np.namespaceApiserver" "authentik" }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: authentik
+  namespace: authentik
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: authentik
+  ingress:
+    {{- include "np.fromPrometheus" (list 9300) | nindent 4 }}
+  egress:
+    {{- include "np.toPooler" . | nindent 4 }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: authentik-server
+  namespace: authentik
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: authentik
+      app.kubernetes.io/component: server
+  ingress:
+    {{- include "np.fromGateway" (list 9000 9443) | nindent 4 }}
+  egress:
+    {{- include "np.dnsProxy" . | nindent 4 }}
+    # User avatars
+    - toFQDNs:
+        - matchName: secure.gravatar.com
+        - matchName: www.gravatar.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: authentik-worker
+  namespace: authentik
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: authentik
+      app.kubernetes.io/component: worker
+  egress:
+    {{- include "np.dnsProxy" . | nindent 4 }}
+    # Update check
+    - toFQDNs:
+        - matchName: version.goauthentik.io
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

@@ -1,0 +1,29 @@
+{{ include "np.namespaceApiserver" "kyverno" }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: kyverno
+  namespace: kyverno
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: kyverno-operator
+  ingress:
+    {{- include "np.fromPrometheus" (list 8000) | nindent 4 }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: kyverno-webhooks
+  namespace: kyverno
+spec:
+  endpointSelector:
+    matchExpressions:
+      - key: app.kubernetes.io/component
+        operator: In
+        values:
+          - admission-controller
+          - cleanup-controller
+  ingress:
+    {{- include "np.fromApiserver" (list 9443) | nindent 4 }}

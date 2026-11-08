@@ -1,0 +1,96 @@
+{{ include "np.namespaceApiserver" "cnpg-system" }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: cnpg-operator
+  namespace: cnpg-system
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: cloudnative-pg
+  ingress:
+    {{- include "np.fromApiserver" (list 9443) | nindent 4 }}
+    {{- include "np.fromPrometheus" (list 8080) | nindent 4 }}
+  egress:
+    # Instance manager status endpoint on instances and poolers
+    - toEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: cnpg-cluster
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: postgres
+  namespace: cnpg-system
+spec:
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: cnpg-cluster
+      cnpg.io/podRole: instance
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            cnpg.io/podRole: pooler
+        # Creates databases and roles for PostgresDatabase claims
+        - matchLabels:
+            io.kubernetes.pod.namespace: crossplane-system
+            pkg.crossplane.io/provider: provider-sql-postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: cloudnative-pg
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+  egress:
+    - {}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: pooler
+  namespace: cnpg-system
+spec:
+  endpointSelector:
+    matchLabels:
+      cnpg.io/cluster: cnpg-cluster
+      cnpg.io/podRole: pooler
+  ingress:
+    # Namespaces holding a PostgresDatabase claim
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: authentik
+        - matchLabels:
+            io.kubernetes.pod.namespace: gatus
+        - matchLabels:
+            io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: grafana
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: cloudnative-pg
+      toPorts:
+        - ports:
+            - port: "8000"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            cnpg.io/cluster: cnpg-cluster
+            cnpg.io/podRole: instance
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP

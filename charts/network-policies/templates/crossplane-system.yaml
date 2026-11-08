@@ -1,0 +1,88 @@
+{{ include "np.namespaceApiserver" "crossplane-system" }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: crossplane
+  namespace: crossplane-system
+spec:
+  endpointSelector:
+    matchLabels:
+      app: crossplane
+  ingress:
+    {{- include "np.fromApiserver" (list 9443) | nindent 4 }}
+  egress:
+    - toEndpoints:
+        - matchExpressions:
+            - key: pkg.crossplane.io/function
+              operator: Exists
+      toPorts:
+        - ports:
+            - port: "9443"
+              protocol: TCP
+    {{- include "np.dnsProxy" . | nindent 4 }}
+    # Package registries; the images themselves are served from ghcr.io.
+    - toFQDNs:
+        - matchName: xpkg.crossplane.io
+        - matchName: xpkg.upbound.io
+        - matchName: ghcr.io
+        - matchName: pkg-containers.githubusercontent.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: crossplane-rbac-manager
+  namespace: crossplane-system
+spec:
+  endpointSelector:
+    matchLabels:
+      app: crossplane-rbac-manager
+  ingress:
+    - {}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: functions
+  namespace: crossplane-system
+spec:
+  endpointSelector:
+    matchExpressions:
+      - key: pkg.crossplane.io/function
+        operator: Exists
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            app: crossplane
+      toPorts:
+        - ports:
+            - port: "9443"
+              protocol: TCP
+  egress:
+    - {}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: provider-sql-postgres
+  namespace: crossplane-system
+spec:
+  endpointSelector:
+    matchLabels:
+      pkg.crossplane.io/provider: provider-sql-postgres
+  ingress:
+    {{- include "np.fromApiserver" (list 9443) | nindent 4 }}
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: cnpg-system
+            cnpg.io/cluster: cnpg-cluster
+            cnpg.io/podRole: instance
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP

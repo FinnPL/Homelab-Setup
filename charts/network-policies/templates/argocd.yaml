@@ -1,0 +1,194 @@
+{{- $argocd := "argocd" }}
+{{- define "np.argocd" -}}
+- matchLabels:
+    app.kubernetes.io/name: {{ . }}
+{{- end }}
+{{ include "np.namespaceApiserver" $argocd }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: argocd-server
+  namespace: argocd
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-server
+  ingress:
+    {{- include "np.fromGateway" (list 8080) | nindent 4 }}
+  egress:
+    - toEndpoints:
+        {{- include "np.argocd" "argocd-repo-server" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "8081"
+              protocol: TCP
+    - toEndpoints:
+        {{- include "np.argocd" "argocd-redis" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+    - toEndpoints:
+        {{- include "np.argocd" "argocd-dex-server" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "5556"
+              protocol: TCP
+            - port: "5557"
+              protocol: TCP
+    # OIDC token exchange with authentik
+    {{- include "np.toGateway" (dict "root" $ "via" (list "authentik")) | nindent 4 }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: argocd-repo-server
+  namespace: argocd
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-repo-server
+  ingress:
+    - fromEndpoints:
+        {{- include "np.argocd" "argocd-server" | nindent 8 }}
+        {{- include "np.argocd" "argocd-application-controller" | nindent 8 }}
+        {{- include "np.argocd" "argocd-applicationset-controller" | nindent 8 }}
+        {{- include "np.argocd" "argocd-notifications-controller" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "8081"
+              protocol: TCP
+  egress:
+    - toEndpoints:
+        {{- include "np.argocd" "argocd-redis" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+    {{- include "np.dnsProxy" . | nindent 4 }}
+    # The repo and every Helm repository a wrapper chart pulls from (charts/*/Chart.yaml).
+    - toFQDNs:
+        - matchName: github.com
+        - matchName: ghcr.io
+        - matchName: charts.crossplane.io
+        - matchName: charts.goauthentik.io
+        - matchName: helm.cilium.io
+        - matchName: pkgs.tailscale.com
+        - matchPattern: "*.github.io"
+        - matchPattern: "*.githubusercontent.com"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: argocd-redis
+  namespace: argocd
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-redis
+  ingress:
+    - fromEndpoints:
+        {{- include "np.argocd" "argocd-server" | nindent 8 }}
+        {{- include "np.argocd" "argocd-repo-server" | nindent 8 }}
+        {{- include "np.argocd" "argocd-application-controller" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+  egress:
+    - {}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: argocd-application-controller
+  namespace: argocd
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-application-controller
+  ingress:
+    - {}
+  egress:
+    - toEndpoints:
+        {{- include "np.argocd" "argocd-repo-server" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "8081"
+              protocol: TCP
+    - toEndpoints:
+        {{- include "np.argocd" "argocd-redis" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "6379"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: argocd-applicationset-controller
+  namespace: argocd
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-applicationset-controller
+  ingress:
+    - {}
+  egress:
+    - toEndpoints:
+        {{- include "np.argocd" "argocd-repo-server" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "8081"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: argocd-notifications-controller
+  namespace: argocd
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-notifications-controller
+  ingress:
+    - {}
+  egress:
+    - toEndpoints:
+        {{- include "np.argocd" "argocd-repo-server" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "8081"
+              protocol: TCP
+    {{- include "np.dnsProxy" . | nindent 4 }}
+    - toFQDNs:
+        - matchName: api.github.com
+        - matchName: discord.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: argocd-dex-server
+  namespace: argocd
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: argocd-dex-server
+  ingress:
+    - fromEndpoints:
+        {{- include "np.argocd" "argocd-server" | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "5556"
+              protocol: TCP
+            - port: "5557"
+              protocol: TCP
