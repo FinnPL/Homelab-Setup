@@ -2,9 +2,13 @@
   services.bird = {
     enable = true;
     config = ''
+      # VULTR_PASSWORD, written by CI from kv/fplnet/bgp/er1-fra1
+      include "secrets.conf";
+
       router id 209.250.233.8;
 
       define OWN_AS = 218255;
+      define OWN_V6 = [ 2a0c:b641:f90::/48, 2a0c:b641:f94::/48 ];
 
       protocol device {}
 
@@ -28,6 +32,11 @@
           min tx interval 300 ms;
           multiplier 5;
         };
+      }
+
+      filter to_upstream {
+        if net ~ OWN_V6 then accept;
+        reject;
       }
 
       # The /48 is learned here, not originated: an upstream export of it ends with the tunnel.
@@ -70,8 +79,29 @@
           export where proto = "loopback";
         };
       }
+
+      # Vultr's route server, multihop from the main address.
+      protocol bgp vultr_v6 {
+        description "Vultr AS20473";
+        local 2a05:f480:1800:28:5400:7ff:fe06:3983 as OWN_AS;
+        neighbor 2001:19f0:ffff::1 as 64515;
+        multihop 2;
+        authentication md5;
+        password VULTR_PASSWORD;
+        ipv6 {
+          import all;
+          export filter to_upstream;
+        };
+      }
+    '';
+
+    # The real file only exists on the router.
+    preCheckConfig = ''
+      echo 'define VULTR_PASSWORD = "build-check";' > secrets.conf
     '';
   };
+
+  environment.etc."bird/secrets.conf".source = "/var/lib/bird/secrets.conf";
 
   networking.firewall.extraInputRules = ''
     iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f90:1003:: tcp dport 179 accept
@@ -80,6 +110,7 @@
     iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f90:1004:: udp dport 3784 accept
     iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f90:1005::1 tcp dport 179 accept
     iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f90:1005::1 udp dport 3784 accept
+    ip6 saddr 2001:19f0:ffff::1 tcp dport 179 accept
   '';
 
   systemd.network.networks."05-lo" = {

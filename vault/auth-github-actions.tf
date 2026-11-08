@@ -264,7 +264,7 @@ resource "vault_jwt_auth_backend_role" "fplnet_plan" {
     environment      = "fplnet"
   }
 
-  token_policies = [vault_policy.aws_tfstate.name, vault_policy.fplnet.name]
+  token_policies = [vault_policy.aws_tfstate.name, vault_policy.fplnet_plan.name]
   token_type     = "service"
   token_ttl      = 1200
   token_max_ttl  = 1200

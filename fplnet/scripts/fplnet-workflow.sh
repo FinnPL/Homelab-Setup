@@ -99,6 +99,33 @@ restore_wg_key() {
     || error "Could not restore the backbone WireGuard key on $host."
 }
 
+# BGP session passwords from kv/fplnet/bgp/<host> become BIRD defines (vultr-password -> VULTR_PASSWORD)
+# in /var/lib/bird/secrets.conf
+restore_bgp_secrets() {
+  local host="$1" response code
+  response=$(curl -sS -w '\n%{http_code}' -H "X-Vault-Token: ${VAULT_TOKEN:?}" \
+    "$VAULT_ADDR/v1/kv/data/fplnet/bgp/$host") || error "Could not reach Vault for the BGP secrets of $host."
+  code="${response##*$'\n'}"
+  [ "$code" = 404 ] && return 0
+  [ "$code" = 200 ] || error "Vault returned HTTP $code for the BGP secrets of $host."
+
+  # shellcheck disable=SC2016 # expands on the router
+  jq -er '.data.data | to_entries[]
+      | if (.value | test("^[A-Za-z0-9._-]+$")) then "define \(.key | ascii_upcase | gsub("-"; "_")) = \"\(.value)\";"
+        else error("\(.key) has characters BIRD would need escaped") end' <<< "${response%$'\n'*}" \
+    | ssh_host "$host" 'set -e
+        f=/var/lib/bird/secrets.conf
+        install -d -m 750 -g bird "${f%/*}"
+        new=$(mktemp "$f.XXXXXX")
+        cat > "$new"
+        if cmp -s "$new" "$f" && systemctl is-active -q bird; then rm "$new"; exit 0; fi
+        chgrp bird "$new"
+        chmod 640 "$new"
+        mv "$new" "$f"
+        systemctl reload-or-restart bird' \
+    || error "Could not restore the BGP secrets on $host."
+}
+
 deploy_host() {
   local host="$1" before
   before=$(established "$host")
@@ -135,6 +162,7 @@ case "${1:-}" in
     for host in $(hosts); do
       verify_host "$host"
       restore_wg_key "$host"
+      restore_bgp_secrets "$host"
       deploy_host "$host"
     done
     ;;
