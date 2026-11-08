@@ -521,6 +521,16 @@ fplnetRouters:
   er1-fra1: 2a0c:b641:f90::3
   gw1-aah1: 2a0c:b641:f90::11
 
+# smokeping targets that are not backbone peers
+fplnetProbeNames:
+  "2a11:6c7:f00:2b4::1": route64-fra4
+  "2a0c:b640:11::ffff": servperso
+  "2a0c:b641:701::a5:20:2409:1": locix-rs1
+  "2a0c:b641:701::a5:20:2409:2": locix-rs2
+  "2602:fa7e:17::125": paradox-rc1
+  "2602:fa7e:17::126": paradox-rc2
+  "2606:4700:4700::1111": cloudflare
+
 dormMonitoring:
   enabled: true
   secret:

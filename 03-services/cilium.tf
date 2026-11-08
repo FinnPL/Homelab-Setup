@@ -11,6 +11,10 @@ resource "helm_release" "cilium" {
       kubeProxyReplacement = "true"
       k8sServiceHost       = "127.0.0.1"
       k8sServicePort       = 7445
+      rollOutCiliumPods    = true
+      updateStrategy = {
+        rollingUpdate = { maxUnavailable = 1 }
+      }
       ipam = {
         mode = "kubernetes"
       }
@@ -124,6 +128,7 @@ resource "helm_release" "cilium" {
       }
 
       operator = {
+        rollOutPods = true
         prometheus = {
           enabled = true
           serviceMonitor = {

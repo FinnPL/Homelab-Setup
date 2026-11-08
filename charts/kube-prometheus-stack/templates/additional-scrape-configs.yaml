@@ -36,6 +36,22 @@ spec:
                 labels:
                   router: {{ $router }}
               {{- end }}
+            {{- if eq $job "fplnet-smokeping" }}
+            # target: the peer router of a backbone link (wg-er1-dus1.er1.ams1.fplnet.net -> er1.ams1),
+            # else the name from fplnetProbeNames, else the address.
+            metric_relabel_configs:
+              - source_labels: [host]
+                target_label: target
+              - source_labels: [host]
+                regex: 'wg-[^.]+\.(.+)\.fplnet\.net'
+                target_label: target
+              {{- range $address, $name := $.Values.fplnetProbeNames }}
+              - source_labels: [host]
+                regex: '{{ $address }}'
+                target_label: target
+                replacement: {{ $name }}
+              {{- end }}
+            {{- end }}
           {{- end }}
   {{- if .Values.bgpTools.enabled }}
   data:
