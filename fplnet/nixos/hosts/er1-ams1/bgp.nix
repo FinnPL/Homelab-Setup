@@ -103,6 +103,11 @@
     '';
   };
 
+  fplnet.monitoring.extraProbeTargets = [
+    "2602:fa7e:17::125"
+    "2602:fa7e:17::126"
+  ];
+
   networking.firewall.extraInputRules = ''
     iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f90:1001:: tcp dport 179 accept
     iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f90:1001:: udp dport 3784 accept

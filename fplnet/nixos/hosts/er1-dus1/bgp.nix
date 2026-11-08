@@ -128,6 +128,12 @@
     '';
   };
 
+  fplnet.monitoring.extraProbeTargets = [
+    "2a0c:b640:11::ffff"
+    "2a0c:b641:701::a5:20:2409:1"
+    "2a0c:b641:701::a5:20:2409:2"
+  ];
+
   networking.firewall.extraInputRules = ''
     ip6 saddr 2a0c:b640:11::ffff tcp dport 179 accept
     iifname "wg-r64-fra4" ip6 saddr 2a11:6c7:f00:2b4::1 tcp dport 179 accept

@@ -4,7 +4,10 @@
   inputs,
   ...
 }: {
-  imports = [./ssh-ca.nix];
+  imports = [
+    ./ssh-ca.nix
+    ./monitoring.nix
+  ];
 
   networking = {
     useDHCP = false;

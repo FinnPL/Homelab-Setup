@@ -28,6 +28,15 @@ spec:
             static_configs:
               - targets: [{{ "{{ (urlParse .url).host }}" }}]
           {{- end }}
+          {{- range $job, $port := dict "fplnet-node" 9100 "fplnet-bird" 9324 "fplnet-smokeping" 9374 }}
+          - job_name: {{ $job }}
+            static_configs:
+              {{- range $router, $address := $.Values.fplnetRouters }}
+              - targets: ['[{{ $address }}]:{{ $port }}']
+                labels:
+                  router: {{ $router }}
+              {{- end }}
+          {{- end }}
   {{- if .Values.bgpTools.enabled }}
   data:
     - secretKey: url

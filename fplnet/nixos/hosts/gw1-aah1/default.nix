@@ -45,6 +45,9 @@
 
   services.openssh.startWhenNeeded = false;
 
+  # The cluster sits on the LAN side.
+  fplnet.monitoring.extraInterfaces = ["eth0"];
+
   zramSwap.enable = lib.mkForce false;
 
   systemd.network.networks."10-lan" = {

@@ -42,3 +42,37 @@ spec:
           labels:
             severity: warning
 {{- end }}
+{{- if .Values.fplnetRouters }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: fplnet-router-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: fplnet.routers
+      rules:
+        - alert: FplnetRouterUnreachable
+          annotations:
+            summary: "{{`{{ $labels.router }}`}}: {{`{{ $labels.job }}`}} unreachable."
+            description: Prometheus cannot scrape the router's exporter over gw1-aah1 and the backbone.
+          expr: up{job=~"fplnet-(node|bird|smokeping)"} == 0
+          for: 5m
+          labels:
+            severity: critical
+
+        - alert: FplnetBgpSessionDown
+          annotations:
+            summary: "{{`{{ $labels.router }}`}}: BGP session {{`{{ $labels.name }}`}} down."
+            description: A BGP session that was established within the last 7 days is not established.
+          expr: |
+            max by (router, name) (bird_protocol_up{job="fplnet-bird", proto="BGP"}) == 0
+            and on (router, name)
+            max by (router, name) (max_over_time(bird_protocol_up{job="fplnet-bird", proto="BGP"}[7d])) == 1
+          for: 3m
+          labels:
+            severity: warning
+{{- end }}

@@ -4,6 +4,8 @@
   # never matches the reply. WireGuard drops unauthenticated packets itself.
   networking.firewall.allowedUDPPorts = [51820];
 
+  fplnet.monitoring.extraProbeTargets = ["2a11:6c7:f00:2b4::1"];
+
   systemd.network = {
     netdevs."20-wg-r64-fra4" = {
       netdevConfig = {
