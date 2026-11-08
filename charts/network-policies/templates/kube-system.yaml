@@ -1,0 +1,78 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: coredns
+  namespace: kube-system
+spec:
+  endpointSelector:
+    matchLabels:
+      k8s-app: kube-dns
+  ingress:
+    - fromEntities:
+        - cluster
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+    {{- include "np.fromPrometheus" (list 9153) | nindent 4 }}
+  egress:
+    {{- include "np.toApiserver" . | nindent 4 }}
+    # Talos host DNS forwards to the node's resolvers.
+    - toEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: hubble-relay
+  namespace: kube-system
+spec:
+  endpointSelector:
+    matchLabels:
+      k8s-app: hubble-relay
+  ingress:
+    - fromEndpoints:
+        - matchLabels:
+            k8s-app: hubble-ui
+      toPorts:
+        - ports:
+            - port: "4245"
+              protocol: TCP
+    {{- include "np.fromPrometheus" (list 9966) | nindent 4 }}
+  egress:
+    - toEntities:
+        - host
+        - remote-node
+      toPorts:
+        - ports:
+            - port: "4244"
+              protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: hubble-ui
+  namespace: kube-system
+spec:
+  endpointSelector:
+    matchLabels:
+      k8s-app: hubble-ui
+  ingress:
+    {{- include "np.fromGateway" (list 8081) | nindent 4 }}
+  egress:
+    {{- include "np.toApiserver" . | nindent 4 }}
+    - toEndpoints:
+        - matchLabels:
+            k8s-app: hubble-relay
+      toPorts:
+        - ports:
+            - port: "4245"
+              protocol: TCP

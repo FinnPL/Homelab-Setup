@@ -1,0 +1,56 @@
+# Gateway LoadBalancer IP; *.lippok.dev resolves here.
+gatewayIP: 10.10.1.200
+
+# Route backends. Envoy checks a calling pod's egress against the backend behind the route, not the Gateway IP.
+gatewayBackends:
+  authentik:
+    namespace: authentik
+    labels:
+      app.kubernetes.io/name: authentik
+      app.kubernetes.io/component: server
+    port: 9000
+  argocd:
+    namespace: argocd
+    labels:
+      app.kubernetes.io/name: argocd-server
+    port: 8080
+  grafana:
+    namespace: monitoring
+    labels:
+      app.kubernetes.io/name: grafana
+    port: 3000
+  prometheus:
+    namespace: monitoring
+    labels:
+      app.kubernetes.io/name: prometheus
+    port: 9090
+  alertmanager:
+    namespace: monitoring
+    labels:
+      app.kubernetes.io/name: alertmanager
+    port: 9093
+  it-tools:
+    namespace: it-tools
+    labels:
+      app.kubernetes.io/name: it-tools
+    port: 8080
+  apollo:
+    namespace: gateway
+    labels:
+      app: apollo-external-proxy
+    port: 8080
+  fritzbox:
+    namespace: gateway
+    labels:
+      app: fritzbox-external-proxy
+    port: 8080
+  proxmox:
+    namespace: gateway
+    labels:
+      app: proxmox-external-proxy
+    port: 8080
+  zeus:
+    namespace: gateway
+    labels:
+      app: zeus-external-proxy
+    port: 8080

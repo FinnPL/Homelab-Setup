@@ -1,0 +1,13 @@
+{{ include "np.namespaceApiserver" "tetragon" }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: tetragon-operator
+  namespace: tetragon
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: tetragon-operator
+  ingress:
+    {{- include "np.fromPrometheus" (list 2113) | nindent 4 }}

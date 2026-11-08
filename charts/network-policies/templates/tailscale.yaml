@@ -1,0 +1,47 @@
+{{ include "np.namespaceApiserver" "tailscale" }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: operator
+  namespace: tailscale
+spec:
+  endpointSelector:
+    matchLabels:
+      app: operator
+  ingress:
+    - {}
+  egress:
+    # Control plane and DERP relays by IP from the DERP map and fallback lists, so no toFQDNs
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP
+            - port: "3478"
+              protocol: UDP
+---
+# Exit node: the open internet, but not the LAN or the cluster (the Pi routes tailnet traffic to the LAN).
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: exit-node
+  namespace: tailscale
+spec:
+  endpointSelector:
+    matchLabels:
+      tailscale.com/managed: "true"
+  ingress:
+    - {}
+  egress:
+    - toCIDRSet:
+        - cidr: 0.0.0.0/0
+          except:
+            - 10.0.0.0/8
+            - 100.64.0.0/10
+            - 172.16.0.0/12
+            - 192.168.0.0/16
+            - 169.254.0.0/16

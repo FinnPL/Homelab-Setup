@@ -1,0 +1,43 @@
+# Applied first: lets every pod resolve names before any deny takes effect.
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: allow-dns
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+spec:
+  endpointSelector:
+    matchExpressions:
+      - key: io.kubernetes.pod.namespace
+        operator: Exists
+  enableDefaultDeny:
+    ingress: false
+    egress: false
+  egress:
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+---
+# Applied last: any pod without an allow above gets nothing in or out.
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: default-deny
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  endpointSelector:
+    matchExpressions:
+      - key: io.kubernetes.pod.namespace
+        operator: Exists
+  ingress:
+    - {}
+  egress:
+    - {}

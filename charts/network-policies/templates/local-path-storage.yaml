@@ -1,0 +1,11 @@
+{{ include "np.namespaceApiserver" "local-path-storage" }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: deny-ingress
+  namespace: local-path-storage
+spec:
+  endpointSelector: {}
+  ingress:
+    - {}

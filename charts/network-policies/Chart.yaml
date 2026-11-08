@@ -1,0 +1,5 @@
+apiVersion: v2
+name: network-policies
+description: Cilium network policies for every namespace; default deny, explicit allows.
+version: 1.0.0
+type: application

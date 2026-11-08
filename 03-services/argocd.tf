@@ -28,6 +28,10 @@ resource "helm_release" "argocd" {
         logging = {
           level = "warn"
         }
+        # Replaced by charts/network-policies
+        networkPolicy = {
+          create = false
+        }
       }
       controller = {
         resources = {

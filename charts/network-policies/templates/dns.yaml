@@ -1,0 +1,39 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: dns
+  namespace: dns
+spec:
+  endpointSelector:
+    matchLabels:
+      app: dns
+  ingress:
+    # LAN clients and the edge relay via the LoadBalancer (SNAT keeps only the world identity)
+    - fromEntities:
+        - world
+        - cluster
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
+            - port: "443"
+              protocol: TCP
+    {{- include "np.fromPrometheus" (list 4000 9167) | nindent 4 }}
+  egress:
+    # Unbound forwards over DoT
+    - toCIDR:
+        - 1.1.1.1/32
+        - 1.0.0.1/32
+      toPorts:
+        - ports:
+            - port: "853"
+              protocol: TCP
+    # Blocky's list downloads resolve through Unbound, which Cilium's DNS proxy never sees.
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

@@ -1,0 +1,40 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: gatus
+  namespace: gatus
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: gatus
+  ingress:
+    {{- include "np.fromGateway" (list 8080) | nindent 4 }}
+  egress:
+    {{- include "np.toPooler" . | nindent 4 }}
+    # Monitored services behind the Gateway
+    {{- include "np.toGateway" (dict "root" $ "via" (keys .Values.gatewayBackends | sortAlpha)) | nindent 4 }}
+    - toEntities:
+        - world
+        - host
+        - remote-node
+      icmps:
+        - fields:
+            - type: EchoRequest
+              family: IPv4
+    {{- include "np.dnsProxy" . | nindent 4 }}
+    - toFQDNs:
+        - matchName: lippok.dev
+        - matchName: mail.lippok.eu
+        - matchName: discord.com
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+    - toFQDNs:
+        - matchName: mail.lippok.eu
+      toPorts:
+        - ports:
+            - port: "587"
+              protocol: TCP
+            - port: "993"
+              protocol: TCP
