@@ -29,7 +29,7 @@
       protocol kernel {
         ipv6 {
           import none;
-          export where proto = "ibgp_ams1" || proto = "ibgp_gw1_aah1";
+          export where proto = "ibgp_ams1" || proto = "ibgp_fra1" || proto = "ibgp_gw1_aah1";
         };
       }
 
@@ -56,6 +56,19 @@
         ipv6 {
           next hop self;
           import where net = 2a0c:b641:f90::2/128;
+          export where proto = "loopback" || proto = "own_v6";
+        };
+      }
+
+      protocol bgp ibgp_fra1 {
+        description "er1-fra1";
+        local 2a0c:b641:f90:1003:: as OWN_AS;
+        neighbor 2a0c:b641:f90:1003::1 as OWN_AS;
+        direct;
+        bfd on;
+        ipv6 {
+          next hop self;
+          import where net = 2a0c:b641:f90::3/128;
           export where proto = "loopback" || proto = "own_v6";
         };
       }
@@ -120,6 +133,8 @@
     iifname "wg-r64-fra4" ip6 saddr 2a11:6c7:f00:2b4::1 tcp dport 179 accept
     iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f90:1001::1 tcp dport 179 accept
     iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f90:1001::1 udp dport 3784 accept
+    iifname "wg-er1-fra1" ip6 saddr 2a0c:b641:f90:1003::1 tcp dport 179 accept
+    iifname "wg-er1-fra1" ip6 saddr 2a0c:b641:f90:1003::1 udp dport 3784 accept
     iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f90:1000::1 tcp dport 179 accept
     iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f90:1000::1 udp dport 3784 accept
     iifname "ens19" ip6 saddr { 2a0c:b641:701::a5:20:2409:1, 2a0c:b641:701::a5:20:2409:2 } tcp dport 179 accept
