@@ -4,6 +4,7 @@ locals {
     "er1.ams1"             = "2a0c:b641:f90::2"
     "er1.dus1"             = "2a0c:b641:f90::1"
     "gw1.aah1"             = "2a0c:b641:f90::11"
+    "eth0.gw1.aah1"        = "2a0c:b641:f94:20::1"
     "ens18.er1.ams1"       = "2602:fa7e:17::3f"
     "wg-er1-ams1.er1.dus1" = "2a0c:b641:f90:1001::"
     "wg-er1-dus1.er1.ams1" = "2a0c:b641:f90:1001::1"
