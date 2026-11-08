@@ -42,7 +42,12 @@ resource "proxmox_virtual_environment_container" "gw1_aah1" {
     size         = var.gw1_aah1_config.disk_size
   }
 
-  # Address, routes and hostname come from the NixOS config.
+  # Proxmox rejects an empty hostname and defaults to CT<vmid>. With ostype unmanaged it
+  # never writes this into the container; NixOS sets the real hostname, address and routes.
+  initialization {
+    hostname = "gw1-aah1"
+  }
+
   network_interface {
     name        = "eth0"
     bridge      = var.proxmox_bridge
