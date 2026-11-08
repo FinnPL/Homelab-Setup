@@ -21,10 +21,9 @@ spec:
             - port: "9443"
               protocol: TCP
     {{- include "np.dnsProxy" . | nindent 4 }}
-    # Package registries; the images themselves are served from ghcr.io.
+    # Packages come from xpkg.crossplane.io, which hands out ghcr.io tokens and redirects
     - toFQDNs:
         - matchName: xpkg.crossplane.io
-        - matchName: xpkg.upbound.io
         - matchName: ghcr.io
         - matchName: pkg-containers.githubusercontent.com
       toPorts:
