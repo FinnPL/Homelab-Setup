@@ -21,6 +21,8 @@ spec:
         - fields:
             - type: EchoRequest
               family: IPv4
+            - type: EchoRequest
+              family: IPv6
     {{- include "np.dnsProxy" . | nindent 4 }}
     - toFQDNs:
         - matchName: lippok.dev

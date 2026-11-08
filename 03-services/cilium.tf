@@ -14,6 +14,17 @@ resource "helm_release" "cilium" {
       ipam = {
         mode = "kubernetes"
       }
+      ipv6 = {
+        enabled = true
+      }
+      enableIPv6Masquerade = false
+      k8s = {
+        requireIPv4PodCIDR = true
+        requireIPv6PodCIDR = true
+      }
+      bgpControlPlane = {
+        enabled = true
+      }
 
       l2announcements = {
         enabled = true
@@ -162,6 +173,95 @@ resource "kubectl_manifest" "cilium_l2_policy" {
       interfaces      = ["eth0", "end0", "ens18"]
       externalIPs     = true
       loadBalancerIPs = true
+    }
+  })
+
+  depends_on = [helm_release.cilium]
+}
+
+resource "kubectl_manifest" "cilium_bgp_cluster" {
+  yaml_body = yamlencode({
+    apiVersion = "cilium.io/v2"
+    kind       = "CiliumBGPClusterConfig"
+    metadata = {
+      name = "gw1-aah1"
+    }
+    spec = {
+      nodeSelector = {
+        matchLabels = {
+          "kubernetes.io/os" = "linux"
+        }
+      }
+      bgpInstances = [
+        {
+          name     = "vieta"
+          localASN = 4200218255
+          peers = [
+            {
+              name          = "gw1-aah1"
+              peerASN       = 218255
+              peerAddress   = "2a0c:b641:f94:20::1"
+              peerConfigRef = { name = "gw1-aah1" }
+            }
+          ]
+        }
+      ]
+    }
+  })
+
+  depends_on = [kubectl_manifest.cilium_bgp_peer]
+}
+
+resource "kubectl_manifest" "cilium_bgp_peer" {
+  yaml_body = yamlencode({
+    apiVersion = "cilium.io/v2"
+    kind       = "CiliumBGPPeerConfig"
+    metadata = {
+      name = "gw1-aah1"
+    }
+    spec = {
+      timers = {
+        holdTimeSeconds         = 9
+        keepAliveTimeSeconds    = 3
+        connectRetryTimeSeconds = 5
+      }
+      gracefulRestart = {
+        enabled            = true
+        restartTimeSeconds = 120
+      }
+      families = [
+        {
+          afi  = "ipv6"
+          safi = "unicast"
+          advertisements = {
+            matchLabels = {
+              advertise = "gw1-aah1"
+            }
+          }
+        }
+      ]
+    }
+  })
+
+  depends_on = [kubectl_manifest.cilium_bgp_advertisement]
+}
+
+resource "kubectl_manifest" "cilium_bgp_advertisement" {
+  yaml_body = yamlencode({
+    apiVersion = "cilium.io/v2"
+    kind       = "CiliumBGPAdvertisement"
+    metadata = {
+      name = "pod-cidr"
+      labels = {
+        advertise = "gw1-aah1"
+      }
+    }
+    spec = {
+      advertisements = [
+        {
+          advertisementType = "PodCIDR"
+        }
+      ]
     }
   })
 

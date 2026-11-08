@@ -24,7 +24,7 @@ spec:
             - port: "3478"
               protocol: UDP
 ---
-# Exit node: the open internet, but not the LAN or the cluster (the Pi routes tailnet traffic to the LAN).
+# The Connector: exit node to the open internet, and subnet router for the Athena LAN
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -45,3 +45,26 @@ spec:
             - 172.16.0.0/12
             - 192.168.0.0/16
             - 169.254.0.0/16
+        - cidr: ::/0
+          except:
+            - 2a0c:b641:f94::/48
+            - fc00::/7
+            - fe80::/10
+            - ff00::/8
+    - toCIDR:
+        - 10.10.1.0/24
+    - toEntities:
+        - host
+        - remote-node
+        - kube-apiserver
+    {{- include "np.toGateway" (dict "root" $ "via" (keys .Values.gatewayBackends | sortAlpha)) | nindent 4 }}
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: dns
+            app: dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: ANY
+            - port: "443"
+              protocol: TCP
