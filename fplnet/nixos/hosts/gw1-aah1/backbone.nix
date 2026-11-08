@@ -1,4 +1,4 @@
-# Tunnels to both edges.
+# Tunnels to every edge.
 let
   tunnel = {
     name,
@@ -46,9 +46,16 @@ let
     endpoint = "188.65.164.27:51822";
     address = "2a0c:b641:f90:1002::1/127";
   };
+
+  fra1 = tunnel {
+    name = "wg-er1-fra1";
+    publicKey = "en+tsQ4OFy1jtCVxO3EY4mq1YfXqgomo/rBjf2aKHXc=";
+    endpoint = "209.250.233.8:51822";
+    address = "2a0c:b641:f90:1005::1/127";
+  };
 in {
   systemd.network = {
-    netdevs = dus1.netdevs // ams1.netdevs;
-    networks = dus1.networks // ams1.networks;
+    netdevs = dus1.netdevs // ams1.netdevs // fra1.netdevs;
+    networks = dus1.networks // ams1.networks // fra1.networks;
   };
 }

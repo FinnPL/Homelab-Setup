@@ -14,6 +14,12 @@ locals {
     "wg-er1-dus1.gw1.aah1" = "2a0c:b641:f90:1000::1"
     "wg-gw1-aah1.er1.ams1" = "2a0c:b641:f90:1002::"
     "wg-er1-ams1.gw1.aah1" = "2a0c:b641:f90:1002::1"
+    "wg-er1-fra1.er1.dus1" = "2a0c:b641:f90:1003::"
+    "wg-er1-dus1.er1.fra1" = "2a0c:b641:f90:1003::1"
+    "wg-er1-fra1.er1.ams1" = "2a0c:b641:f90:1004::"
+    "wg-er1-ams1.er1.fra1" = "2a0c:b641:f90:1004::1"
+    "wg-gw1-aah1.er1.fra1" = "2a0c:b641:f90:1005::"
+    "wg-er1-fra1.gw1.aah1" = "2a0c:b641:f90:1005::1"
     "wg-r64-fra4.er1.dus1" = "2a11:6c7:f00:2b4::2"
   }
 

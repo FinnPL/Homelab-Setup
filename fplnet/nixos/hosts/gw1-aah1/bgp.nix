@@ -49,7 +49,7 @@ in {
       protocol kernel {
         ipv6 {
           import none;
-          export where proto = "ibgp_dus1" || proto = "ibgp_ams1" || proto ~ "k8s_*";
+          export where proto = "ibgp_dus1" || proto = "ibgp_ams1" || proto = "ibgp_fra1" || proto ~ "k8s_*";
         };
       }
 
@@ -63,7 +63,7 @@ in {
 
       # Default via er1-dus1 (closer); er1-ams1 takes over when BFD drops it.
       filter from_edge {
-        if !(net = 2a0c:b641:f90::1/128 || net = 2a0c:b641:f90::2/128 || net = ::/0) then reject;
+        if !(net = 2a0c:b641:f90::1/128 || net = 2a0c:b641:f90::2/128 || net = 2a0c:b641:f90::3/128 || net = ::/0) then reject;
         if proto = "ibgp_dus1" then bgp_local_pref = 200;
         accept;
       }
@@ -90,6 +90,12 @@ in {
         neighbor 2a0c:b641:f90:1002:: as OWN_AS;
       }
 
+      protocol bgp ibgp_fra1 from edge {
+        description "er1-fra1";
+        local 2a0c:b641:f90:1005::1 as OWN_AS;
+        neighbor 2a0c:b641:f90:1005:: as OWN_AS;
+      }
+
       # Cilium on each Talos node. Cilium only dials out, so gw1 waits.
       template bgp k8s {
         local 2a0c:b641:f94:20::1 as OWN_AS;
@@ -109,6 +115,8 @@ in {
     iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f90:1000:: udp dport 3784 accept
     iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f90:1002:: tcp dport 179 accept
     iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f90:1002:: udp dport 3784 accept
+    iifname "wg-er1-fra1" ip6 saddr 2a0c:b641:f90:1005:: tcp dport 179 accept
+    iifname "wg-er1-fra1" ip6 saddr 2a0c:b641:f90:1005:: udp dport 3784 accept
     iifname "eth0" ip6 saddr { ${lib.concatMapStringsSep ", " nodeAddress (lib.attrNames k8sNodes)} } tcp dport 179 accept
   '';
 
