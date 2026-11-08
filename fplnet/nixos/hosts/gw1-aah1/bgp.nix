@@ -1,10 +1,36 @@
-{
+{lib, ...}: let
+  # Talos nodes by the last octet of their Athena IPv4 address, which is also their
+  # IPv6 address f94:20::<octet> (02-infrastructure/talos-patches.tf).
+  k8sNodes = {
+    "60" = "talos-8vk-gus";
+    "61" = "talos-m0l-ybl";
+    "62" = "talos-ymz-dnc";
+    "63" = "talos-urr-99l";
+    "66" = "talos-4ut-tyx";
+  };
+  nodeAddress = octet: "2a0c:b641:f94:20::${octet}";
+
+  # A node may announce its pod /64 and LoadBalancer /128s from f94:8000::/64.
+  k8sSessions = lib.concatStrings (lib.mapAttrsToList (octet: name: ''
+      protocol bgp k8s_${octet} from k8s {
+        description "${name}";
+        neighbor ${nodeAddress octet} as K8S_AS;
+        ipv6 {
+          import where net ~ [ 2a0c:b641:f94:8100::/56{64,64}, 2a0c:b641:f94:8000::/64{128,128} ];
+          import limit 32 action block;
+          export none;
+        };
+      }
+    '')
+    k8sNodes);
+in {
   services.bird = {
     enable = true;
     config = ''
       router id 10.10.1.95;
 
       define OWN_AS = 218255;
+      define K8S_AS = 4200218255;
 
       protocol device {}
 
@@ -18,11 +44,12 @@
         route 2a0c:b641:f94::/48 unreachable;
       }
 
-      # Edge loopbacks and the default route reach the kernel.
+      # Edge loopbacks, the default route and the cluster's routes reach the kernel.
+      # The cluster's routes stay here: the edges only get the /48.
       protocol kernel {
         ipv6 {
           import none;
-          export where proto = "ibgp_dus1" || proto = "ibgp_ams1";
+          export where proto = "ibgp_dus1" || proto = "ibgp_ams1" || proto ~ "k8s_*";
         };
       }
 
@@ -62,6 +89,18 @@
         local 2a0c:b641:f90:1002::1 as OWN_AS;
         neighbor 2a0c:b641:f90:1002:: as OWN_AS;
       }
+
+      # Cilium on each Talos node. Cilium only dials out, so gw1 waits.
+      template bgp k8s {
+        local 2a0c:b641:f94:20::1 as OWN_AS;
+        direct;
+        passive on;
+        hold time 9;
+        keepalive time 3;
+        graceful restart on;
+      }
+
+      ${k8sSessions}
     '';
   };
 
@@ -70,6 +109,7 @@
     iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f90:1000:: udp dport 3784 accept
     iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f90:1002:: tcp dport 179 accept
     iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f90:1002:: udp dport 3784 accept
+    iifname "eth0" ip6 saddr { ${lib.concatMapStringsSep ", " nodeAddress (lib.attrNames k8sNodes)} } tcp dport 179 accept
   '';
 
   systemd.network.networks."05-lo" = {

@@ -20,6 +20,7 @@ resource "talos_machine_configuration_apply" "workers" {
   machine_configuration_input = data.talos_machine_configuration.worker.machine_configuration
   node                        = each.value
   endpoint                    = each.value
+  config_patches              = local.talos_v6_patches[each.value]
 
   depends_on = [
     talos_machine_bootstrap.this
