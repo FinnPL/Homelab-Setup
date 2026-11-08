@@ -65,6 +65,17 @@ spec:
               protocol: TCP
             - port: "9374"
               protocol: TCP
+    # FPLNET router exporters on their loopbacks (additional scrape configs)
+    - toCIDR:
+        - 2a0c:b641:f90::/64
+      toPorts:
+        - ports:
+            - port: "9100"
+              protocol: TCP
+            - port: "9324"
+              protocol: TCP
+            - port: "9374"
+              protocol: TCP
     {{- include "np.dnsProxy" . | nindent 4 }}
     - toFQDNs:
         - matchName: prometheus.bgp.tools

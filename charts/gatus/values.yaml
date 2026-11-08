@@ -218,6 +218,59 @@ gatus:
             failure-threshold: 3
             success-threshold: 2
 
+      # FPLNET routers by loopback, over gw1-aah1 and the backbone (IPv6 only)
+      - name: "er1-dus1"
+        group: "FPLNET"
+        url: "icmp://er1.dus1.fplnet.net"
+        interval: 60s
+        client:
+          network: ip6
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "er1-ams1"
+        group: "FPLNET"
+        url: "icmp://er1.ams1.fplnet.net"
+        interval: 60s
+        client:
+          network: ip6
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "er1-fra1"
+        group: "FPLNET"
+        url: "icmp://er1.fra1.fplnet.net"
+        interval: 60s
+        client:
+          network: ip6
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
+      - name: "gw1-aah1"
+        group: "FPLNET"
+        url: "icmp://gw1.aah1.fplnet.net"
+        interval: 60s
+        client:
+          network: ip6
+        conditions:
+          - "[CONNECTED] == true"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
       # Servers
       - name: "Minerva Pi3"
         group: "Servers"

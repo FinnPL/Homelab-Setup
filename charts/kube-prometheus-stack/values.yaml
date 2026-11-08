@@ -514,6 +514,13 @@ bgpTools:
   # Servperso AS34872, Route64 AS212895, Paradox AS52025.
   expectedUpstreams: 3
 
+# FPLNET routers by loopback for node_exporter and bird_exporter
+fplnetRouters:
+  er1-dus1: 2a0c:b641:f90::1
+  er1-ams1: 2a0c:b641:f90::2
+  er1-fra1: 2a0c:b641:f90::3
+  gw1-aah1: 2a0c:b641:f90::11
+
 dormMonitoring:
   enabled: true
   secret:
