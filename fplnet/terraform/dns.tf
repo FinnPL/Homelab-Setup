@@ -24,6 +24,14 @@ locals {
     "wg-r64-fra4.er1.dus1" = "2a11:6c7:f00:2b4::2"
   }
 
+  # Talos nodes by role, at f94:20::<last v4 octet>; gw1-aah1's BGP sessions read the same file.
+  k8s_nodes = {
+    for octet, n in jsondecode(file("${path.module}/../nixos/k8s-nodes.json")) :
+    "${n.name}.k8s.aah1" => "2a0c:b641:f94:20::${octet}"
+  }
+
+  names = merge(local.hosts, local.k8s_nodes)
+
   # The PTR of these lives with the provider, set in its panel.
   hosts_v4 = {
     "ens18.er1.ams1"  = "188.65.164.27"
@@ -35,7 +43,7 @@ locals {
 
   # Expand "::" to the full 32 nibbles, reversed and dotted as in ip6.arpa.
   ptr_names = {
-    for name, addr in local.hosts : name => "${join(".", reverse(split("", join("", [
+    for name, addr in local.names : name => "${join(".", reverse(split("", join("", [
       for g in concat(
         compact(split(":", split("::", addr)[0])),
         [for _ in range(8 - length(compact(split(":", addr)))) : "0"],
@@ -58,7 +66,7 @@ data "cloudflare_zone" "reverse" {
 }
 
 resource "cloudflare_dns_record" "aaaa" {
-  for_each = local.hosts
+  for_each = local.names
 
   zone_id = data.cloudflare_zone.forward.id
   name    = "${each.key}.fplnet.net"

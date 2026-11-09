@@ -1,13 +1,7 @@
 {lib, ...}: let
   # Talos nodes by the last octet of their Athena IPv4 address, which is also their
   # IPv6 address f94:20::<octet> (02-infrastructure/talos-patches.tf).
-  k8sNodes = {
-    "60" = "talos-8vk-gus";
-    "61" = "talos-m0l-ybl";
-    "62" = "talos-ymz-dnc";
-    "63" = "talos-urr-99l";
-    "66" = "talos-4ut-tyx";
-  };
+  k8sNodes = lib.mapAttrs (_: n: n.node) (lib.importJSON ../../k8s-nodes.json);
   nodeAddress = octet: "2a0c:b641:f94:20::${octet}";
 
   # A node may announce its pod /64 and LoadBalancer /128s from f94:8000::/64.
