@@ -53,6 +53,15 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
+          {{- with .Values.fplnetRpkiValidators }}
+          - job_name: fplnet-routinator
+            static_configs:
+              {{- range . }}
+              - targets: ['[{{ index $.Values.fplnetRouters . }}]:8323']
+                labels:
+                  router: {{ . }}
+              {{- end }}
+          {{- end }}
   {{- if .Values.bgpTools.enabled }}
   data:
     - secretKey: url

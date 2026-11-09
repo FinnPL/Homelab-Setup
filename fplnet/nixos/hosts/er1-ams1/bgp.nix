@@ -88,7 +88,8 @@
         local 2602:fa7e:17::3f as OWN_AS;
         hold time 90;
         ipv6 {
-          import all;
+          import table on;
+          import filter from_upstream;
           export filter to_upstream;
         };
       }

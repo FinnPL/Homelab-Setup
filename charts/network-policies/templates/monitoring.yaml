@@ -76,6 +76,8 @@ spec:
               protocol: TCP
             - port: "9374"
               protocol: TCP
+            - port: "8323"
+              protocol: TCP
     {{- include "np.dnsProxy" . | nindent 4 }}
     - toFQDNs:
         - matchName: prometheus.bgp.tools

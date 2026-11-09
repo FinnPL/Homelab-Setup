@@ -89,7 +89,8 @@
         authentication md5;
         password VULTR_PASSWORD;
         ipv6 {
-          import all;
+          import table on;
+          import filter from_upstream;
           export filter to_upstream;
         };
       }
