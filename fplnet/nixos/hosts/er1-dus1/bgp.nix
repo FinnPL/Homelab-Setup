@@ -5,13 +5,14 @@
       router id 194.28.99.178;
 
       define OWN_AS = 218255;
-      define OWN_V6 = [ 2a0c:b641:f90::/48, 2a0c:b641:f94::/48 ];
+      define OWN_V6 = [ 2a0c:b641:f98::/48, 2a0c:b641:f94::/48 ];
 
       protocol device {}
 
+      # This edge's own /48
       protocol static own_v6 {
         ipv6;
-        route 2a0c:b641:f90::/48 unreachable;
+        route 2a0c:b641:f98::/48 unreachable;
       }
 
       # Default route for the sites; this kernel keeps its own.
@@ -22,7 +23,7 @@
 
       protocol static loopback {
         ipv6;
-        route 2a0c:b641:f90::1/128 unreachable;
+        route 2a0c:b641:f98::1/128 unreachable;
       }
 
       # Only peer loopbacks and site prefixes reach the kernel.
@@ -49,39 +50,39 @@
 
       protocol bgp ibgp_ams1 {
         description "er1-ams1";
-        local 2a0c:b641:f90:1001:: as OWN_AS;
-        neighbor 2a0c:b641:f90:1001::1 as OWN_AS;
+        local 2a0c:b641:f98:1001:: as OWN_AS;
+        neighbor 2a0c:b641:f98:1001::1 as OWN_AS;
         direct;
         bfd on;
         ipv6 {
           next hop self;
-          import where net = 2a0c:b641:f90::2/128;
-          export where proto = "loopback" || proto = "own_v6";
+          import where net = 2a0c:b641:f99::1/128;
+          export where proto = "loopback";
         };
       }
 
       protocol bgp ibgp_fra1 {
         description "er1-fra1";
-        local 2a0c:b641:f90:1003:: as OWN_AS;
-        neighbor 2a0c:b641:f90:1003::1 as OWN_AS;
+        local 2a0c:b641:f98:1002:: as OWN_AS;
+        neighbor 2a0c:b641:f98:1002::1 as OWN_AS;
         direct;
         bfd on;
         ipv6 {
           next hop self;
-          import where net = 2a0c:b641:f90::3/128;
-          export where proto = "loopback" || proto = "own_v6";
+          import where net = 2a0c:b641:f9a::1/128;
+          export where proto = "loopback";
         };
       }
 
       protocol bgp ibgp_gw1_aah1 {
         description "gw1-aah1";
-        local 2a0c:b641:f90:1000:: as OWN_AS;
-        neighbor 2a0c:b641:f90:1000::1 as OWN_AS;
+        local 2a0c:b641:f98:1000:: as OWN_AS;
+        neighbor 2a0c:b641:f98:1000::1 as OWN_AS;
         direct;
         bfd on;
         ipv6 {
           next hop self;
-          import where net = 2a0c:b641:f90::11/128 || net = 2a0c:b641:f94::/48;
+          import where net = 2a0c:b641:f94::1/128 || net = 2a0c:b641:f94::/48;
           export where proto = "loopback" || proto = "default_v6";
         };
       }
@@ -140,21 +141,21 @@
   networking.firewall.extraInputRules = ''
     ip6 saddr 2a0c:b640:11::ffff tcp dport 179 accept
     iifname "wg-r64-fra4" ip6 saddr 2a11:6c7:f00:2b4::1 tcp dport 179 accept
-    iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f90:1001::1 tcp dport 179 accept
-    iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f90:1001::1 udp dport 3784 accept
-    iifname "wg-er1-fra1" ip6 saddr 2a0c:b641:f90:1003::1 tcp dport 179 accept
-    iifname "wg-er1-fra1" ip6 saddr 2a0c:b641:f90:1003::1 udp dport 3784 accept
-    iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f90:1000::1 tcp dport 179 accept
-    iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f90:1000::1 udp dport 3784 accept
+    iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f98:1001::1 tcp dport 179 accept
+    iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f98:1001::1 udp dport 3784 accept
+    iifname "wg-er1-fra1" ip6 saddr 2a0c:b641:f98:1002::1 tcp dport 179 accept
+    iifname "wg-er1-fra1" ip6 saddr 2a0c:b641:f98:1002::1 udp dport 3784 accept
+    iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f98:1000::1 tcp dport 179 accept
+    iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f98:1000::1 udp dport 3784 accept
     iifname "ens19" ip6 saddr { 2a0c:b641:701::a5:20:2409:1, 2a0c:b641:701::a5:20:2409:2 } tcp dport 179 accept
   '';
 
   systemd.network.networks."05-lo" = {
     matchConfig.Name = "lo";
-    address = ["2a0c:b641:f90::1/128"];
+    address = ["2a0c:b641:f98::1/128"];
     routes = [
       {
-        Destination = "2a0c:b641:f90::/48";
+        Destination = "2a0c:b641:f98::/48";
         Type = "unreachable";
       }
       {

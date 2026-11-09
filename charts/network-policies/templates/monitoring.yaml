@@ -67,7 +67,10 @@ spec:
               protocol: TCP
     # FPLNET router exporters on their loopbacks (additional scrape configs)
     - toCIDR:
-        - 2a0c:b641:f90::/64
+        - 2a0c:b641:f98::1/128
+        - 2a0c:b641:f99::1/128
+        - 2a0c:b641:f9a::1/128
+        - 2a0c:b641:f94::1/128
       toPorts:
         - ports:
             - port: "9100"

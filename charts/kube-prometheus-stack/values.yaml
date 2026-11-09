@@ -510,16 +510,21 @@ bgpTools:
   enabled: true
   remoteKey: apps/bgp-tools
   asn: "218255"
-  prefix: 2a0c:b641:f90::/48
-  # Servperso AS34872, Route64 AS212895, Paradox AS52025.
-  expectedUpstreams: 3
+  # Every announced /48: one per edge, plus Vieta.
+  prefixes:
+    - 2a0c:b641:f98::/48
+    - 2a0c:b641:f99::/48
+    - 2a0c:b641:f9a::/48
+    - 2a0c:b641:f94::/48
+  # Servperso AS34872, Route64 AS212895, Paradox AS52025, Vultr AS20473.
+  expectedUpstreams: 4
 
 # FPLNET routers by loopback for node_exporter and bird_exporter
 fplnetRouters:
-  er1-dus1: 2a0c:b641:f90::1
-  er1-ams1: 2a0c:b641:f90::2
-  er1-fra1: 2a0c:b641:f90::3
-  gw1-aah1: 2a0c:b641:f90::11
+  er1-dus1: 2a0c:b641:f98::1
+  er1-ams1: 2a0c:b641:f99::1
+  er1-fra1: 2a0c:b641:f9a::1
+  gw1-aah1: 2a0c:b641:f94::1
 
 # FPLNET routers running Routinator (fplnet.rpki.validator), on :8323
 fplnetRpkiValidators:

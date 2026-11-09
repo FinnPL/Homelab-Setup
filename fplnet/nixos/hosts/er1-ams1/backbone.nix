@@ -25,7 +25,7 @@
 
     networks."40-wg-er1-dus1" = {
       matchConfig.Name = "wg-er1-dus1";
-      address = ["2a0c:b641:f90:1001::1/127"];
+      address = ["2a0c:b641:f98:1001::1/127"];
       networkConfig = {
         IPv6AcceptRA = false;
         LinkLocalAddressing = "no";
@@ -53,7 +53,7 @@
 
     networks."41-wg-gw1-aah1" = {
       matchConfig.Name = "wg-gw1-aah1";
-      address = ["2a0c:b641:f90:1002::/127"];
+      address = ["2a0c:b641:f99:1000::/127"];
       networkConfig = {
         IPv6AcceptRA = false;
         LinkLocalAddressing = "no";
@@ -82,7 +82,7 @@
 
     networks."42-wg-er1-fra1" = {
       matchConfig.Name = "wg-er1-fra1";
-      address = ["2a0c:b641:f90:1004::/127"];
+      address = ["2a0c:b641:f99:1001::/127"];
       networkConfig = {
         IPv6AcceptRA = false;
         LinkLocalAddressing = "no";

@@ -1,31 +1,33 @@
 # Forward-confirmed rDNS: every name gets an AAAA, and a PTR when its address is in our /44.
 locals {
   hosts = {
-    "er1.ams1"             = "2a0c:b641:f90::2"
-    "er1.dus1"             = "2a0c:b641:f90::1"
-    "er1.fra1"             = "2a0c:b641:f90::3"
-    "gw1.aah1"             = "2a0c:b641:f90::11"
+    "er1.ams1"             = "2a0c:b641:f99::1"
+    "er1.dus1"             = "2a0c:b641:f98::1"
+    "er1.fra1"             = "2a0c:b641:f9a::1"
+    "gw1.aah1"             = "2a0c:b641:f94::1"
     "eth0.gw1.aah1"        = "2a0c:b641:f94:20::1"
     "ens18.er1.ams1"       = "2602:fa7e:17::3f"
+    "ens18.er1.dus1"       = "2a0c:b640:11:178::1"
     "enp1s0.er1.fra1"      = "2a05:f480:1800:28:5400:7ff:fe06:3983"
-    "wg-er1-ams1.er1.dus1" = "2a0c:b641:f90:1001::"
-    "wg-er1-dus1.er1.ams1" = "2a0c:b641:f90:1001::1"
-    "wg-gw1-aah1.er1.dus1" = "2a0c:b641:f90:1000::"
-    "wg-er1-dus1.gw1.aah1" = "2a0c:b641:f90:1000::1"
-    "wg-gw1-aah1.er1.ams1" = "2a0c:b641:f90:1002::"
-    "wg-er1-ams1.gw1.aah1" = "2a0c:b641:f90:1002::1"
-    "wg-er1-fra1.er1.dus1" = "2a0c:b641:f90:1003::"
-    "wg-er1-dus1.er1.fra1" = "2a0c:b641:f90:1003::1"
-    "wg-er1-fra1.er1.ams1" = "2a0c:b641:f90:1004::"
-    "wg-er1-ams1.er1.fra1" = "2a0c:b641:f90:1004::1"
-    "wg-gw1-aah1.er1.fra1" = "2a0c:b641:f90:1005::"
-    "wg-er1-fra1.gw1.aah1" = "2a0c:b641:f90:1005::1"
+    "wg-er1-ams1.er1.dus1" = "2a0c:b641:f98:1001::"
+    "wg-er1-dus1.er1.ams1" = "2a0c:b641:f98:1001::1"
+    "wg-gw1-aah1.er1.dus1" = "2a0c:b641:f98:1000::"
+    "wg-er1-dus1.gw1.aah1" = "2a0c:b641:f98:1000::1"
+    "wg-gw1-aah1.er1.ams1" = "2a0c:b641:f99:1000::"
+    "wg-er1-ams1.gw1.aah1" = "2a0c:b641:f99:1000::1"
+    "wg-er1-fra1.er1.dus1" = "2a0c:b641:f98:1002::"
+    "wg-er1-dus1.er1.fra1" = "2a0c:b641:f98:1002::1"
+    "wg-er1-fra1.er1.ams1" = "2a0c:b641:f99:1001::"
+    "wg-er1-ams1.er1.fra1" = "2a0c:b641:f99:1001::1"
+    "wg-gw1-aah1.er1.fra1" = "2a0c:b641:f9a:1000::"
+    "wg-er1-fra1.gw1.aah1" = "2a0c:b641:f9a:1000::1"
     "wg-r64-fra4.er1.dus1" = "2a11:6c7:f00:2b4::2"
   }
 
   # The PTR of these lives with the provider, set in its panel.
   hosts_v4 = {
     "ens18.er1.ams1"  = "188.65.164.27"
+    "ens18.er1.dus1"  = "194.28.99.178"
     "enp1s0.er1.fra1" = "209.250.233.8"
   }
 
