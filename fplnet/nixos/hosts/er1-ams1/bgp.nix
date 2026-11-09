@@ -106,12 +106,33 @@
       protocol bgp paradox_rc2 from paradox {
         neighbor 2602:fa7e:17::126 as 52025;
       }
+
+      # InterIX route servers AS56584 on interix
+      template bgp interix_rs {
+        description "InterIX RS AS56584";
+        local 2001:7f8:134::10e as OWN_AS;
+        ipv6 {
+          import table on;
+          import filter from_upstream;
+          export filter to_upstream;
+        };
+      }
+
+      protocol bgp interix_rs1 from interix_rs {
+        neighbor 2001:7f8:134::253 as 56584;
+      }
+
+      protocol bgp interix_rs2 from interix_rs {
+        neighbor 2001:7f8:134::254 as 56584;
+      }
     '';
   };
 
   fplnet.monitoring.extraProbeTargets = [
     "2602:fa7e:17::125"
     "2602:fa7e:17::126"
+    "2001:7f8:134::253"
+    "2001:7f8:134::254"
   ];
 
   networking.firewall.extraInputRules = ''
@@ -122,6 +143,7 @@
     iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f99:1000::1 tcp dport 179 accept
     iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f99:1000::1 udp dport 3784 accept
     ip6 saddr { 2602:fa7e:17::125, 2602:fa7e:17::126 } tcp dport 179 accept
+    iifname "interix" ip6 saddr { 2001:7f8:134::253, 2001:7f8:134::254 } tcp dport 179 accept
   '';
 
   systemd.network.networks."05-lo" = {
