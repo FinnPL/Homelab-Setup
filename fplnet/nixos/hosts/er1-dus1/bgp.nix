@@ -93,7 +93,8 @@
         local 2a0c:b640:11:178::1 as OWN_AS;
         neighbor 2a0c:b640:11::ffff as 34872;
         ipv6 {
-          import all;
+          import table on;
+          import filter from_upstream;
           export filter to_upstream;
         };
       }
@@ -104,7 +105,8 @@
         local 2a11:6c7:f00:2b4::2 as OWN_AS;
         neighbor 2a11:6c7:f00:2b4::1 as 212895;
         ipv6 {
-          import all;
+          import table on;
+          import filter from_upstream;
           export filter to_upstream;
         };
       }
@@ -114,7 +116,8 @@
         description "LocIX DUS RS AS202409";
         local 2a0c:b641:701::a5:21:8255:1 as OWN_AS;
         ipv6 {
-          import all;
+          import table on;
+          import filter from_upstream;
           export filter to_upstream;
         };
       }

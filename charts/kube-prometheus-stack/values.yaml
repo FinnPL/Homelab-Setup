@@ -526,6 +526,11 @@ fplnetRouters:
   er1-fra1: 2a0c:b641:f9a::1
   gw1-aah1: 2a0c:b641:f94::1
 
+# FPLNET routers running Routinator (fplnet.rpki.validator), on :8323
+fplnetRpkiValidators:
+  - er1-dus1
+  - er1-ams1
+
 # smokeping targets that are not backbone peers
 fplnetProbeNames:
   "2a11:6c7:f00:2b4::1": route64-fra4

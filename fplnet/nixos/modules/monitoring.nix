@@ -22,6 +22,11 @@ in {
       default = [];
       description = "Interfaces besides the backbone tunnels that scrapes arrive on.";
     };
+    extraPorts = lib.mkOption {
+      type = lib.types.listOf lib.types.port;
+      default = [];
+      description = "Metrics ports of other services on this router, opened like the exporters'.";
+    };
     extraProbeTargets = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
@@ -48,7 +53,7 @@ in {
     };
 
     networking.firewall.extraInputRules = ''
-      iifname { ${interfaces} } ip6 saddr 2a0c:b641:f94:8100::/56 tcp dport { 9100, 9324, 9374 } accept
+      iifname { ${interfaces} } ip6 saddr 2a0c:b641:f94:8100::/56 tcp dport { ${lib.concatMapStringsSep ", " toString ([9100 9324 9374] ++ cfg.extraPorts)} } accept
     '';
   };
 }
