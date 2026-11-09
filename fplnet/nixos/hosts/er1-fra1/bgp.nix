@@ -12,6 +12,12 @@
 
       protocol device {}
 
+      # Default route for the sites
+      protocol static default_v6 {
+        ipv6;
+        route ::/0 unreachable;
+      }
+
       # This edge's own /48
       protocol static own_v6 {
         ipv6;
@@ -71,7 +77,6 @@
         };
       }
 
-      # No default to gw1 until this edge has an upstream.
       protocol bgp ibgp_gw1_aah1 {
         description "gw1-aah1";
         local 2a0c:b641:f9a:1000:: as OWN_AS;
@@ -81,7 +86,7 @@
         ipv6 {
           next hop self;
           import where net = 2a0c:b641:f94::1/128 || net = 2a0c:b641:f94::/48;
-          export where proto = "loopback";
+          export where proto = "loopback" || proto = "default_v6";
         };
       }
 
