@@ -80,12 +80,20 @@ resource "vault_policy" "minerva" {
   EOT
 }
 
-# Plan and deploy read the same token until the routers are deployed from CI.
+# Deploy writes the router WireGuard keys and BGP passwords, a plan only needs the zone token.
 resource "vault_policy" "fplnet" {
   name = "fplnet"
 
   policy = <<-EOT
     path "kv/data/fplnet/*" { capabilities = ["read"] }
+  EOT
+}
+
+resource "vault_policy" "fplnet_plan" {
+  name = "fplnet-plan"
+
+  policy = <<-EOT
+    path "kv/data/fplnet/cloudflare" { capabilities = ["read"] }
   EOT
 }
 
