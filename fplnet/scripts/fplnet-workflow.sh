@@ -77,6 +77,11 @@ established() {
   ssh_host "$1" birdc show protocols | awk '$2 == "BGP" && /Established/ { print $1 }'
 }
 
+# iBGP sessions of a host that are not Established.
+ibgp_down() {
+  ssh_host "$1" birdc show protocols | awk '$2 == "BGP" && $1 ~ /^ibgp_/ && !/Established/ { print $1 }'
+}
+
 # Vault holds the backbone WireGuard key, so a reinstalled router comes back with the same public key.
 restore_wg_key() {
   local host="$1"
@@ -126,9 +131,12 @@ restore_bgp_secrets() {
     || error "Could not restore the BGP secrets on $host."
 }
 
+# Upstream and IX sessions are checked per host, so a broken one stops the rollout.
+# iBGP waits for check_backbone: a change to both ends of a link (renumbering) keeps it
+# down until the peer is deployed too.
 deploy_host() {
   local host="$1" before
-  before=$(established "$host")
+  before=$(established "$host" | grep -v '^ibgp_' || true)
 
   # Magic rollback reverts the host if deploy-rs cannot reconnect after activation.
   nix run "github:NixOS/nixpkgs/$(jq -er '.nodes.nixpkgs.locked.rev' "$FLAKE/flake.lock")#deploy-rs" -- \
@@ -136,7 +144,7 @@ deploy_host() {
     --ssh-opts "${SSH_OPTS[*]}" \
     "$FLAKE#$host"
 
-  # Sessions Established before the deploy must come back (no rollback, the build fails).
+  # External sessions Established before the deploy must come back (no rollback, the build fails).
   for _ in $(seq 18); do
     if [ -z "$(comm -23 <(sort <<< "$before") <(established "$host" | sort))" ]; then
       echo "$host deployed; BGP sessions back: $(xargs <<< "$before")"
@@ -147,6 +155,23 @@ deploy_host() {
   ssh_host "$host" birdc show protocols || true
   error "$host deployed, but these BGP sessions did not come back within 3 min: \
 $(comm -23 <(sort <<< "$before") <(established "$host" | sort) | xargs)"
+}
+
+# After every host is deployed, every iBGP session must be up.
+check_backbone() {
+  local down host
+  for _ in $(seq 18); do
+    down=""
+    for host in $(hosts); do
+      down+=$(ibgp_down "$host" | sed "s/^/$host:/" | xargs)" "
+    done
+    if [ -z "$(xargs <<< "$down")" ]; then
+      echo "Backbone up: every iBGP session Established."
+      return 0
+    fi
+    sleep 10
+  done
+  error "iBGP sessions still down 3 min after the rollout: $(xargs <<< "$down")"
 }
 
 trust_host_ca
@@ -165,6 +190,7 @@ case "${1:-}" in
       restore_bgp_secrets "$host"
       deploy_host "$host"
     done
+    check_backbone
     ;;
   *) error "usage: $0 converge|deploy" ;;
 esac
