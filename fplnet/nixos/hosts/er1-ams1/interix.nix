@@ -20,5 +20,9 @@
   boot.kernel.sysctl = {
     "net.ipv4.conf.interix.arp_ignore" = 1;
     "net.ipv4.conf.interix.arp_announce" = 2;
+    "net.ipv4.conf.interix.send_redirects" = 0;
+    "net.ipv4.conf.interix.accept_redirects" = 0;
+    "net.ipv6.conf.interix.accept_redirects" = 0;
+    "net.ipv6.conf.interix.autoconf" = 0;
   };
 }

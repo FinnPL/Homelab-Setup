@@ -39,7 +39,10 @@
 
   systemd.tmpfiles.rules = ["d /var/lib/wireguard 0750 root systemd-network -"];
 
-  boot.kernel.sysctl."net.ipv6.conf.all.forwarding" = 1;
+  boot.kernel.sysctl = {
+    "net.ipv6.conf.all.forwarding" = 1;
+    "net.ipv4.conf.all.accept_redirects" = 0;
+  };
 
   services.openssh = {
     enable = true;
