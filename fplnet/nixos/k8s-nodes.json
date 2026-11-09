@@ -1,0 +1,7 @@
+{
+  "60": { "node": "talos-8vk-gus", "name": "cp1" },
+  "61": { "node": "talos-m0l-ybl", "name": "pi1" },
+  "62": { "node": "talos-ymz-dnc", "name": "pi2" },
+  "63": { "node": "talos-urr-99l", "name": "pi3" },
+  "66": { "node": "talos-4ut-tyx", "name": "db1" }
+}
