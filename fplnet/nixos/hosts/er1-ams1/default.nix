@@ -4,6 +4,7 @@
     ./hardware.nix
     ./bgp.nix
     ./backbone.nix
+    ./interix.nix
     ../../modules/base.nix
     ../../modules/rpki.nix
   ];

@@ -7,6 +7,7 @@ locals {
     "gw1.aah1"             = "2a0c:b641:f94::1"
     "eth0.gw1.aah1"        = "2a0c:b641:f94:20::1"
     "ens18.er1.ams1"       = "2602:fa7e:17::3f"
+    "interix.er1.ams1"     = "2001:7f8:134::10e"
     "ens18.er1.dus1"       = "2a0c:b640:11:178::1"
     "enp1s0.er1.fra1"      = "2a05:f480:1800:28:5400:7ff:fe06:3983"
     "wg-er1-ams1.er1.dus1" = "2a0c:b641:f98:1001::"
@@ -26,9 +27,10 @@ locals {
 
   # The PTR of these lives with the provider, set in its panel.
   hosts_v4 = {
-    "ens18.er1.ams1"  = "188.65.164.27"
-    "ens18.er1.dus1"  = "194.28.99.178"
-    "enp1s0.er1.fra1" = "209.250.233.8"
+    "ens18.er1.ams1"   = "188.65.164.27"
+    "interix.er1.ams1" = "185.1.185.17"
+    "ens18.er1.dus1"   = "194.28.99.178"
+    "enp1s0.er1.fra1"  = "209.250.233.8"
   }
 
   reverse_zone = "9.f.0.1.4.6.b.c.0.a.2.ip6.arpa"
