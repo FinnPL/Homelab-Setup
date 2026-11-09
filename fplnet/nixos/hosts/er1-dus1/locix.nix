@@ -17,5 +17,9 @@
   boot.kernel.sysctl = {
     "net.ipv4.conf.ens19.arp_ignore" = 1;
     "net.ipv4.conf.ens19.arp_announce" = 2;
+    "net.ipv4.conf.ens19.send_redirects" = 0;
+    "net.ipv4.conf.ens19.accept_redirects" = 0;
+    "net.ipv6.conf.ens19.accept_redirects" = 0;
+    "net.ipv6.conf.ens19.autoconf" = 0;
   };
 }
