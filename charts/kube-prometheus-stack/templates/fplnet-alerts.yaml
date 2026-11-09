@@ -63,7 +63,7 @@ spec:
           annotations:
             summary: "{{`{{ $labels.router }}`}}: {{`{{ $labels.job }}`}} unreachable."
             description: Prometheus cannot scrape the router's exporter over gw1-aah1 and the backbone.
-          expr: up{job=~"fplnet-(node|bird|smokeping|routinator)"} == 0
+          expr: up{job=~"fplnet-(node|bird|smokeping)"} == 0
           for: 5m
           labels:
             severity: critical
@@ -89,13 +89,20 @@ spec:
           labels:
             severity: warning
 
+        - alert: FplnetRpkiValidatorDown
+          annotations:
+            summary: "{{`{{ $labels.router }}`}}: Routinator metrics unreachable."
+            description: Routinator answers 503 until the first validation run after a start finishes, which takes over 10 minutes on er1-dus1's throttled disk. The edges use the other cache meanwhile.
+          expr: up{job="fplnet-routinator"} == 0
+          for: 45m
+          labels:
+            severity: warning
+
         - alert: FplnetRpkiValidatorStale
           annotations:
             summary: "{{`{{ $labels.router }}`}}: Routinator has not finished a validation run for an hour."
             description: Routinator keeps serving its last data set over RTR, so the routers see no failure while the ROAs age.
-          expr: |
-            routinator_last_update_done{job="fplnet-routinator"} > 3600
-            or routinator_last_update_done{job="fplnet-routinator"} != routinator_last_update_done{job="fplnet-routinator"}
+          expr: routinator_last_update_done{job="fplnet-routinator"} > 3600
           for: 30m
           labels:
             severity: warning

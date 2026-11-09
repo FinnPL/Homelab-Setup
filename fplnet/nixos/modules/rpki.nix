@@ -6,8 +6,8 @@
 }: let
   cfg = config.fplnet.rpki;
   caches = {
-    dus1 = "2a0c:b641:f90::1";
-    ams1 = "2a0c:b641:f90::2";
+    dus1 = "2a0c:b641:f98::1";
+    ams1 = "2a0c:b641:f99::1";
   };
   edgeTunnels = lib.concatMapStringsSep ", " (name: ''"${name}"'') (
     lib.filter (lib.hasPrefix "wg-er1-")
