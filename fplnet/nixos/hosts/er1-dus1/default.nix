@@ -7,11 +7,14 @@
     ./locix.nix
     ./backbone.nix
     ../../modules/base.nix
+    ../../modules/rpki.nix
   ];
 
   boot.loader.grub.enable = true;
 
   networking.hostName = "er1-dus1";
+
+  fplnet.rpki.validator = true;
 
   systemd.network.networks."10-uplink" = {
     matchConfig.Name = "ens18";

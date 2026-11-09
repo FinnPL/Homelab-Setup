@@ -5,6 +5,7 @@
     ./bgp.nix
     ./backbone.nix
     ../../modules/base.nix
+    ../../modules/rpki.nix
   ];
 
   boot.loader = {

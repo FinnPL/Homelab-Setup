@@ -5,6 +5,7 @@
     ./bgp.nix
     ./backbone.nix
     ../../modules/base.nix
+    ../../modules/rpki.nix
   ];
 
   boot.loader = {
@@ -16,6 +17,8 @@
   };
 
   networking.hostName = "er1-ams1";
+
+  fplnet.rpki.validator = true;
 
   systemd.network.networks."10-uplink" = {
     matchConfig.MACAddress = "bc:24:11:9f:03:19";
