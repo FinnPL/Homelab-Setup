@@ -24,7 +24,7 @@
       # Source from the loopback so traceroute shows er1.dus1.fplnet.net.
       {
         Gateway = "2a0c:b640:11::ffff";
-        PreferredSource = "2a0c:b641:f90::1";
+        PreferredSource = "2a0c:b641:f98::1";
       }
     ];
     networkConfig = {

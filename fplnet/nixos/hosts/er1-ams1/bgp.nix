@@ -5,7 +5,7 @@
       router id 188.65.164.27;
 
       define OWN_AS = 218255;
-      define OWN_V6 = [ 2a0c:b641:f90::/48, 2a0c:b641:f94::/48 ];
+      define OWN_V6 = [ 2a0c:b641:f99::/48, 2a0c:b641:f94::/48 ];
 
       protocol device {}
 
@@ -15,16 +15,22 @@
         route ::/0 unreachable;
       }
 
+      # This edge's own /48
+      protocol static own_v6 {
+        ipv6;
+        route 2a0c:b641:f99::/48 unreachable;
+      }
+
       protocol static loopback {
         ipv6;
-        route 2a0c:b641:f90::2/128 unreachable;
+        route 2a0c:b641:f99::1/128 unreachable;
       }
 
       # Only peer loopbacks and site prefixes reach the kernel.
       protocol kernel {
         ipv6 {
           import none;
-          export where (proto = "ibgp_dus1" && net = 2a0c:b641:f90::1/128) || proto = "ibgp_fra1" || proto = "ibgp_gw1_aah1";
+          export where proto = "ibgp_dus1" || proto = "ibgp_fra1" || proto = "ibgp_gw1_aah1";
         };
       }
 
@@ -42,42 +48,41 @@
         reject;
       }
 
-      # The /48 is learned here, not originated: an upstream export of it ends with the tunnel.
       protocol bgp ibgp_dus1 {
         description "er1-dus1";
-        local 2a0c:b641:f90:1001::1 as OWN_AS;
-        neighbor 2a0c:b641:f90:1001:: as OWN_AS;
+        local 2a0c:b641:f98:1001::1 as OWN_AS;
+        neighbor 2a0c:b641:f98:1001:: as OWN_AS;
         direct;
         bfd on;
         ipv6 {
           next hop self;
-          import where net = 2a0c:b641:f90::1/128 || net = 2a0c:b641:f90::/48;
+          import where net = 2a0c:b641:f98::1/128;
           export where proto = "loopback";
         };
       }
 
       protocol bgp ibgp_fra1 {
         description "er1-fra1";
-        local 2a0c:b641:f90:1004:: as OWN_AS;
-        neighbor 2a0c:b641:f90:1004::1 as OWN_AS;
+        local 2a0c:b641:f99:1001:: as OWN_AS;
+        neighbor 2a0c:b641:f99:1001::1 as OWN_AS;
         direct;
         bfd on;
         ipv6 {
           next hop self;
-          import where net = 2a0c:b641:f90::3/128;
+          import where net = 2a0c:b641:f9a::1/128;
           export where proto = "loopback";
         };
       }
 
       protocol bgp ibgp_gw1_aah1 {
         description "gw1-aah1";
-        local 2a0c:b641:f90:1002:: as OWN_AS;
-        neighbor 2a0c:b641:f90:1002::1 as OWN_AS;
+        local 2a0c:b641:f99:1000:: as OWN_AS;
+        neighbor 2a0c:b641:f99:1000::1 as OWN_AS;
         direct;
         bfd on;
         ipv6 {
           next hop self;
-          import where net = 2a0c:b641:f90::11/128 || net = 2a0c:b641:f94::/48;
+          import where net = 2a0c:b641:f94::1/128 || net = 2a0c:b641:f94::/48;
           export where proto = "loopback" || proto = "default_v6";
         };
       }
@@ -109,21 +114,21 @@
   ];
 
   networking.firewall.extraInputRules = ''
-    iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f90:1001:: tcp dport 179 accept
-    iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f90:1001:: udp dport 3784 accept
-    iifname "wg-er1-fra1" ip6 saddr 2a0c:b641:f90:1004::1 tcp dport 179 accept
-    iifname "wg-er1-fra1" ip6 saddr 2a0c:b641:f90:1004::1 udp dport 3784 accept
-    iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f90:1002::1 tcp dport 179 accept
-    iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f90:1002::1 udp dport 3784 accept
+    iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f98:1001:: tcp dport 179 accept
+    iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f98:1001:: udp dport 3784 accept
+    iifname "wg-er1-fra1" ip6 saddr 2a0c:b641:f99:1001::1 tcp dport 179 accept
+    iifname "wg-er1-fra1" ip6 saddr 2a0c:b641:f99:1001::1 udp dport 3784 accept
+    iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f99:1000::1 tcp dport 179 accept
+    iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f99:1000::1 udp dport 3784 accept
     ip6 saddr { 2602:fa7e:17::125, 2602:fa7e:17::126 } tcp dport 179 accept
   '';
 
   systemd.network.networks."05-lo" = {
     matchConfig.Name = "lo";
-    address = ["2a0c:b641:f90::2/128"];
+    address = ["2a0c:b641:f99::1/128"];
     routes = [
       {
-        Destination = "2a0c:b641:f90::/48";
+        Destination = "2a0c:b641:f99::/48";
         Type = "unreachable";
       }
       {

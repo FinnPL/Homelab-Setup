@@ -25,7 +25,11 @@ spec:
             description: bgp.tools sees no paths to an announced FPLNET prefix.
           expr: |
             (
-              label_replace(vector(0), "prefix", "{{ .Values.bgpTools.prefix }}", "", "")
+              (
+                {{- range $i, $prefix := .Values.bgpTools.prefixes }}
+                {{ if $i }}or {{ end }}label_replace(vector(0), "prefix", "{{ $prefix }}", "", "")
+                {{- end }}
+              )
               unless on (prefix) bgptools_asn_prefix_visible{asn="{{ .Values.bgpTools.asn }}"} > 0
             )
             and on () up{job="bgp-tools"} == 1
