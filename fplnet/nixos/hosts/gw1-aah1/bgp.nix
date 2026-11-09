@@ -55,10 +55,11 @@ in {
         };
       }
 
-      # Default via er1-dus1 (closer); er1-ams1 takes over when BFD drops it.
+      # Default via er1-fra1 (~5 ms), then er1-dus1 (~20 ms), then er1-ams1 (~25 ms).
       filter from_edge {
         if !(net = 2a0c:b641:f98::1/128 || net = 2a0c:b641:f99::1/128 || net = 2a0c:b641:f9a::1/128 || net = ::/0) then reject;
-        if proto = "ibgp_dus1" then bgp_local_pref = 200;
+        if proto = "ibgp_fra1" then bgp_local_pref = 200;
+        if proto = "ibgp_dus1" then bgp_local_pref = 150;
         accept;
       }
 
