@@ -116,7 +116,7 @@
         ipv6 {
           import table on;
           import filter from_peer;
-          receive limit 150000 action restart;
+          receive limit 100000 action restart;
           export filter to_upstream;
         };
       }
@@ -138,7 +138,7 @@
         ipv6 {
           import table on;
           import filter from_peer;
-          receive limit 10000 action restart;
+          receive limit 30000 action restart;
           export filter to_upstream;
         };
       }

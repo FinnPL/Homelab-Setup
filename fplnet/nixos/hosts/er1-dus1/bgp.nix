@@ -122,7 +122,7 @@
         ipv6 {
           import table on;
           import filter from_peer;
-          receive limit 20000 action restart;
+          receive limit 100000 action restart;
           export filter to_upstream;
         };
       }
