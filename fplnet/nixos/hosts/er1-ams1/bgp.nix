@@ -44,6 +44,10 @@
       }
 
       filter to_upstream {
+        if net = 2a0c:b641:f94::/48 then {
+          bgp_path.prepend(OWN_AS);
+          bgp_path.prepend(OWN_AS);
+        }
         if net ~ OWN_V6 then accept;
         reject;
       }
