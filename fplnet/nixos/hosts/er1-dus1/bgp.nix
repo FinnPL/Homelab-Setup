@@ -26,14 +26,6 @@
         route 2a0c:b641:f98::1/128 unreachable;
       }
 
-      # Only peer loopbacks and site prefixes reach the kernel.
-      protocol kernel {
-        ipv6 {
-          import none;
-          export where proto = "ibgp_ams1" || proto = "ibgp_fra1" || proto = "ibgp_gw1_aah1";
-        };
-      }
-
       # Drops iBGP within 1.5 s of the tunnel failing
       protocol bfd {
         interface "wg-er1-*", "wg-gw1-*" {
@@ -107,6 +99,8 @@
         local 2a11:6c7:f00:2b4::2 as OWN_AS;
         neighbor 2a11:6c7:f00:2b4::1 as 212895;
         enforce first as on;
+        # Backup only
+        default bgp_local_pref 80;
         ipv6 {
           import table on;
           import filter from_transit;

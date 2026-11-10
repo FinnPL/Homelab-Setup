@@ -49,8 +49,10 @@
       accept;
     }
 
+    # Peers before transit (100); import_scrub can still lower it for graceful shutdown.
     filter from_peer {
       if !import_ok(false) then reject;
+      bgp_local_pref = 150;
       import_scrub();
       accept;
     }
