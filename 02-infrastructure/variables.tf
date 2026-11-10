@@ -147,7 +147,7 @@ variable "talos_db_worker_config" {
     name      = "talos-worker-db"
     cores     = 2
     memory    = 5120
-    disk_size = 30
+    disk_size = 60
   }
 }
 
