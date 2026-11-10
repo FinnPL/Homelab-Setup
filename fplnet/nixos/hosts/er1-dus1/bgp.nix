@@ -48,6 +48,17 @@
         reject;
       }
 
+      # Vieta only as a last resort over the tunnel.
+      filter to_route64 {
+        if net = 2a0c:b641:f94::/48 then {
+          bgp_path.prepend(OWN_AS);
+          bgp_path.prepend(OWN_AS);
+          bgp_path.prepend(OWN_AS);
+        }
+        if net ~ OWN_V6 then accept;
+        reject;
+      }
+
       protocol bgp ibgp_ams1 {
         description "er1-ams1";
         local 2a0c:b641:f98:1001:: as OWN_AS;
@@ -111,7 +122,7 @@
           import table on;
           import filter from_transit;
           receive limit 400000 action restart;
-          export filter to_upstream;
+          export filter to_route64;
         };
       }
 
