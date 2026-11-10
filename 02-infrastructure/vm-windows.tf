@@ -39,7 +39,7 @@ resource "proxmox_virtual_environment_vm" "windows_server" {
   }
 
   disk {
-    datastore_id = var.proxmox_storage
+    datastore_id = var.nfs_hdd_storage
     file_format  = "raw"
     interface    = "scsi0"
     size         = var.windows_vm_config.disk_size
