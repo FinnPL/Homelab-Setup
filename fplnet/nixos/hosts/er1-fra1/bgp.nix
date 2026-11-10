@@ -90,6 +90,14 @@
         };
       }
 
+      # Vultr's private ASNs lead every path
+      filter from_vultr {
+        bgp_path.delete([64515, 65534]);
+        if !import_ok(true) then reject;
+        import_scrub();
+        accept;
+      }
+
       # Vultr's route server, multihop from the main address.
       protocol bgp vultr_v6 {
         description "Vultr AS20473";
@@ -98,9 +106,11 @@
         multihop 2;
         authentication md5;
         password VULTR_PASSWORD;
+        enforce first as on;
         ipv6 {
           import table on;
-          import filter from_upstream;
+          import filter from_vultr;
+          receive limit 400000 action restart;
           export filter to_upstream;
         };
       }
