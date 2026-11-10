@@ -9,6 +9,7 @@
     ../../modules/rpki.nix
     ../../modules/bgp-filters.nix
     ../../modules/kernel-routing.nix
+    ../../modules/anti-spoofing.nix
   ];
 
   boot.loader = {
