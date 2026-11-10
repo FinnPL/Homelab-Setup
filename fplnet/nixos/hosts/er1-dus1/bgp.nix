@@ -129,7 +129,7 @@
         local 2a0c:b641:701::a5:21:8255:1 as OWN_AS;
         ipv6 {
           import table on;
-          import filter from_peer;
+          import filter from_route_server;
           receive limit 100000 action restart;
           export filter to_upstream;
         };

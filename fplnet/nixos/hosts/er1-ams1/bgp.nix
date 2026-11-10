@@ -111,7 +111,7 @@
         local 2001:7f8:134::10e as OWN_AS;
         ipv6 {
           import table on;
-          import filter from_peer;
+          import filter from_route_server;
           receive limit 100000 action restart;
           export filter to_upstream;
         };
