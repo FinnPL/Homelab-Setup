@@ -143,7 +143,7 @@
         };
       }
 
-      # Hurricane Electric Bilateral at InterIX.
+      # Hurricane Electric transit at InterIX.
       protocol bgp he {
         description "Hurricane Electric AS6939";
         local 2001:7f8:134::10e as OWN_AS;
@@ -151,8 +151,8 @@
         enforce first as on;
         ipv6 {
           import table on;
-          import filter from_peer;
-          receive limit 260000 action restart;
+          import filter from_transit;
+          receive limit 400000 action restart;
           export filter to_upstream;
         };
       }
