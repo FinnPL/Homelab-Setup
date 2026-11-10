@@ -31,12 +31,6 @@ in {
             }
           '')
           caches)}
-        # Our own space never arrives from outside; a forged origin of AS218255 would pass ROV.
-        filter from_upstream {
-          if net ~ [ 2a0c:b641:f90::/44+ ] then reject;
-          if roa_check(r6, net, bgp_path.last_nonaggregated) = ROA_INVALID then reject;
-          accept;
-        }
       '';
     }
 

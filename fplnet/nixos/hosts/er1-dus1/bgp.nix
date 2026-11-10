@@ -92,9 +92,11 @@
         description "Servperso AS34872";
         local 2a0c:b640:11:178::1 as OWN_AS;
         neighbor 2a0c:b640:11::ffff as 34872;
+        enforce first as on;
         ipv6 {
           import table on;
-          import filter from_upstream;
+          import filter from_transit;
+          receive limit 400000 action restart;
           export filter to_upstream;
         };
       }
@@ -104,9 +106,11 @@
         description "Route64 AS212895";
         local 2a11:6c7:f00:2b4::2 as OWN_AS;
         neighbor 2a11:6c7:f00:2b4::1 as 212895;
+        enforce first as on;
         ipv6 {
           import table on;
-          import filter from_upstream;
+          import filter from_transit;
+          receive limit 400000 action restart;
           export filter to_upstream;
         };
       }
@@ -117,7 +121,8 @@
         local 2a0c:b641:701::a5:21:8255:1 as OWN_AS;
         ipv6 {
           import table on;
-          import filter from_upstream;
+          import filter from_peer;
+          receive limit 20000 action restart;
           export filter to_upstream;
         };
       }

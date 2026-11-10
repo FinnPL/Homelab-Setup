@@ -92,9 +92,11 @@
         description "Paradox Networks AS52025";
         local 2602:fa7e:17::3f as OWN_AS;
         hold time 90;
+        enforce first as on;
         ipv6 {
           import table on;
-          import filter from_upstream;
+          import filter from_transit;
+          receive limit 400000 action restart;
           export filter to_upstream;
         };
       }
@@ -113,7 +115,8 @@
         local 2001:7f8:134::10e as OWN_AS;
         ipv6 {
           import table on;
-          import filter from_upstream;
+          import filter from_peer;
+          receive limit 150000 action restart;
           export filter to_upstream;
         };
       }
@@ -127,9 +130,17 @@
       }
 
       # Cloudflare Bilateral at InterIX.
-      protocol bgp cloudflare from interix_rs {
+      protocol bgp cloudflare {
         description "Cloudflare AS13335";
+        local 2001:7f8:134::10e as OWN_AS;
         neighbor 2001:7f8:134::40 as 13335;
+        enforce first as on;
+        ipv6 {
+          import table on;
+          import filter from_peer;
+          receive limit 10000 action restart;
+          export filter to_upstream;
+        };
       }
     '';
   };

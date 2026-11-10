@@ -6,6 +6,7 @@
     ./backbone.nix
     ../../modules/base.nix
     ../../modules/rpki.nix
+    ../../modules/bgp-filters.nix
   ];
 
   boot.loader = {
