@@ -76,6 +76,7 @@ jobs:
           scan-ref: ${{ matrix.path }}
           scanners: misconfig
           skip-dirs: ${{ matrix.skip_dirs }}
+          trivyignores: .trivyignore.yaml
           format: sarif
           output: results.sarif
           exit-code: "0"

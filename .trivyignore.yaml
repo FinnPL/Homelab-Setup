@@ -1,0 +1,7 @@
+misconfigurations:
+  - id: KSV-0037
+    paths:
+      - "**/network-policies/templates/kube-system.yaml"
+    statement: >-
+      A CiliumNetworkPolicy applies only to pods in its own namespace, so the
+      CoreDNS and Hubble policies have to live in kube-system.
