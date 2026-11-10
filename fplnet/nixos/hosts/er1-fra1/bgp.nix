@@ -90,6 +90,12 @@
         };
       }
 
+      # Vultr's multihop neighbour, so its next hop resolves without the BGP /48 that contains it.
+      protocol static vultr_nexthop {
+        ipv6;
+        route 2001:19f0:ffff::1/128 via fe80::fc00:7ff:fe06:3983%enp1s0;
+      }
+
       # Vultr's private ASNs lead every path
       filter from_vultr {
         bgp_path.delete([64515, 65534]);
