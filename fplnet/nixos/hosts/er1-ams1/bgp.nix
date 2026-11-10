@@ -125,6 +125,12 @@
       protocol bgp interix_rs2 from interix_rs {
         neighbor 2001:7f8:134::254 as 56584;
       }
+
+      # Cloudflare Bilateral at InterIX.
+      protocol bgp cloudflare from interix_rs {
+        description "Cloudflare AS13335";
+        neighbor 2001:7f8:134::40 as 13335;
+      }
     '';
   };
 
@@ -133,6 +139,7 @@
     "2602:fa7e:17::126"
     "2001:7f8:134::253"
     "2001:7f8:134::254"
+    "2001:7f8:134::40"
   ];
 
   networking.firewall.extraInputRules = ''
@@ -143,7 +150,7 @@
     iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f99:1000::1 tcp dport 179 accept
     iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f99:1000::1 udp dport 3784 accept
     ip6 saddr { 2602:fa7e:17::125, 2602:fa7e:17::126 } tcp dport 179 accept
-    iifname "interix" ip6 saddr { 2001:7f8:134::253, 2001:7f8:134::254 } tcp dport 179 accept
+    iifname "interix" ip6 saddr { 2001:7f8:134::253, 2001:7f8:134::254, 2001:7f8:134::40 } tcp dport 179 accept
   '';
 
   systemd.network.networks."05-lo" = {
