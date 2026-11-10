@@ -9,6 +9,7 @@
     ../../modules/base.nix
     ../../modules/rpki.nix
     ../../modules/bgp-filters.nix
+    ../../modules/kernel-routing.nix
   ];
 
   boot.loader.grub.enable = true;
