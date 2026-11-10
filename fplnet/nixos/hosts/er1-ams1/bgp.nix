@@ -142,6 +142,20 @@
           export filter to_upstream;
         };
       }
+
+      # Hurricane Electric Bilateral at InterIX.
+      protocol bgp he {
+        description "Hurricane Electric AS6939";
+        local 2001:7f8:134::10e as OWN_AS;
+        neighbor 2001:7f8:134::bc as 6939;
+        enforce first as on;
+        ipv6 {
+          import table on;
+          import filter from_peer;
+          receive limit 260000 action restart;
+          export filter to_upstream;
+        };
+      }
     '';
   };
 
@@ -151,6 +165,7 @@
     "2001:7f8:134::253"
     "2001:7f8:134::254"
     "2001:7f8:134::40"
+    "2001:7f8:134::bc"
   ];
 
   networking.firewall.extraInputRules = ''
@@ -161,7 +176,7 @@
     iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f99:1000::1 tcp dport 179 accept
     iifname "wg-gw1-aah1" ip6 saddr 2a0c:b641:f99:1000::1 udp dport 3784 accept
     ip6 saddr { 2602:fa7e:17::125, 2602:fa7e:17::126 } tcp dport 179 accept
-    iifname "interix" ip6 saddr { 2001:7f8:134::253, 2001:7f8:134::254, 2001:7f8:134::40 } tcp dport 179 accept
+    iifname "interix" ip6 saddr { 2001:7f8:134::253, 2001:7f8:134::254, 2001:7f8:134::40, 2001:7f8:134::bc } tcp dport 179 accept
   '';
 
   systemd.network.networks."05-lo" = {
