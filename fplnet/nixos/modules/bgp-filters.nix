@@ -1,5 +1,30 @@
 # Import policy for every external BGP session on the edges (MANRS, NLNOG bgpfilterguide).
-{lib, ...}: {
+{
+  config,
+  lib,
+  ...
+}: let
+  # Informational large communities, set on import:
+  #   218255:1:<site>      1 er1-dus1, 2 er1-ams1, 3 er1-fra1
+  #   218255:2:<neighbour> 1 transit, 2 IX route server, 3 bilateral peer
+  #   218255:3:<country>   ISO 3166-1 numeric of the site (276 DE, 528 NL)
+  sites = {
+    er1-dus1 = {
+      id = 1;
+      country = 276;
+    };
+    er1-ams1 = {
+      id = 2;
+      country = 528;
+    };
+    er1-fra1 = {
+      id = 3;
+      country = 276;
+    };
+  };
+  host = config.networking.hostName;
+  site = sites.${host} or (throw "bgp-filters: no large community site for ${host}");
+in {
   services.bird.config = lib.mkOrder 700 ''
     define BOGON_ASNS = [
       0,                      # RFC 7607
@@ -36,8 +61,11 @@
       return true;
     }
 
-    function import_scrub() {
+    # Only our own tags carry 218255; a neighbour's are dropped first.
+    function import_tag() {
       bgp_large_community.delete([(218255, *, *)]);
+      bgp_large_community.add((218255, 1, ${toString site.id}));
+      bgp_large_community.add((218255, 3, ${toString site.country}));
       # RFC 8326 graceful shutdown
       if (65535, 0) ~ bgp_community then bgp_local_pref = 0;
     }
@@ -45,15 +73,25 @@
     # Transit may hand us a default; peers and route servers may not.
     filter from_transit {
       if !import_ok(true) then reject;
-      import_scrub();
+      import_tag();
+      bgp_large_community.add((218255, 2, 1));
       accept;
     }
 
-    # Peers before transit (100); import_scrub can still lower it for graceful shutdown.
+    # Peers before transit (100); import_tag can still lower it for graceful shutdown.
+    filter from_route_server {
+      if !import_ok(false) then reject;
+      bgp_local_pref = 150;
+      import_tag();
+      bgp_large_community.add((218255, 2, 2));
+      accept;
+    }
+
     filter from_peer {
       if !import_ok(false) then reject;
       bgp_local_pref = 150;
-      import_scrub();
+      import_tag();
+      bgp_large_community.add((218255, 2, 3));
       accept;
     }
   '';

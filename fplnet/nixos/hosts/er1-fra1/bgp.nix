@@ -92,7 +92,8 @@
       filter from_vultr {
         bgp_path.delete([64515, 65534]);
         if !import_ok(true) then reject;
-        import_scrub();
+        import_tag();
+        bgp_large_community.add((218255, 2, 1));
         accept;
       }
 
