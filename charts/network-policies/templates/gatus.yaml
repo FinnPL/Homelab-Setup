@@ -26,6 +26,7 @@ spec:
     {{- include "np.dnsProxy" . | nindent 4 }}
     - toFQDNs:
         - matchName: lippok.dev
+        - matchName: fplnet.net
         - matchName: mail.lippok.eu
         - matchName: discord.com
       toPorts:

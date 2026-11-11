@@ -131,6 +131,41 @@ restore_bgp_secrets() {
     || error "Could not restore the BGP secrets on $host."
 }
 
+# The edges get fplnet.net's cert by DNS-01
+restore_cloudflare_token() {
+  local host="$1"
+  case "$host" in er1-*) ;; *) return 0 ;; esac
+  curl -sSf -H "X-Vault-Token: ${VAULT_TOKEN:?}" "$VAULT_ADDR/v1/kv/data/fplnet/cloudflare" \
+    | jq -er '"CLOUDFLARE_DNS_API_TOKEN=\(.data.data["api-token"])"' \
+    | ssh_host "$host" 'install -d -m 700 /etc/cloudflare && install -m 600 /dev/stdin /etc/cloudflare/credentials' \
+    || error "Could not restore the Cloudflare token on $host."
+}
+
+# One ECH key for every edge (anycast), kv/fplnet/ech
+restore_ech_key() {
+  local host="$1"
+  case "$host" in er1-*) ;; *) return 0 ;; esac
+  # shellcheck disable=SC2016 # expands on the router
+  curl -sSf -H "X-Vault-Token: ${VAULT_TOKEN:?}" "$VAULT_ADDR/v1/kv/data/fplnet/ech" \
+    | jq -er '.data.data.pem' \
+    | ssh_host "$host" 'set -e
+        f=/var/lib/fplnet-ech/fplnet.net.pem
+        install -d -m 755 "${f%/*}"
+        new=$(mktemp "$f.XXXXXX")
+        cat > "$new"
+        if cmp -s "$new" "$f"; then rm "$new"; exit 0; fi
+        getent group nginx > /dev/null && chgrp nginx "$new"
+        chmod 640 "$new"
+        mv "$new" "$f"
+        systemctl is-active -q nginx && systemctl reload nginx || true' \
+    || error "Could not restore the ECH key on $host (is kv/fplnet/ech set?)."
+}
+
+site_up() {
+  case "$1" in er1-*) ;; *) return 0 ;; esac
+  ssh_host "$1" curl -fs -o /dev/null --max-time 5 --resolve 'fplnet.net:443:[2a0c:b641:f91::80]' https://fplnet.net/healthz
+}
+
 # Upstream and IX sessions are checked per host, so a broken one stops the rollout.
 # iBGP waits for check_backbone: a change to both ends of a link (renumbering) keeps it
 # down until the peer is deployed too.
@@ -144,15 +179,16 @@ deploy_host() {
     --ssh-opts "${SSH_OPTS[*]}" \
     "$FLAKE#$host"
 
-  # External sessions Established before the deploy must come back (no rollback, the build fails).
+  # External sessions Established before the deploy must come back, and an edge must serve fplnet.net (no rollback, the build fails).
   for _ in $(seq 18); do
-    if [ -z "$(comm -23 <(sort <<< "$before") <(established "$host" | sort))" ]; then
+    if [ -z "$(comm -23 <(sort <<< "$before") <(established "$host" | sort))" ] && site_up "$host"; then
       echo "$host deployed; BGP sessions back: $(xargs <<< "$before")"
       return 0
     fi
     sleep 10
   done
   ssh_host "$host" birdc show protocols || true
+  site_up "$host" || error "$host deployed, but fplnet.net does not answer on its anycast address."
   error "$host deployed, but these BGP sessions did not come back within 3 min: \
 $(comm -23 <(sort <<< "$before") <(established "$host" | sort) | xargs)"
 }
@@ -188,6 +224,8 @@ case "${1:-}" in
       verify_host "$host"
       restore_wg_key "$host"
       restore_bgp_secrets "$host"
+      restore_cloudflare_token "$host"
+      restore_ech_key "$host"
       deploy_host "$host"
     done
     check_backbone

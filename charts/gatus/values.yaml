@@ -271,6 +271,21 @@ gatus:
             failure-threshold: 3
             success-threshold: 2
 
+      # Over IPv6 this reaches er1-fra1
+      - name: "fplnet.net"
+        group: "FPLNET"
+        url: "https://fplnet.net/healthz"
+        interval: 60s
+        client:
+          network: ip6
+        conditions:
+          - "[STATUS] == 200"
+          - "[CERTIFICATE_EXPIRATION] > 240h"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
       # Servers
       - name: "Minerva Pi3"
         group: "Servers"

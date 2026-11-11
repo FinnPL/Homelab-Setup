@@ -5,7 +5,7 @@
       router id 188.65.164.27;
 
       define OWN_AS = 218255;
-      define OWN_V6 = [ 2a0c:b641:f99::/48, 2a0c:b641:f94::/48 ];
+      define OWN_V6 = [ 2a0c:b641:f99::/48, 2a0c:b641:f94::/48, 2a0c:b641:f91::/48 ];
 
       protocol device {}
 

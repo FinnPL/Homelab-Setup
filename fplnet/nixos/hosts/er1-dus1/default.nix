@@ -11,6 +11,9 @@
     ../../modules/bgp-filters.nix
     ../../modules/kernel-routing.nix
     ../../modules/anti-spoofing.nix
+    ../../modules/haproxy.nix
+    ../../modules/fplnet-net.nix
+    ../../modules/anycast.nix
   ];
 
   boot.loader.grub.enable = true;

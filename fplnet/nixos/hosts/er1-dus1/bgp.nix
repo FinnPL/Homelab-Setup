@@ -5,7 +5,7 @@
       router id 194.28.99.178;
 
       define OWN_AS = 218255;
-      define OWN_V6 = [ 2a0c:b641:f98::/48, 2a0c:b641:f94::/48 ];
+      define OWN_V6 = [ 2a0c:b641:f98::/48, 2a0c:b641:f94::/48, 2a0c:b641:f91::/48 ];
 
       protocol device {}
 
@@ -43,9 +43,9 @@
         reject;
       }
 
-      # Vieta only as a last resort over the tunnel.
+      # Vieta and the anycast site only as a last resort over the tunnel.
       filter to_route64 {
-        if net = 2a0c:b641:f94::/48 then {
+        if net = 2a0c:b641:f94::/48 || net = 2a0c:b641:f91::/48 then {
           bgp_path.prepend(OWN_AS);
           bgp_path.prepend(OWN_AS);
           bgp_path.prepend(OWN_AS);

@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FPLNET AS218255</title>
+<link rel="icon" href="data:,">
+<meta name="description" content="FPLNET, AS218255: Finn Lippok's personal network with edges in Düsseldorf, Amsterdam and Frankfurt. Open peering.">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #fbfbf9;
+    --fg: #1d1d1b;
+    --muted: #66665f;
+    --rule: #deded8;
+    --accent: #1f5fbf;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #141413;
+      --fg: #e8e8e3;
+      --muted: #9b9b93;
+      --rule: #2e2e2b;
+      --accent: #7aa7ff;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 52rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
+  h1 { font-size: 1.9rem; margin: 0 0 .75rem; letter-spacing: -.01em; }
+  h1 .asn { color: var(--muted); font-weight: 400; }
+  footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1.5rem; margin-top: 2.5rem; padding-top: .75rem; border-top: 1px solid var(--rule); }
+  h2 { font-size: 1.05rem; margin: 2.5rem 0 .75rem; padding-bottom: .35rem; border-bottom: 1px solid var(--rule); }
+  h3 { font-size: .95rem; margin: 1.5rem 0 .5rem; color: var(--muted); }
+  p { margin: .5rem 0; }
+  a { color: var(--accent); text-underline-offset: .15em; }
+  code { font: .92em ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .table-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+  th, td { text-align: left; padding: .4rem .75rem .4rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 600; color: var(--muted); font-size: .85rem; }
+  td code { white-space: nowrap; }
+</style>
+</head>
+<body>
+<main>
+  <h1>FPLNET <span class="asn">AS218255</span></h1>
+  <p>Hi, I'm Finn Paul Lippok. FPLNET is the AS of my homelab. More about me and the lab on <a href="https://lippok.dev">lippok.dev</a>.</p>
+
+  <h2>Prefixes</h2>
+  <p><code>2a0c:b641:f90::/44</code></p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Prefix</th><th>Purpose</th></tr></thead>
+    <tbody>
+      <tr><td><code>2a0c:b641:f91::/48</code></td><td>Edge anycast</td></tr>
+      <tr><td><code>2a0c:b641:f92::/48</code></td><td>Site anycast</td></tr>
+      <tr><td><code>2a0c:b641:f94::/48</code></td><td>Vieta, Aachen</td></tr>
+      <tr><td><code>2a0c:b641:f95::/48</code></td><td>Minerva, Freiburg</td></tr>
+      <tr><td><code>2a0c:b641:f98::/48</code></td><td>er1.dus1, Düsseldorf</td></tr>
+      <tr><td><code>2a0c:b641:f99::/48</code></td><td>er1.ams1, Amsterdam</td></tr>
+      <tr><td><code>2a0c:b641:f9a::/48</code></td><td>er1.fra1, Frankfurt</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Locations: <a href="/geofeed.csv">geofeed.csv</a></p>
+
+  <h2>Peering</h2>
+  <p>Open peering at these exchanges, and on their route servers.</p>
+
+  <h3>Exchanges</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Exchange</th><th>IPv6</th><th>Router</th></tr></thead>
+    <tbody>
+      <tr><td>LocIX Düsseldorf</td><td><code>2a0c:b641:701:0:a5:21:8255:1</code></td><td>er1.dus1</td></tr>
+      <tr><td>InterIX Amsterdam</td><td><code>2001:7f8:134::10e</code></td><td>er1.ams1</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Upstreams</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Network</th><th>ASN</th><th>Router</th></tr></thead>
+    <tbody>
+      <tr><td>Servperso</td><td>AS34872</td><td>er1.dus1</td></tr>
+      <tr><td>Route64</td><td>AS212895</td><td>er1.dus1</td></tr>
+      <tr><td>Paradox Networks</td><td>AS52025</td><td>er1.ams1</td></tr>
+      <tr><td>Hurricane Electric</td><td>AS6939</td><td>er1.ams1</td></tr>
+      <tr><td>Vultr</td><td>AS20473</td><td>er1.fra1</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+  <h3>Notable peers</h3>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Network</th><th>ASN</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td>Cloudflare</td><td>AS13335</td><td>InterIX Amsterdam</td></tr>
+    </tbody>
+  </table>
+  </div>
+
+
+  <footer>
+    <span>
+      <a href="https://www.peeringdb.com/asn/218255">PeeringDB</a> ·
+      <a href="https://apps.db.ripe.net/db-web-ui/query?searchtext=AS218255">RIPE DB</a> ·
+      <a href="https://bgp.tools/as/218255">bgp.tools</a>
+    </span>
+    <a href="mailto:noc@lippok.eu">noc@lippok.eu</a>
+  </footer>
+</main>
+</body>
+</html>
