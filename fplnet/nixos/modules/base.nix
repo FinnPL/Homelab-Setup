@@ -52,10 +52,6 @@
     };
   };
 
-  users.users.root.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAzhAxEIjiH8TuO9toC0OYag/H08NGJBG92eZshgj0VD"
-  ];
-
   zramSwap.enable = true;
   services.journald.extraConfig = "SystemMaxUse=500M";
 
