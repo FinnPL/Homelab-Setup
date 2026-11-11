@@ -80,6 +80,26 @@ spec:
           labels:
             severity: warning
 
+        - alert: FplnetAnycastWithdrawn
+          annotations:
+            summary: "{{`{{ $labels.router }}`}}: not announcing the f91 edge anycast."
+            description: anycast-f91.service withdraws 2a0c:b641:f91::/48 while fplnet.net does not answer on 2a0c:b641:f91::80 with a valid cert. The edge's IPv4 address still gets its share of visitors.
+          expr: |
+            max by (router) (up{job="fplnet-bird", router=~"er1-.*"}) == 1
+            unless on (router) bird_protocol_up{job="fplnet-bird", name="anycast_f91"} == 1
+          for: 10m
+          labels:
+            severity: warning
+
+        - alert: FplnetUnitFailed
+          annotations:
+            summary: "{{`{{ $labels.router }}`}}: {{`{{ $labels.name }}`}} failed."
+            description: A systemd unit on the router is in failed state. acme-order-renew-fplnet.net.service means the cert renewal failed; it runs again at the next daily timer.
+          expr: node_systemd_unit_state{job="fplnet-node", state="failed"} == 1
+          for: 15m
+          labels:
+            severity: warning
+
         - alert: FplnetRpkiCacheDown
           annotations:
             summary: "{{`{{ $labels.router }}`}}: RPKI cache {{`{{ $labels.name }}`}} down."
