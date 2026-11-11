@@ -24,6 +24,11 @@
 
       frontend tls_in
         bind :::443 v4v6
+
+        stick-table type ipv6 size 100k expire 1m store conn_rate(10s),conn_cur
+        tcp-request connection track-sc0 src
+        tcp-request connection reject if { sc0_conn_rate gt 100 } || { sc0_conn_cur gt 100 }
+
         tcp-request inspect-delay 5s
         tcp-request content reject unless { req.ssl_hello_type 1 }
 

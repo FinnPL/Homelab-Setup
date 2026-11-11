@@ -141,6 +141,26 @@ restore_cloudflare_token() {
     || error "Could not restore the Cloudflare token on $host."
 }
 
+# One ECH key for every edge (anycast), kv/fplnet/ech
+restore_ech_key() {
+  local host="$1"
+  case "$host" in er1-*) ;; *) return 0 ;; esac
+  # shellcheck disable=SC2016 # expands on the router
+  curl -sSf -H "X-Vault-Token: ${VAULT_TOKEN:?}" "$VAULT_ADDR/v1/kv/data/fplnet/ech" \
+    | jq -er '.data.data.pem' \
+    | ssh_host "$host" 'set -e
+        f=/var/lib/fplnet-ech/fplnet.net.pem
+        install -d -m 755 "${f%/*}"
+        new=$(mktemp "$f.XXXXXX")
+        cat > "$new"
+        if cmp -s "$new" "$f"; then rm "$new"; exit 0; fi
+        getent group nginx > /dev/null && chgrp nginx "$new"
+        chmod 640 "$new"
+        mv "$new" "$f"
+        systemctl is-active -q nginx && systemctl reload nginx || true' \
+    || error "Could not restore the ECH key on $host (is kv/fplnet/ech set?)."
+}
+
 site_up() {
   case "$1" in er1-*) ;; *) return 0 ;; esac
   ssh_host "$1" curl -fs -o /dev/null --max-time 5 --resolve 'fplnet.net:443:[2a0c:b641:f91::80]' https://fplnet.net/healthz
@@ -205,6 +225,7 @@ case "${1:-}" in
       restore_wg_key "$host"
       restore_bgp_secrets "$host"
       restore_cloudflare_token "$host"
+      restore_ech_key "$host"
       deploy_host "$host"
     done
     check_backbone

@@ -129,3 +129,35 @@ resource "cloudflare_dns_record" "web_a" {
   content = each.value
   proxied = false
 }
+
+# Advertises HTTP/3 and the ECH public key.
+resource "cloudflare_dns_record" "web_https" {
+  zone_id = data.cloudflare_zone.forward.id
+  name    = "fplnet.net"
+  type    = "HTTPS"
+  ttl     = 300
+  data = {
+    priority = 1
+    target   = "."
+    value    = "alpn=\"h3,h2\" ech=\"${trimspace(file("${path.module}/fplnet-net.echconfig"))}\""
+  }
+}
+
+# Only Let's Encrypt may issue
+resource "cloudflare_dns_record" "caa" {
+  for_each = {
+    issue     = "letsencrypt.org"
+    issuewild = ";"
+    iodef     = "mailto:noc@lippok.eu"
+  }
+
+  zone_id = data.cloudflare_zone.forward.id
+  name    = "fplnet.net"
+  type    = "CAA"
+  ttl     = 3600
+  data = {
+    flags = 0
+    tag   = each.key
+    value = each.value
+  }
+}
