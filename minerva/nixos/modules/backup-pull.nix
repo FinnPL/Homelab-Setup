@@ -10,7 +10,7 @@
   cfg = config.minerva.backupPulls;
   stateDir = "/var/lib/backup-pull";
   key = "${stateDir}/id_ed25519";
-  textfileDir = "/var/lib/prometheus-node-exporter-text";
+  inherit (config.minerva.monitoring) textfileDir;
   zfs = config.boot.zfs.package;
 
   pullScript = name: pull: let
@@ -62,7 +62,7 @@ in {
         maxDelete = lib.mkOption {
           type = lib.types.ints.positive;
           default = 1000;
-          description = "A run that would delete more files fails instead (mass deletion, ransomware renames).";
+          description = "Deletions per run (mass deletion, ransomware renames); past it rsync skips the rest and exits 25, so the unit fails.";
         };
         bwlimit = lib.mkOption {
           type = lib.types.str;
@@ -84,8 +84,6 @@ in {
       home = stateDir;
     };
     users.groups.backup-pull = {};
-
-    systemd.tmpfiles.rules = ["d ${textfileDir} 0755 root root -"];
 
     systemd.services =
       {
@@ -119,6 +117,12 @@ in {
             zfs list -H nas/backup/${name} >/dev/null 2>&1 || zfs create nas/backup/${name}
             chown backup-pull:backup-pull /nas/backup/${name}
             chmod 0750 /nas/backup/${name}
+            # Lets an alert tell "never succeeded" from "not set up yet".
+            echo 'backup_pull_configured{source="${name}"} ${
+              if pull.paths != []
+              then "1"
+              else "0"
+            }' > ${textfileDir}/backup_pull_${name}_config.prom
           '';
         };
 
