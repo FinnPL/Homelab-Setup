@@ -65,6 +65,15 @@ spec:
               protocol: TCP
             - port: "9374"
               protocol: TCP
+    # Minerva NAS exporters
+    - toCIDR:
+        - 10.10.1.11/32
+      toPorts:
+        - ports:
+            - port: "9100"
+              protocol: TCP
+            - port: "9633"
+              protocol: TCP
     # FPLNET router exporters on their loopbacks (additional scrape configs)
     - toCIDR:
         - 2a0c:b641:f98::1/128

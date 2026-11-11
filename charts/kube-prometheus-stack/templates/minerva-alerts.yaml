@@ -1,0 +1,224 @@
+{{- if .Values.minervaNas }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: minerva-nas-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: minerva.nas
+      rules:
+        - alert: MinervaNasUnreachable
+          annotations:
+            summary: "NAS {{`{{ $labels.job }}`}} unreachable."
+            description: Prometheus cannot scrape the Minerva NAS; every other NAS alert is blind until it can.
+          expr: up{job=~"minerva-nas-(node|smartctl)"} == 0
+          for: 5m
+          labels:
+            severity: critical
+
+        - alert: MinervaNasMetricsStale
+          annotations:
+            summary: NAS pool and disk metrics not updated for 15 minutes.
+            description: The nas-metrics unit (every 5 minutes) is failing; zpool, self-test and HBA values are stale. See journalctl -u nas-metrics.
+          expr: time() - nas_metrics_last_success_timestamp_seconds{job="minerva-nas-node"} > 900
+          for: 5m
+          labels:
+            severity: warning
+
+        - alert: ZfsPoolNotOnline
+          annotations:
+            summary: "Pool {{`{{ $labels.zpool }}`}} is {{`{{ $labels.state }}`}}."
+            description: The pool has lost redundancy or stopped; see zpool status on the NAS.
+          expr: node_zfs_zpool_state{job="minerva-nas-node", state!="online"} > 0
+          for: 1m
+          labels:
+            severity: critical
+
+        - alert: ZfsDiskNotOnline
+          annotations:
+            summary: "{{`{{ $labels.disk }}`}} in pool {{`{{ $labels.pool }}`}} is not ONLINE."
+          expr: zfs_disk_online{job="minerva-nas-node"} == 0
+          for: 1m
+          labels:
+            severity: critical
+
+        - alert: ZfsDiskErrors
+          annotations:
+            summary: "{{`{{ $labels.disk }}`}}: {{`{{ $value }}`}} ZFS {{`{{ $labels.type }}`}} errors."
+            description: ZFS counted I/O or checksum errors on this disk. The counters stay until `zpool clear nas` after investigating.
+          expr: zfs_disk_errors{job="minerva-nas-node"} > 0
+          labels:
+            severity: critical
+
+        - alert: ZfsDataErrors
+          annotations:
+            summary: "Pool {{`{{ $labels.pool }}`}} has {{`{{ $value }}`}} permanent data errors."
+            description: Files could not be repaired from the mirror; zpool status -v lists them.
+          expr: zfs_pool_data_errors{job="minerva-nas-node"} > 0
+          labels:
+            severity: critical
+
+        - alert: ZfsScrubFoundErrors
+          annotations:
+            summary: "Last scrub of {{`{{ $labels.pool }}`}} ended with {{`{{ $value }}`}} errors."
+          expr: zfs_pool_scrub_errors{job="minerva-nas-node"} > 0
+          labels:
+            severity: critical
+
+        - alert: ZfsScrubStale
+          annotations:
+            summary: "Pool {{`{{ $labels.pool }}`}} not scrubbed for 35 days."
+            description: The zfs-scrub timer runs on the 1st of each month.
+          expr: |
+            time() - zfs_pool_scrub_end_timestamp_seconds{job="minerva-nas-node"} > 35 * 86400
+            unless on (pool) zfs_pool_scrub_running == 1
+          for: 1h
+          labels:
+            severity: warning
+
+        - alert: ZfsPoolFilling
+          annotations:
+            summary: "Pool {{`{{ $labels.pool }}`}} is {{`{{ $value | humanizePercentage }}`}} full."
+            description: ZFS slows down and fragments past about 80 percent.
+          expr: zfs_pool_allocated_bytes{job="minerva-nas-node"} / zfs_pool_size_bytes > 0.8
+          for: 1h
+          labels:
+            severity: warning
+
+        - alert: ZfsSnapshotsStale
+          annotations:
+            summary: "No snapshot of {{`{{ $labels.dataset }}`}} for 2 hours."
+            description: sanoid takes hourly snapshots of nas/backup; without them the pulls have no history.
+          expr: time() - zfs_snapshot_newest_timestamp_seconds{job="minerva-nas-node"} > 7200
+          for: 15m
+          labels:
+            severity: warning
+
+        - alert: BackupPullStale
+          annotations:
+            summary: "Pull of {{`{{ $labels.source }}`}} has not succeeded in 26 hours."
+            description: The source has paths configured but no successful pull in the last day (or ever); see journalctl -u backup-pull-{{`{{ $labels.source }}`}}.
+          expr: |
+            backup_pull_configured{job="minerva-nas-node"} == 1
+            unless on (source) time() - backup_pull_last_success_timestamp_seconds < 26 * 3600
+          for: 1h
+          labels:
+            severity: warning
+
+        - alert: MinervaNasUnitFailed
+          annotations:
+            summary: "NAS unit {{`{{ $labels.name }}`}} failed."
+            description: A pull hitting --max-delete, sanoid, the scrub or smartd shows up here; see journalctl -u {{`{{ $labels.name }}`}}.
+          expr: node_systemd_unit_state{job="minerva-nas-node", state="failed"} == 1
+          for: 5m
+          labels:
+            severity: warning
+
+    # smartctl_exporter names drives sdb/sdc, which can swap at a reboot; a value compared over
+    # time must follow the drive, so these re-key it by serial number.
+    - name: minerva.disks.recording
+      rules:
+        - record: minerva:disk_grown_defects:by_serial
+          expr: |
+            max by (serial_number) (
+              smartctl_scsi_grown_defect_list{job="minerva-nas-smartctl"}
+              * on (instance, device) group_left (serial_number) smartctl_device
+            )
+        - record: minerva:disk_uncorrected_errors:by_serial
+          expr: |
+            max by (serial_number) (
+              (
+                smartctl_read_total_uncorrected_errors{job="minerva-nas-smartctl"}
+                + smartctl_write_total_uncorrected_errors{job="minerva-nas-smartctl"}
+              )
+              * on (instance, device) group_left (serial_number) smartctl_device
+            )
+
+    - name: minerva.disks
+      rules:
+        - alert: DiskSmartFailed
+          annotations:
+            summary: "{{`{{ $labels.serial_number }}`}} reports SMART failure."
+            description: The drive's own health check failed; replace it.
+          expr: |
+            (smartctl_device_smart_status{job="minerva-nas-smartctl"} == 0)
+            * on (instance, device) group_left (serial_number) smartctl_device
+          labels:
+            severity: critical
+
+        - alert: DiskSelfTestFailed
+          annotations:
+            summary: "{{`{{ $labels.disk }}`}}: {{`{{ $labels.type }}`}} self-test failed (result {{`{{ $value }}`}})."
+            description: smartctl -l selftest on the NAS has the failing segment.
+          expr: |
+            smart_selftest_last_result{job="minerva-nas-node"} >= 3
+            and smart_selftest_last_result{job="minerva-nas-node"} < 15
+          labels:
+            severity: critical
+
+        - alert: DiskSelfTestStale
+          annotations:
+            summary: "{{`{{ $labels.disk }}`}}: no self-test for over 8 days."
+            description: smartd runs a short test every Sunday; measured on the drive's own power-on clock.
+          expr: smart_power_on_hours{job="minerva-nas-node"} - smart_selftest_last_power_on_hours > 8 * 24 + 12
+          for: 1h
+          labels:
+            severity: warning
+
+        - alert: DiskGrownDefectsIncreasing
+          annotations:
+            summary: "{{`{{ $labels.serial_number }}`}}: grown defect list +{{`{{ $value }}`}} in 24 hours."
+            description: The drive remapped new bad sectors. A steady climb means it is failing.
+          expr: |
+            minerva:disk_grown_defects:by_serial
+            - min_over_time(minerva:disk_grown_defects:by_serial[1d])
+            > 0
+          labels:
+            severity: warning
+
+        - alert: DiskUncorrectedErrors
+          annotations:
+            summary: "{{`{{ $labels.serial_number }}`}}: {{`{{ $value }}`}} uncorrected errors in the last hour."
+            description: The drive could not correct a read or write; ZFS repairs reads from the mirror.
+          # The drive resets these counters on every power cycle; a reset only lowers the minimum.
+          expr: |
+            minerva:disk_uncorrected_errors:by_serial
+            - min_over_time(minerva:disk_uncorrected_errors:by_serial[1h])
+            > 0
+          labels:
+            severity: warning
+
+        - alert: DiskHot
+          annotations:
+            summary: "{{`{{ $labels.serial_number }}`}} at {{`{{ $value }}`}} °C."
+            description: Over 50 °C for 15 minutes; the drives trip at 60 °C.
+          expr: |
+            (smartctl_device_temperature{job="minerva-nas-smartctl", temperature_type="current"} > 50)
+            * on (instance, device) group_left (serial_number) smartctl_device
+          for: 15m
+          labels:
+            severity: warning
+
+        - alert: DiskOverheating
+          annotations:
+            summary: "{{`{{ $labels.serial_number }}`}} at {{`{{ $value }}`}} °C."
+            description: Over 55 °C; the drives trip at 60 °C.
+          expr: |
+            (smartctl_device_temperature{job="minerva-nas-smartctl", temperature_type="current"} > 55)
+            * on (instance, device) group_left (serial_number) smartctl_device
+          for: 5m
+          labels:
+            severity: critical
+
+        - alert: HbaHot
+          annotations:
+            summary: "HBA chip at {{`{{ $value }}`}} °C."
+            description: The SAS3008 runs at about 55 °C with its fan and reached 75 °C without one; a climb means the fan stopped.
+          expr: hba_roc_temperature_celsius{job="minerva-nas-node"} > 70
+          for: 15m
+          labels:
+            severity: warning
+{{- end }}
