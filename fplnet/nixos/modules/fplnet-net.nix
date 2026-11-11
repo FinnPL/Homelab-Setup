@@ -67,7 +67,6 @@
         set_real_ip_from 127.0.0.1;
         real_ip_header proxy_protocol;
         access_log off;
-        add_header_inherit merge;
         add_header Alt-Svc 'h3=":443"; ma=86400' always;
         add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
         add_header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; img-src data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" always;
@@ -77,17 +76,17 @@
       '';
       locations = {
         "/".extraConfig = ''
-          add_header Cache-Control "public, max-age=300";
+          expires 5m;
         '';
         "= /healthz".extraConfig = ''
           default_type text/plain;
-          add_header Cache-Control "no-store";
+          expires -1;
           return 200 "ok\n";
         '';
         "= /geofeed.csv".extraConfig = ''
           types { }
           default_type "text/csv; charset=utf-8";
-          add_header Cache-Control "public, max-age=3600";
+          expires 1h;
         '';
       };
     };
