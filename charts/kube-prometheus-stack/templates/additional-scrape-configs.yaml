@@ -53,6 +53,16 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
+          {{- with .Values.minervaNas }}
+          {{- range $job, $port := dict "minerva-nas-node" 9100 "minerva-nas-smartctl" 9633 }}
+          - job_name: {{ $job }}
+            static_configs:
+              - targets: ['{{ $.Values.minervaNas.address }}:{{ $port }}']
+                labels:
+                  site: minerva
+                  host: nas
+          {{- end }}
+          {{- end }}
           {{- with .Values.fplnetRpkiValidators }}
           - job_name: fplnet-routinator
             static_configs:

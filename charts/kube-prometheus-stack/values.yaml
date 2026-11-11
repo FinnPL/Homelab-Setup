@@ -519,6 +519,11 @@ bgpTools:
   # Servperso AS34872, Route64 AS212895, Paradox AS52025, Vultr AS20473.
   expectedUpstreams: 4
 
+# Minerva NAS VM (minerva/nixos)
+# Change with the move to Freiburg!
+minervaNas:
+  address: 10.10.1.11
+
 # FPLNET routers by loopback for node_exporter and bird_exporter
 fplnetRouters:
   er1-dus1: 2a0c:b641:f98::1
