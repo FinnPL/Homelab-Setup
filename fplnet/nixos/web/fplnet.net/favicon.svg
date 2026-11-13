@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <style>.l{stroke:#1f5fbf}.n{fill:#1f5fbf}.t{fill:#17191d}@media (prefers-color-scheme: dark){.l{stroke:#7aa7ff}.n{fill:#7aa7ff}.t{fill:#fbfaf8}}</style>
+  <g class="l" stroke-width="1.2" opacity=".5" stroke-linecap="round">
+    <line x1="3.0" y1="3.0" x2="15.93" y2="9.77"/>
+    <line x1="15.93" y1="9.77" x2="29.0" y2="16.42"/>
+    <line x1="3.0" y1="3.0" x2="29.0" y2="16.42"/>
+    <line x1="11.12" y1="12.44" x2="3.0" y2="3.0"/>
+    <line x1="11.12" y1="12.44" x2="15.93" y2="9.77"/>
+    <line x1="11.12" y1="12.44" x2="29.0" y2="16.42"/>
+    <line x1="23.29" y1="29.0" x2="29.0" y2="16.42"/>
+    <line x1="23.29" y1="29.0" x2="15.93" y2="9.77"/>
+    <line x1="23.29" y1="29.0" x2="3.0" y2="3.0"/>
+  </g>
+  <g class="n">
+    <circle cx="3.0" cy="3.0" r="3.0"/>
+    <circle cx="15.93" cy="9.77" r="3.0"/>
+    <circle cx="29.0" cy="16.42" r="3.0"/>
+    <circle cx="11.12" cy="12.44" r="2.4"/>
+    <circle cx="23.29" cy="29.0" r="2.4"/>
+  </g>
+  <text class="t" x="16" y="20.6" text-anchor="middle" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="13.5" font-weight="800" letter-spacing="-0.5">FPL</text>
+</svg>

@@ -15,9 +15,12 @@ export const PROFILES: { label: string; text: string; href: string }[] = [
 
 export const INATURALIST = { label: "iNaturalist", text: "finnpl", href: "https://www.inaturalist.org/people/finnpl" };
 
+export const FPLNET = { label: "FPLNET", text: "fplnet.net (AS218255)", href: "https://fplnet.net" };
+
 const IDENTITY_PAGES: string[] = [
   "https://www.badische-zeitung.de/person/Finn+Lippok",
   INATURALIST.href,
+  FPLNET.href,
 ];
 
 export const AWARDS: { name: string; body: string }[] = [

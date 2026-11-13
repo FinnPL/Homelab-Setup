@@ -4,55 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FPLNET AS218255</title>
-<link rel="icon" href="data:,">
-<meta name="description" content="FPLNET, AS218255: Finn Lippok's personal network with edges in Düsseldorf, Amsterdam and Frankfurt. Open peering.">
-<style>
-  :root {
-    color-scheme: light dark;
-    --bg: #fbfbf9;
-    --fg: #1d1d1b;
-    --muted: #66665f;
-    --rule: #deded8;
-    --accent: #1f5fbf;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #141413;
-      --fg: #e8e8e3;
-      --muted: #9b9b93;
-      --rule: #2e2e2b;
-      --accent: #7aa7ff;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--fg);
-    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
-  }
-  main { max-width: 52rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
-  h1 { font-size: 1.9rem; margin: 0 0 .75rem; letter-spacing: -.01em; }
-  h1 .asn { color: var(--muted); font-weight: 400; }
-  footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1.5rem; margin-top: 2.5rem; padding-top: .75rem; border-top: 1px solid var(--rule); }
-  h2 { font-size: 1.05rem; margin: 2.5rem 0 .75rem; padding-bottom: .35rem; border-bottom: 1px solid var(--rule); }
-  h3 { font-size: .95rem; margin: 1.5rem 0 .5rem; color: var(--muted); }
-  p { margin: .5rem 0; }
-  a { color: var(--accent); text-underline-offset: .15em; }
-  code { font: .92em ui-monospace, SFMono-Regular, Menlo, monospace; }
-  .table-wrap { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
-  th, td { text-align: left; padding: .4rem .75rem .4rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
-  th { font-weight: 600; color: var(--muted); font-size: .85rem; }
-  td code { white-space: nowrap; }
-</style>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="description" content="FPLNET, AS218255: the personal network of Finn Paul Lippok, with edges in Düsseldorf, Amsterdam and Frankfurt. Open peering.">
+<link rel="canonical" href="https://fplnet.net/">
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <main>
-  <h1>FPLNET <span class="asn">AS218255</span></h1>
-  <p>Hi, I'm Finn Paul Lippok. FPLNET is the AS of my homelab. More about me and the lab on <a href="https://lippok.dev">lippok.dev</a>.</p>
+  <header class="top">
+    <h1>FPLNET <span class="asn">AS218255</span></h1>
+    <a class="button" href="/connection">Connection test →</a>
+  </header>
+  <p>Hi, I'm Finn Paul Lippok. FPLNET is the AS of my homelab. More about me and the lab on <a href="https://lippok.dev" rel="me">lippok.dev</a>.</p>
 
-  <h2>Prefixes</h2>
+  <h2 id="prefixes">Prefixes</h2>
   <p><code>2a0c:b641:f90::/44</code></p>
   <div class="table-wrap">
   <table>
@@ -70,8 +35,13 @@
   </div>
   <p>Locations: <a href="/geofeed.csv">geofeed.csv</a></p>
 
-  <h2>Peering</h2>
-  <p>Open peering at these exchanges, and on their route servers.</p>
+  <h2 id="peering">Peering</h2>
+  <p>Open peering at these exchanges, and on their route servers. IPv6 only.</p>
+  <ul>
+    <li>To request a session, mail <a href="mailto:noc@lippok.eu">noc@lippok.eu</a> with your ASN and the exchange. A PeeringDB record is all we need. MD5 is optional.</li>
+    <li>We announce only AS218255's own prefixes, registered as <code>route6</code> objects in the RIPE database (<code>RIPE::AS218255</code>, no AS-SET). Max prefixes: 10.</li>
+    <li>We drop RPKI-invalid routes, bogon prefixes and ASNs, prefixes longer than /48, and AS paths over 64 hops. We honour graceful shutdown (RFC 8326).</li>
+  </ul>
 
   <h3>Exchanges</h3>
   <div class="table-wrap">
@@ -108,12 +78,31 @@
   </table>
   </div>
 
+  <h2 id="communities">BGP communities</h2>
+  <p>Informational large communities, set on every route we import. We remove any <code>218255:*</code> a neighbour sends. No action communities yet.</p>
+  <div class="table-wrap">
+  <table>
+    <thead><tr><th>Community</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>218255:1:1</code></td><td>Learned at er1.dus1, Düsseldorf</td></tr>
+      <tr><td><code>218255:1:2</code></td><td>Learned at er1.ams1, Amsterdam</td></tr>
+      <tr><td><code>218255:1:3</code></td><td>Learned at er1.fra1, Frankfurt</td></tr>
+      <tr><td><code>218255:2:1</code></td><td>From a transit provider</td></tr>
+      <tr><td><code>218255:2:2</code></td><td>From an exchange route server</td></tr>
+      <tr><td><code>218255:2:3</code></td><td>From a bilateral peer</td></tr>
+      <tr><td><code>218255:3:<i>n</i></code></td><td>Country of the router, ISO 3166-1 numeric (276 Germany, 528 Netherlands)</td></tr>
+    </tbody>
+  </table>
+  </div>
+
 
   <footer>
     <span>
       <a href="https://www.peeringdb.com/asn/218255">PeeringDB</a> ·
       <a href="https://apps.db.ripe.net/db-web-ui/query?searchtext=AS218255">RIPE DB</a> ·
-      <a href="https://bgp.tools/as/218255">bgp.tools</a>
+      <a href="https://bgp.tools/as/218255">bgp.tools</a> ·
+      <a href="https://bgp.he.net/AS218255">bgp.he.net</a> ·
+      <a href="https://bgp.he.net/lg/218255">Looking glass</a>
     </span>
     <a href="mailto:noc@lippok.eu">noc@lippok.eu</a>
   </footer>

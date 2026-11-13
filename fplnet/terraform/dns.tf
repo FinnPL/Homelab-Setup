@@ -44,8 +44,9 @@ locals {
   reverse_zone = "9.f.0.1.4.6.b.c.0.a.2.ip6.arpa"
 
   # Expand "::" to the full 32 nibbles, reversed and dotted as in ip6.arpa.
+  # "@" is the apex, fplnet.net itself.
   ptr_names = {
-    for name, addr in local.names : name => "${join(".", reverse(split("", join("", [
+    for name, addr in merge(local.names, { "@" = local.web_v6 }) : name => "${join(".", reverse(split("", join("", [
       for g in concat(
         compact(split(":", split("::", addr)[0])),
         [for _ in range(8 - length(compact(split(":", addr)))) : "0"],
@@ -99,15 +100,20 @@ resource "cloudflare_dns_record" "ptr" {
   name    = each.value
   type    = "PTR"
   ttl     = 3600
-  content = "${each.key}.fplnet.net"
+  content = each.key == "@" ? "fplnet.net" : "${each.key}.fplnet.net"
 }
 
 # fplnet.net: the edge anycast address over IPv6, every edge's provider address over IPv4 (no own v4).
 locals {
   web_v6 = "2a0c:b641:f91::80"
-  web_v4 = {
-    for name in ["ens18.er1.ams1", "ens18.er1.dus1", "enp1s0.er1.fra1"] : name => local.hosts_v4[name]
+
+  # Each edge's uplink in hosts_v4
+  edge_uplinks = {
+    "er1.ams1" = "ens18.er1.ams1"
+    "er1.dus1" = "ens18.er1.dus1"
+    "er1.fra1" = "enp1s0.er1.fra1"
   }
+  web_v4 = { for edge, uplink in local.edge_uplinks : uplink => local.hosts_v4[uplink] }
 }
 
 resource "cloudflare_dns_record" "web_aaaa" {
@@ -130,6 +136,38 @@ resource "cloudflare_dns_record" "web_a" {
   proxied = false
 }
 
+# fplnet.net/connection tests each address family on a name that has only that family.
+resource "cloudflare_dns_record" "web_v4_only" {
+  for_each = local.web_v4
+
+  zone_id = data.cloudflare_zone.forward.id
+  name    = "v4.fplnet.net"
+  type    = "A"
+  ttl     = 300
+  content = each.value
+  proxied = false
+}
+
+resource "cloudflare_dns_record" "web_v6_only" {
+  zone_id = data.cloudflare_zone.forward.id
+  name    = "v6.fplnet.net"
+  type    = "AAAA"
+  ttl     = 300
+  content = local.web_v6
+  proxied = false
+}
+
+resource "cloudflare_dns_record" "edge_a" {
+  for_each = local.edge_uplinks
+
+  zone_id = data.cloudflare_zone.forward.id
+  name    = "${each.key}.fplnet.net"
+  type    = "A"
+  ttl     = 3600
+  content = local.hosts_v4[each.value]
+  proxied = false
+}
+
 # Advertises HTTP/3 and the ECH public key.
 resource "cloudflare_dns_record" "web_https" {
   zone_id = data.cloudflare_zone.forward.id
@@ -143,10 +181,10 @@ resource "cloudflare_dns_record" "web_https" {
   }
 }
 
-# Only Let's Encrypt may issue
+# Only Let's Encrypt may issue, and only through DNS-01
 resource "cloudflare_dns_record" "caa" {
   for_each = {
-    issue     = "letsencrypt.org"
+    issue     = "letsencrypt.org; validationmethods=dns-01"
     issuewild = ";"
     iodef     = "mailto:noc@lippok.eu"
   }
