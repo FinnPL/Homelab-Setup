@@ -80,12 +80,17 @@ resource "vault_policy" "minerva" {
   EOT
 }
 
-# Deploy writes the router WireGuard keys and BGP passwords, a plan only needs the zone token.
+# Deploy reads every router secret and keeps fplnet.net's cert, ACME account and ECH keys current.
+# A plan needs only the zone token and the published ECH config.
 resource "vault_policy" "fplnet" {
   name = "fplnet"
 
   policy = <<-EOT
     path "kv/data/fplnet/*" { capabilities = ["read"] }
+    path "kv/data/fplnet/tls" { capabilities = ["read", "create", "update"] }
+    path "kv/data/fplnet/acme" { capabilities = ["read", "create", "update"] }
+    path "kv/data/fplnet/ech" { capabilities = ["read", "create", "update"] }
+    path "kv/data/fplnet/ech-public" { capabilities = ["read", "create", "update"] }
   EOT
 }
 
@@ -94,6 +99,7 @@ resource "vault_policy" "fplnet_plan" {
 
   policy = <<-EOT
     path "kv/data/fplnet/cloudflare" { capabilities = ["read"] }
+    path "kv/data/fplnet/ech-public" { capabilities = ["read"] }
   EOT
 }
 
