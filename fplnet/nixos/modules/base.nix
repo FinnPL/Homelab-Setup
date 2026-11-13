@@ -37,6 +37,11 @@
     wait-online.enable = false;
   };
 
+  services.resolved.settings.Resolve = {
+    LLMNR = false;
+    MulticastDNS = false;
+  };
+
   systemd.tmpfiles.rules = ["d /var/lib/wireguard 0750 root systemd-network -"];
 
   boot.kernel.sysctl = {
