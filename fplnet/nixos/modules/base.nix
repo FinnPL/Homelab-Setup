@@ -46,7 +46,9 @@
 
   boot.kernel.sysctl = {
     "net.ipv6.conf.all.forwarding" = 1;
-    "net.ipv4.conf.all.accept_redirects" = 0;
+    "net.ipv4.conf.*.accept_redirects" = 0;
+    "net.ipv6.conf.*.accept_redirects" = 0;
+    "net.ipv4.conf.*.send_redirects" = 0;
   };
 
   services.openssh = {
@@ -56,10 +58,6 @@
       PasswordAuthentication = false;
     };
   };
-
-  users.users.root.openssh.authorizedKeys.keys = [
-    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAzhAxEIjiH8TuO9toC0OYag/H08NGJBG92eZshgj0VD"
-  ];
 
   zramSwap.enable = true;
   services.journald.extraConfig = "SystemMaxUse=500M";
