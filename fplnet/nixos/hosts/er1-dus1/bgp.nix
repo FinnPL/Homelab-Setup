@@ -142,6 +142,26 @@
       protocol bgp locix_rs2 from locix_rs {
         neighbor 2a0c:b641:701::a5:20:2409:2 as 202409;
       }
+
+      # Full table for HE's route collector
+      filter to_collector {
+        if net ~ OWN_V6 then accept;
+        if source != RTS_BGP || net = ::/0 then reject;
+        # eBGP-learned only; iBGP carries just loopbacks and f94
+        if bgp_path.len = 0 then reject;
+        accept;
+      }
+
+      protocol bgp he_collector {
+        description "HE route collector AS393338";
+        local 2a0c:b641:f98::1 as OWN_AS;
+        neighbor 2600:7000:1000::11 as 393338;
+        multihop;
+        ipv6 {
+          import none;
+          export filter to_collector;
+        };
+      }
     '';
   };
 
@@ -152,6 +172,7 @@
   ];
 
   networking.firewall.extraInputRules = ''
+    ip6 saddr 2600:7000:1000::11 tcp dport 179 accept
     ip6 saddr 2a0c:b640:11::ffff tcp dport 179 accept
     iifname "wg-r64-fra4" ip6 saddr 2a11:6c7:f00:2b4::1 tcp dport 179 accept
     iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f98:1001::1 tcp dport 179 accept

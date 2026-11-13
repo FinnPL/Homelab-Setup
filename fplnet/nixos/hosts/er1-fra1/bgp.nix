@@ -113,6 +113,26 @@
           export filter to_upstream;
         };
       }
+
+      # Full table for HE's route collector AS393338
+      filter to_collector {
+        if net ~ OWN_V6 then accept;
+        if source != RTS_BGP || net = ::/0 then reject;
+        # eBGP-learned only; iBGP carries just loopbacks and f94
+        if bgp_path.len = 0 then reject;
+        accept;
+      }
+
+      protocol bgp he_collector {
+        description "HE route collector AS393338";
+        local 2a0c:b641:f9a::1 as OWN_AS;
+        neighbor 2600:7000:1000::12 as 393338;
+        multihop;
+        ipv6 {
+          import none;
+          export filter to_collector;
+        };
+      }
     '';
 
     # The real file only exists on the router.
@@ -124,6 +144,7 @@
   environment.etc."bird/secrets.conf".source = "/var/lib/bird/secrets.conf";
 
   networking.firewall.extraInputRules = ''
+    ip6 saddr 2600:7000:1000::12 tcp dport 179 accept
     iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f98:1002:: tcp dport 179 accept
     iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f98:1002:: udp dport 3784 accept
     iifname "wg-er1-ams1" ip6 saddr 2a0c:b641:f99:1001:: tcp dport 179 accept

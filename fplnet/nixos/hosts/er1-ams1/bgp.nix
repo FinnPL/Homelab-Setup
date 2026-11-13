@@ -152,6 +152,26 @@
           export filter to_upstream;
         };
       }
+
+      # Full table for HE's route collector
+      filter to_collector {
+        if net ~ OWN_V6 then accept;
+        if source != RTS_BGP || net = ::/0 then reject;
+        # eBGP-learned only; iBGP carries just loopbacks and f94
+        if bgp_path.len = 0 then reject;
+        accept;
+      }
+
+      protocol bgp he_collector {
+        description "HE route collector AS393338";
+        local 2a0c:b641:f99::1 as OWN_AS;
+        neighbor 2600:7000:1000::15 as 393338;
+        multihop;
+        ipv6 {
+          import none;
+          export filter to_collector;
+        };
+      }
     '';
   };
 
@@ -165,6 +185,7 @@
   ];
 
   networking.firewall.extraInputRules = ''
+    ip6 saddr 2600:7000:1000::15 tcp dport 179 accept
     iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f98:1001:: tcp dport 179 accept
     iifname "wg-er1-dus1" ip6 saddr 2a0c:b641:f98:1001:: udp dport 3784 accept
     iifname "wg-er1-fra1" ip6 saddr 2a0c:b641:f99:1001::1 tcp dport 179 accept
