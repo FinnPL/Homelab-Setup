@@ -44,8 +44,9 @@ locals {
   reverse_zone = "9.f.0.1.4.6.b.c.0.a.2.ip6.arpa"
 
   # Expand "::" to the full 32 nibbles, reversed and dotted as in ip6.arpa.
+  # "@" is the apex, fplnet.net itself.
   ptr_names = {
-    for name, addr in local.names : name => "${join(".", reverse(split("", join("", [
+    for name, addr in merge(local.names, { "@" = local.web_v6 }) : name => "${join(".", reverse(split("", join("", [
       for g in concat(
         compact(split(":", split("::", addr)[0])),
         [for _ in range(8 - length(compact(split(":", addr)))) : "0"],
@@ -99,7 +100,7 @@ resource "cloudflare_dns_record" "ptr" {
   name    = each.value
   type    = "PTR"
   ttl     = 3600
-  content = "${each.key}.fplnet.net"
+  content = each.key == "@" ? "fplnet.net" : "${each.key}.fplnet.net"
 }
 
 # fplnet.net: the edge anycast address over IPv6, every edge's provider address over IPv4 (no own v4).
@@ -143,10 +144,10 @@ resource "cloudflare_dns_record" "web_https" {
   }
 }
 
-# Only Let's Encrypt may issue
+# Only Let's Encrypt may issue, and only through DNS-01
 resource "cloudflare_dns_record" "caa" {
   for_each = {
-    issue     = "letsencrypt.org"
+    issue     = "letsencrypt.org; validationmethods=dns-01"
     issuewild = ";"
     iodef     = "mailto:noc@lippok.eu"
   }

@@ -69,7 +69,7 @@
         access_log off;
         add_header Alt-Svc 'h3=":443"; ma=86400' always;
         add_header Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
-        add_header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; img-src data:; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" always;
+        add_header Content-Security-Policy "default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" always;
         add_header X-Content-Type-Options nosniff always;
         add_header Referrer-Policy no-referrer always;
         add_header Cross-Origin-Opener-Policy same-origin always;
