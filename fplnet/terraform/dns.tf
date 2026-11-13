@@ -106,9 +106,14 @@ resource "cloudflare_dns_record" "ptr" {
 # fplnet.net: the edge anycast address over IPv6, every edge's provider address over IPv4 (no own v4).
 locals {
   web_v6 = "2a0c:b641:f91::80"
-  web_v4 = {
-    for name in ["ens18.er1.ams1", "ens18.er1.dus1", "enp1s0.er1.fra1"] : name => local.hosts_v4[name]
+
+  # Each edge's uplink in hosts_v4
+  edge_uplinks = {
+    "er1.ams1" = "ens18.er1.ams1"
+    "er1.dus1" = "ens18.er1.dus1"
+    "er1.fra1" = "enp1s0.er1.fra1"
   }
+  web_v4 = { for edge, uplink in local.edge_uplinks : uplink => local.hosts_v4[uplink] }
 }
 
 resource "cloudflare_dns_record" "web_aaaa" {
@@ -128,6 +133,38 @@ resource "cloudflare_dns_record" "web_a" {
   type    = "A"
   ttl     = 300
   content = each.value
+  proxied = false
+}
+
+# fplnet.net/connection tests each address family on a name that has only that family.
+resource "cloudflare_dns_record" "web_v4_only" {
+  for_each = local.web_v4
+
+  zone_id = data.cloudflare_zone.forward.id
+  name    = "v4.fplnet.net"
+  type    = "A"
+  ttl     = 300
+  content = each.value
+  proxied = false
+}
+
+resource "cloudflare_dns_record" "web_v6_only" {
+  zone_id = data.cloudflare_zone.forward.id
+  name    = "v6.fplnet.net"
+  type    = "AAAA"
+  ttl     = 300
+  content = local.web_v6
+  proxied = false
+}
+
+resource "cloudflare_dns_record" "edge_a" {
+  for_each = local.edge_uplinks
+
+  zone_id = data.cloudflare_zone.forward.id
+  name    = "${each.key}.fplnet.net"
+  type    = "A"
+  ttl     = 3600
+  content = local.hosts_v4[each.value]
   proxied = false
 }
 

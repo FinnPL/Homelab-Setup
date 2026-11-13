@@ -1,42 +1,55 @@
 # HAProxy on :443 on every edge and routes by SNI without decrypting
-{config, ...}: {
-  networking.firewall.allowedTCPPorts = [443];
+{
+  config,
+  lib,
+  ...
+}: {
+  options.fplnet.haproxy.names = lib.mkOption {
+    type = lib.types.listOf lib.types.str;
+    default = [];
+    description = "Server names handed to the local nginx.";
+  };
 
-  systemd.services.haproxy.reloadTriggers = [config.environment.etc."haproxy.cfg".source];
+  config = {
+    networking.firewall.allowedTCPPorts = [443];
 
-  services.haproxy = {
-    enable = true;
-    config = ''
-      global
-        log /dev/log local0 info
-        maxconn 4000
+    systemd.services.haproxy.reloadTriggers = [config.environment.etc."haproxy.cfg".source];
 
-      defaults
-        log global
-        mode tcp
-        option tcplog
-        option dontlognull
-        # Log only failed or aborted connections, not every visit and health check.
-        option dontlog-normal
-        timeout connect 5s
-        timeout client  1m
-        timeout server  1m
+    services.haproxy = {
+      enable = true;
+      config = ''
+        global
+          log /dev/log local0 info
+          maxconn 4000
 
-      frontend tls_in
-        bind :::443 v4v6
+        defaults
+          log global
+          mode tcp
+          option tcplog
+          option dontlognull
+          # Log only failed or aborted connections, not every visit and health check.
+          option dontlog-normal
+          timeout connect 5s
+          timeout client  1m
+          timeout server  1m
 
-        stick-table type ipv6 size 100k expire 1m store conn_rate(10s),conn_cur
-        tcp-request connection track-sc0 src
-        tcp-request connection reject if { sc0_conn_rate gt 100 } || { sc0_conn_cur gt 100 }
+        frontend tls_in
+          bind :::443 v4v6
 
-        tcp-request inspect-delay 5s
-        tcp-request content reject unless { req.ssl_hello_type 1 }
+          stick-table type ipv6 size 100k expire 1m store conn_rate(10s),conn_cur
+          tcp-request connection track-sc0 src
+          tcp-request connection reject if { sc0_conn_rate gt 100 } || { sc0_conn_cur gt 100 }
 
-        # No default_backend: any other name is closed.
-        use_backend nginx if { req.ssl_sni -i fplnet.net }
+          tcp-request inspect-delay 5s
+          tcp-request content reject unless { req.ssl_hello_type 1 }
 
-      backend nginx
-        server nginx 127.0.0.1:8443 send-proxy-v2 check inter 10s
-    '';
+          # No default_backend: any other name is closed.
+          use_backend nginx if { req.ssl_sni -i ${lib.concatStringsSep " " config.fplnet.haproxy.names} }
+
+        # TLV 0xe0: the kernel's RTT to the client in microseconds, for the connection page.
+        backend nginx
+          server nginx 127.0.0.1:8443 send-proxy-v2 set-proxy-v2-tlv-fmt(0xe0) %[fc_rtt(us)] check inter 10s
+      '';
+    };
   };
 }

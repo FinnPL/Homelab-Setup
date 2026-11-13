@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Connection test, FPLNET AS218255</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<meta name="description" content="How your connection reaches FPLNET, AS218255: IP version, HTTP/3, post-quantum key exchange, Encrypted Client Hello and the edge you landed on.">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://fplnet.net/connection">
+<link rel="stylesheet" href="/style.css">
+<script src="/connection.js" defer></script>
+</head>
+<body>
+<main>
+  <h1><a href="/">FPLNET <span class="asn">AS218255</span></a></h1>
+  <p class="lead">You reached <b id="summary-edge"><!--# echo var="hostname" default="" --></b> over <b>IPv<!--# echo var="client_family" default="" --></b>.</p>
+
+  <h2>This connection</h2>
+  <dl class="facts">
+    <div><dt>Your address</dt><dd><code id="ip" data-family="<!--# echo var="client_family" default="" -->"><!--# echo var="client_ip" default="" --></code></dd></div>
+    <div><dt>Edge</dt><dd id="edge" data-raw="<!--# echo var="hostname" default="" -->"><!--# echo var="hostname" default="" --></dd></div>
+    <div><dt>HTTP</dt><dd id="protocol" data-raw="<!--# echo var="server_protocol" default="" -->"><!--# echo var="server_protocol" default="" --></dd></div>
+    <div><dt>TLS</dt><dd id="tls" data-raw="<!--# echo var="ssl_protocol" default="" -->" data-cipher="<!--# echo var="ssl_cipher" default="" -->"><!--# echo var="ssl_protocol" default="" --> <!--# echo var="ssl_cipher" default="" --></dd></div>
+    <div><dt>Key exchange</dt><dd id="group" data-raw="<!--# echo var="ssl_curve" default="" -->"><!--# echo var="ssl_curve" default="" --></dd></div>
+    <div><dt>Encrypted Client Hello</dt><dd id="ech" data-raw="<!--# echo var="ssl_ech_status" default="" -->"><!--# echo var="ssl_ech_status" default="" --></dd></div>
+    <div><dt>TLS session</dt><dd id="session" data-resumed="<!--# echo var="ssl_session_reused" default="" -->" data-early="<!--# echo var="ssl_early_data" default="" -->"><!--# echo var="ssl_session_reused" default="" --></dd></div>
+    <div><dt>TCP round trip</dt><dd id="rtt" data-raw="<!--# echo var="proxy_protocol_tlv_0xe0" default="" -->"><!--# echo var="proxy_protocol_tlv_0xe0" default="" --> µs</dd></div>
+  </dl>
+
+  <noscript><p class="note">IPv4, IPv6 and edge tests need JavaScript.</p></noscript>
+
+  <section class="js" hidden>
+    <h2>IPv4 and IPv6</h2>
+    <dl class="facts" id="families">
+      <div><dt>IPv4</dt><dd id="fam-4">testing…</dd></div>
+      <div><dt>IPv6</dt><dd id="fam-6">testing…</dd></div>
+    </dl>
+
+    <h2>Edges</h2>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Edge</th><th>Location</th><th class="num">Round trip</th><th></th></tr></thead>
+      <tbody id="edges"></tbody>
+    </table>
+    </div>
+  </section>
+
+  <footer>
+    <span>
+      <a href="https://www.peeringdb.com/asn/218255">PeeringDB</a> ·
+      <a href="https://apps.db.ripe.net/db-web-ui/query?searchtext=AS218255">RIPE DB</a> ·
+      <a href="https://bgp.tools/as/218255">bgp.tools</a> ·
+      <a href="https://bgp.he.net/AS218255">bgp.he.net</a> ·
+      <a href="https://bgp.he.net/lg/218255">Looking glass</a>
+    </span>
+    <a href="mailto:noc@lippok.eu">noc@lippok.eu</a>
+  </footer>
+</main>
+</body>
+</html>

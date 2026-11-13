@@ -7,52 +7,14 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <meta name="description" content="FPLNET, AS218255: the personal network of Finn Paul Lippok, with edges in Düsseldorf, Amsterdam and Frankfurt. Open peering.">
 <link rel="canonical" href="https://fplnet.net/">
-<style>
-  :root {
-    color-scheme: light dark;
-    --bg: #fbfbf9;
-    --fg: #1d1d1b;
-    --muted: #66665f;
-    --rule: #deded8;
-    --accent: #1f5fbf;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #141413;
-      --fg: #e8e8e3;
-      --muted: #9b9b93;
-      --rule: #2e2e2b;
-      --accent: #7aa7ff;
-    }
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--fg);
-    font: 16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
-  }
-  main { max-width: 52rem; margin: 0 auto; padding: 2rem 1rem 4rem; }
-  h1 { font-size: 1.9rem; margin: 0 0 .75rem; letter-spacing: -.01em; }
-  h1 .asn { color: var(--muted); font-weight: 400; }
-  footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1.5rem; margin-top: 2.5rem; padding-top: .75rem; border-top: 1px solid var(--rule); }
-  h2 { font-size: 1.05rem; margin: 2.5rem 0 .75rem; padding-bottom: .35rem; border-bottom: 1px solid var(--rule); }
-  h3 { font-size: .95rem; margin: 1.5rem 0 .5rem; color: var(--muted); }
-  p { margin: .5rem 0; }
-  ul { margin: .5rem 0; padding-left: 1.25rem; }
-  li { margin: .25rem 0; }
-  a { color: var(--accent); text-underline-offset: .15em; }
-  code { font: .92em ui-monospace, SFMono-Regular, Menlo, monospace; }
-  .table-wrap { overflow-x: auto; }
-  table { border-collapse: collapse; width: 100%; font-size: .95rem; }
-  th, td { text-align: left; padding: .4rem .75rem .4rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
-  th { font-weight: 600; color: var(--muted); font-size: .85rem; }
-  td code { white-space: nowrap; }
-</style>
+<link rel="stylesheet" href="/style.css">
 </head>
 <body>
 <main>
-  <h1>FPLNET <span class="asn">AS218255</span></h1>
+  <header class="top">
+    <h1>FPLNET <span class="asn">AS218255</span></h1>
+    <a class="button" href="/connection">Connection test →</a>
+  </header>
   <p>Hi, I'm Finn Paul Lippok. FPLNET is the AS of my homelab. More about me and the lab on <a href="https://lippok.dev" rel="me">lippok.dev</a>.</p>
 
   <h2 id="prefixes">Prefixes</h2>
