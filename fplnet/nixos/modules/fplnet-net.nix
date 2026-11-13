@@ -7,8 +7,6 @@
 }: let
   names = ["v4.fplnet.net" "v6.fplnet.net" "${lib.replaceStrings ["-"] ["."] config.networking.hostName}.fplnet.net"];
 in {
-  imports = [./live.nix];
-
   fplnet.haproxy.names = ["fplnet.net"] ++ names;
 
   networking.firewall = {
