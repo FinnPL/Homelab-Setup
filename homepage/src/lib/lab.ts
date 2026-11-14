@@ -92,7 +92,7 @@ const COPY: Record<string, { group: string; blurb: string }> = {
   },
   "site-data": {
     group: "Observability",
-    blurb: "Serves the site numbers on this website from Prometheus, through the edges.",
+    blurb: "Serves this website's site numbers from Prometheus and its status history from Gatus, through the edges.",
   },
   "it-tools": { group: "Applications", blurb: "A self-hosted collection of small conversion and encoding utilities." },
 };

@@ -63,7 +63,7 @@ import { IDENTITY } from "../lib/identity";
 </Base>
 
 <script>
-  import { DNS_CHECK } from "../lib/net";
+  import { DNS_CHECK, STATUS_DATA } from "../lib/net";
 
   // The canary name only resolves through Blocky; public DNS has no address for it.
   const check = document.getElementById("dns-check")!;
@@ -77,7 +77,7 @@ import { IDENTITY } from "../lib/identity";
     });
 
   const v = document.querySelector('#dns-strip [data-k="v"]')!;
-  fetch("/status.json", { cache: "no-store" })
+  fetch(STATUS_DATA, { cache: "no-store" })
     .then((r) => (r.ok ? r.json() : null))
     .catch(() => null)
     .then((d) => {

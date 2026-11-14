@@ -1,4 +1,6 @@
-// Per-day status bars from /status.json, which the edge rewrites from Gatus every 5 minutes.
+// Per-day status bars from site-data's status.json, rewritten from Gatus every 5 minutes.
+import { STATUS_DATA } from "../lib/net";
+
 // Rows with no check behind them yet are listed as such, not drawn as bars.
 const NOT_BUILT = ["DNS Minerva", "NTP"];
 
@@ -33,7 +35,7 @@ function span(cls: string, text = "") {
 export async function renderStatus(list: HTMLElement, stampEl: HTMLElement | null, days: number) {
   let data: StatusJson | null = null;
   try {
-    const res = await fetch("/status.json", { cache: "no-store" });
+    const res = await fetch(STATUS_DATA, { cache: "no-store" });
     if (res.ok) data = await res.json();
   } catch {
     data = null;

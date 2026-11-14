@@ -78,6 +78,12 @@ data:
         add_header Cache-Control "no-store" always;
         default_type application/json;
       }
+      location = /status.json {
+        add_header Access-Control-Allow-Origin $cors_origin always;
+        add_header Vary Origin always;
+        add_header Cache-Control "no-store" always;
+        default_type application/json;
+      }
       location = /healthz {
         default_type text/plain;
         return 200 "ok\n";
@@ -93,3 +99,156 @@ data:
         sys.exit(0 if time.time() - os.path.getmtime("/data/site.json") < int(os.environ["STALE_AFTER"]) else 1)
     except OSError:
         sys.exit(1)
+  status.py: |
+    # Writes status.json from Gatus every 5 minutes. Gatus keeps only the last 100 results per check,
+    # so the 90-day history lives in STATE and each run folds the new results into it.
+    import json, os, re, time, urllib.parse, urllib.request
+    from datetime import datetime, timedelta, timezone
+
+    GATUS = os.environ["GATUS_URL"]
+    STATE = "/state/state.json"
+    OUT = "/data/status.json"
+    DAYS = 90
+    MIN_OUTAGE_MS = 10 * 60 * 1000
+    DAY_MS = 86400000
+
+    ROWS = [
+        ("Website", lambda e: e.get("name") == "Website"),
+        ("Mail", lambda e: e.get("group") == "Mail"),
+        ("NAS", lambda e: e.get("group") == "NAS"),
+        ("Authentik", lambda e: e.get("name") == "Authentik"),
+        ("DNS Vieta", lambda e: e.get("name") == "DNS Vieta"),
+    ]
+
+
+    def last_sunday(year, month):
+        d = datetime(year, month + 1, 1, tzinfo=timezone.utc) - timedelta(days=1)
+        return d - timedelta(days=(d.weekday() + 1) % 7)
+
+
+    def day_key(ms):
+        # Days run in Europe/Berlin: CEST from the last Sunday of March to the last Sunday of
+        # October, 01:00 UTC each (the image has no tz database).
+        t = datetime.fromtimestamp(ms / 1000, timezone.utc)
+        start = last_sunday(t.year, 3).replace(hour=1)
+        end = last_sunday(t.year, 10).replace(hour=1)
+        return (t + timedelta(hours=2 if start <= t < end else 1)).strftime("%Y-%m-%d")
+
+
+    def parse_ms(ts):
+        # Gatus writes nanoseconds; Python parses up to microseconds.
+        ts = re.sub(r"(\.\d{6})\d+", r"\1", ts.replace("Z", "+00:00"))
+        return int(datetime.fromisoformat(ts).timestamp() * 1000)
+
+
+    def get(path):
+        with urllib.request.urlopen(GATUS + path, timeout=20) as r:
+            return json.load(r)
+
+
+    def write_atomic(path, data):
+        with open(path + ".tmp", "w") as f:
+            json.dump(data, f, separators=(",", ":"))
+        os.replace(path + ".tmp", path)
+
+
+    def seed(key):
+        events = get(f"/api/v1/endpoints/{urllib.parse.quote(key, safe='')}/statuses?page=1&pageSize=1").get("events") or []
+        st = {"last": None, "seen": [], "runs": [], "open": None}
+        if not events:
+            return st
+        for ev in events:
+            t = parse_ms(ev["timestamp"])
+            if ev["type"] == "UNHEALTHY" and st["open"] is None:
+                st["open"] = {"start": t, "last": t}
+            if ev["type"] == "HEALTHY" and st["open"]:
+                st["runs"].append({"start": st["open"]["start"], "end": t})
+                st["open"] = None
+        st["last"] = parse_ms(events[-1]["timestamp"])
+        t, now = parse_ms(events[0]["timestamp"]), time.time() * 1000
+        while t < now:
+            st["seen"].append(day_key(t))
+            t += DAY_MS
+        return st
+
+
+    def fold(st, results):
+        seen = set(st["seen"])
+        for r in results:
+            t = parse_ms(r["timestamp"])
+            if st["last"] is not None and t <= st["last"]:
+                continue
+            seen.add(day_key(t))
+            if not r.get("success"):
+                if st["open"]:
+                    st["open"]["last"] = t
+                else:
+                    st["open"] = {"start": t, "last": t}
+            elif st["open"]:
+                st["runs"].append({"start": st["open"]["start"], "end": t})
+                st["open"] = None
+            st["last"] = t
+        st["seen"] = sorted(seen)
+
+
+    def prune(st, keys):
+        cutoff = time.time() * 1000 - (DAYS + 1) * DAY_MS
+        st["runs"] = [r for r in st["runs"] if r["end"] >= cutoff]
+        st["seen"] = [k for k in st["seen"] if k in keys]
+
+
+    def outage_minutes(st):
+        per_day = {}
+        runs = st["runs"] + ([{"start": st["open"]["start"], "end": st["open"]["last"]}] if st["open"] else [])
+        for r in runs:
+            start, end = r["start"], r["end"]
+            if end - start <= MIN_OUTAGE_MS:
+                continue
+            for t in range(start, end, 60000):
+                k = day_key(t)
+                per_day[k] = per_day.get(k, 0) + min(60000, end - t)
+        return {k: round(ms / 60000) for k, ms in per_day.items()}
+
+
+    def run():
+        now = time.time() * 1000
+        keys = [day_key(now - i * DAY_MS) for i in range(DAYS - 1, -1, -1)]
+        state = json.load(open(STATE)) if os.path.exists(STATE) else {}
+        endpoints = get("/api/v1/endpoints/statuses?page=1&pageSize=100")
+
+        rows, newest = [], 0
+        for label, match in ROWS:
+            matched = [e for e in endpoints if match(e)]
+            if not matched:
+                continue
+            down, seen = {}, set()
+            for e in matched:
+                if e["key"] not in state:
+                    state[e["key"]] = seed(e["key"])
+                st = state[e["key"]]
+                fold(st, sorted(e.get("results") or [], key=lambda r: parse_ms(r["timestamp"])))
+                prune(st, keys)
+                if st["last"]:
+                    newest = max(newest, st["last"])
+                seen.update(st["seen"])
+                for k, m in outage_minutes(st).items():
+                    down[k] = max(down.get(k, 0), m)
+            rows.append({
+                "label": label,
+                "state": "ok" if all((e.get("results") or [{}])[-1].get("success") for e in matched) else "degraded",
+                "days": [None if k not in seen else 0 if k in down else 1 for k in keys],
+                "minutes": [None if k not in seen else down.get(k, 0) for k in keys],
+            })
+
+        write_atomic(STATE, state)
+        generated = datetime.fromtimestamp(newest / 1000, timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z") if newest else None
+        write_atomic(OUT, {"generated": generated, "days": DAYS, "minOutageMinutes": 10, "keys": keys, "rows": rows})
+        print(f"wrote {OUT} with {len(rows)} rows", flush=True)
+
+
+    while True:
+        try:
+            run()
+        except Exception as e:
+            print(f"status run failed: {e}", flush=True)
+        time.sleep(300)

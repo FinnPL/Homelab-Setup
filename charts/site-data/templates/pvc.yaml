@@ -1,0 +1,14 @@
+# The status feeder's 90-day history. Gatus keeps only its last 100 results per check.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: site-data-status
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: site-data
+spec:
+  accessModes: ["ReadWriteOnce"]
+  storageClassName: nfs-client
+  resources:
+    requests:
+      storage: 16Mi

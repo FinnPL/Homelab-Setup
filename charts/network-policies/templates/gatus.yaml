@@ -9,6 +9,14 @@ spec:
       app.kubernetes.io/name: gatus
   ingress:
     {{- include "np.fromGateway" (list 8080) | nindent 4 }}
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: site-data
+            app.kubernetes.io/name: site-data
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
   egress:
     {{- include "np.toPooler" . | nindent 4 }}
     # Monitored services behind the Gateway
