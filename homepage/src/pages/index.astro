@@ -2,7 +2,7 @@
 import Base from "../layouts/Base.astro";
 import { projects } from "../lib/projects";
 import { IDENTITY } from "../lib/identity";
-import { ASN, AGGREGATE, CONNECTION } from "../lib/net";
+import { ASN, AGGREGATE, CONNECTION, LOOKING_GLASS } from "../lib/net";
 import { stamp } from "../lib/build";
 
 const { featured, fetchedAt } = await projects();
@@ -29,7 +29,7 @@ const shown = featured.filter((p) => p.home !== false);
         <div class="nh-id"><span class="title">{ASN}</span><span class="pfx">{AGGREGATE}</span></div>
         <nav class="nh-links">
           <a href="https://fplnet.net/">fplnet.net →</a>
-          <span class="nb">Looking glass · not built yet</span>
+          <a href={LOOKING_GLASS}>Looking glass →</a>
           <a href={CONNECTION}>Your connection →</a>
           <a href="/status">Status →</a>
         </nav>

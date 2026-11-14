@@ -1,6 +1,6 @@
 // The live network map on the home page. Everything it shows comes from the edges' live.json and
 // the sites' site.json; parts that do not exist yet are drawn dashed and say so.
-import { EDGES, EDGE_IDS, GW1_AAH1_PREFERENCE, isBackboneIface, isNeighbourSession, networkOf, type EdgeId } from "../lib/net";
+import { EDGES, EDGE_IDS, GW1_AAH1_PREFERENCE, isBackboneIface, isNeighbourSession, networkOf, lgSummary, lgSession, type EdgeId } from "../lib/net";
 import { state, on, want, fresh, sessionTotals, uplinkTotals, fmtRate, fmtNum, esc, NB, NO_DATA, type Live } from "./feed";
 
 const NS = "http://www.w3.org/2000/svg";
@@ -192,11 +192,11 @@ const lossPct = (v: number | null | undefined) => (v == null ? "" : (v * 100).to
 
 function edgePanel(id: EdgeId) {
   const n = EDGES[id], s = fresh(id);
-  const head = `<h3>${n.name}</h3><div class="sub">${n.city}, ${n.provider}</div>`;
+  const head = `<h3>${n.name}<a href="${lgSummary(id)}">looking glass →</a></h3><div class="sub">${n.city}, ${n.provider}</div>`;
   if (!s) return head + `<p>${NO_DATA}</p>`;
   const up = sum(edgeUplinks(s));
   const sess = s.sessions
-    .map((x) => `<tr><td>${dot(x.up)}${esc(x.name)}<br><span class="k">${esc(x.kind)}</span></td><td class="num">${x.prefixes ? fmtNum(x.prefixes) : ""}</td></tr>`)
+    .map((x) => `<tr><td>${dot(x.up)}<a href="${esc(lgSession(id, x.name))}">${esc(x.name)}</a><br><span class="k">${esc(x.kind)}</span></td><td class="num">${x.prefixes ? fmtNum(x.prefixes) : ""}</td></tr>`)
     .join("");
   const row = (x: Live["links"][number]) => `<tr><td>${esc(x.target)}</td><td class="num">${ms(x.rtt_ms)}</td><td class="num">${lossPct(x.loss_60s)}</td></tr>`;
   const bb = s.links.filter((x) => x.kind === "backbone").map(row).join("");

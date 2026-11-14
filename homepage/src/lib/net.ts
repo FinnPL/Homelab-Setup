@@ -6,10 +6,10 @@ export const AGGREGATE = "2a0c:b641:f90::/44";
 
 export type EdgeId = "ams1" | "dus1" | "fra1";
 
-export const EDGES: Record<EdgeId, { name: string; city: string; provider: string; prefix: string }> = {
-  ams1: { name: "er1.ams1", city: "Amsterdam", provider: "getvps.net", prefix: "2a0c:b641:f99::/48" },
-  dus1: { name: "er1.dus1", city: "Düsseldorf", provider: "Servperso", prefix: "2a0c:b641:f98::/48" },
-  fra1: { name: "er1.fra1", city: "Frankfurt", provider: "Vultr", prefix: "2a0c:b641:f9a::/48" },
+export const EDGES: Record<EdgeId, { name: string; city: string; provider: string; prefix: string; loopback: string }> = {
+  ams1: { name: "er1.ams1", city: "Amsterdam", provider: "getvps.net", prefix: "2a0c:b641:f99::/48", loopback: "2a0c:b641:f99::1" },
+  dus1: { name: "er1.dus1", city: "Düsseldorf", provider: "Servperso", prefix: "2a0c:b641:f98::/48", loopback: "2a0c:b641:f98::1" },
+  fra1: { name: "er1.fra1", city: "Frankfurt", provider: "Vultr", prefix: "2a0c:b641:f9a::/48", loopback: "2a0c:b641:f9a::1" },
 };
 export const EDGE_IDS = Object.keys(EDGES) as EdgeId[];
 
@@ -17,6 +17,10 @@ export const liveUrl = (e: EdgeId) => `https://${EDGES[e].name}.fplnet.net/live.
 export const SITE_DATA = "https://site-data.relay.lippok.dev/site.json";
 export const DNS_CHECK = "https://dns-check.fplnet.net/api/ping";
 export const CONNECTION = "https://fplnet.net/connection";
+
+export const LOOKING_GLASS = "https://lg.fplnet.net/";
+export const lgSummary = (e: EdgeId) => `${LOOKING_GLASS}summary/${EDGES[e].loopback}`;
+export const lgSession = (e: EdgeId, protocol: string) => `${LOOKING_GLASS}detail/${EDGES[e].loopback}/${encodeURIComponent(protocol)}`;
 
 // gw1-aah1 takes its default route from the edges in this order (local pref 200/150/100 in
 // from_edge, fplnet/nixos/hosts/gw1-aah1).
