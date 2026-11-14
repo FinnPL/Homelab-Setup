@@ -3,6 +3,7 @@
 {
   config,
   lib,
+  pkgs,
   ...
 }: let
   cfg = config.fplnet.monitoring;
@@ -49,6 +50,35 @@ in {
         enable = true;
         listenAddress = "[${loopback}]";
         hosts = map linkPeer backbone ++ cfg.extraProbeTargets ++ ["2606:4700:4700::1111"];
+      };
+    };
+
+    systemd.services.smokeping-watchdog = {
+      description = "Restart smokeping_prober when it stopped pinging a target";
+      after = ["prometheus-smokeping-exporter.service"];
+      path = [pkgs.curl pkgs.gawk pkgs.coreutils pkgs.systemd];
+      serviceConfig.Type = "oneshot";
+      script = ''
+        state=/run/smokeping-watchdog
+        now=$(curl -sf "http://[${loopback}]:9374/metrics" | awk '/^smokeping_requests_total/ {print $1, $2}' | sort) || exit 0
+        [ -n "$now" ] || exit 0
+        if [ -f "$state" ]; then
+          stuck=$(join "$state" <(echo "$now") | awk '$2 == $3 {print $1}')
+          if [ -n "$stuck" ]; then
+            echo "not pinging: $stuck"
+            rm -f "$state"
+            systemctl restart prometheus-smokeping-exporter.service
+            exit 0
+          fi
+        fi
+        echo "$now" > "$state"
+      '';
+    };
+    systemd.timers.smokeping-watchdog = {
+      wantedBy = ["timers.target"];
+      timerConfig = {
+        OnBootSec = "3min";
+        OnUnitActiveSec = "2min";
       };
     };
 

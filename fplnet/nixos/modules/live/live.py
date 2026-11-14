@@ -19,7 +19,7 @@ BIRD = f"http://[{LOOPBACK}]:9324/metrics"
 
 SESSION_EVERY = 10
 WINDOW = 60
-KIND = {"from_transit": "transit", "from_route_server": "route server", "from_peer": "peer"}
+KIND = {"from_transit": "transit", "from_vultr": "transit", "from_route_server": "route server", "from_peer": "peer"}
 LINE = re.compile(r'^(\w+)\{([^}]*)\} (\S+)$')
 LABEL = re.compile(r'(\w+)="([^"]*)"')
 
