@@ -10,10 +10,6 @@ ROOT="${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}"
 # One Vault host CA for every site.
 HOST_CA_FILE="$ROOT/fplnet/vault_host_ca.pub"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLOUD_EDGE_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
-HOST_CA_FILE="$CLOUD_EDGE_DIR/vault_host_ca.pub"
-
 error() {
   echo "::error::$*"
   exit 1

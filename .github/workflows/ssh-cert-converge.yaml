@@ -86,7 +86,6 @@ jobs:
         env:
           PLAYBOOKS: |
             nfs-server.yml nfs_server
-            mesh-router.yml mesh_router
         run: |
           set -euo pipefail
           state=$(aws s3 cp "s3://${TFSTATE_BUCKET}/01-network/terraform.tfstate" -)
