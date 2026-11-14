@@ -8,16 +8,6 @@ data "terraform_remote_state" "network" {
   }
 }
 
-data "terraform_remote_state" "cloud_edge" {
-  backend = "s3"
-
-  config = {
-    bucket = "finnpl-homelab-tfstate-1766068376"
-    key    = "cloud-edge/terraform.tfstate"
-    region = "eu-central-1"
-  }
-}
-
 data "terraform_remote_state" "vault" {
   backend = "s3"
 
@@ -40,11 +30,10 @@ locals {
   )
 
   # Derived values
-  proxmox_host_ip    = local.host_ips.nuc
-  athena_gateway     = local.athena_network.gateway
-  athena_vlan_id     = local.athena_network.vlan_id
-  athena_subnet      = local.athena_network.subnet
-  athena_subnet_cidr = split("/", local.athena_subnet)[1]
+  proxmox_host_ip = local.host_ips.nuc
+  athena_gateway  = local.athena_network.gateway
+  athena_vlan_id  = local.athena_network.vlan_id
+  athena_subnet   = local.athena_network.subnet
 
   # IP assignments sourced from 01-network outputs (DHCP reservations)
   windows_server_ip     = local.host_ips.windows_server
@@ -55,13 +44,6 @@ locals {
     local.host_ips.talos_worker_2,
     local.host_ips.talos_worker_3,
   ]
-
-  # Mesh router
-  mesh_router_ip  = local.host_ips.mesh_router
-  mesh_router_mac = local.host_vm_macs.mesh_router
-
-  # WireGuard endpoint of the cloud-edge
-  mesh_wg_peer_endpoint = "${data.terraform_remote_state.cloud_edge.outputs.instance_public_ip}:51820"
 
   # Resolve MACs from 01-network outputs
   talos_controlplane_mac = local.host_vm_macs.talos_controlplane

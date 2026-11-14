@@ -40,7 +40,7 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 |:-----|:-----|:---------|:------------|
 | **Vieta** | Primary homelab: Kubernetes cluster, services, storage | Talos K8s on Proxmox | `vieta-deploy.yaml` |
 | **Minerva** | Secondary site: lightweight services | Docker Compose | `minerva-deploy.yaml` |
-| **Cloud Edge** | Public-facing edge: HAProxy TLS relay, VPN tunneling | NixOS on Oracle Cloud (ARM) | `cloud-edge-deploy.yaml` |
+| **Cloud Edge** | Spare VM: Tailscale and SSH only, public traffic goes through the FPLNET edges | NixOS on Oracle Cloud (ARM) | `cloud-edge-deploy.yaml` |
 
 ### Technology Stack
 
@@ -148,24 +148,21 @@ Inter-VLAN traffic is blocked by default. Only SSH, HTTPS, and SMB are permitted
 
 #### DNS
 
-Cloudflare manages the `lippok.dev` zone. A wildcard and root A record are created in `03-services` pointing to the Kubernetes Gateway LoadBalancer IP. Oracle records are managed under `cloud-edge`.
+Cloudflare manages the `lippok.dev` zone. `03-services` points the wildcard at the Kubernetes Gateway LoadBalancer IP and writes the names served through the FPLNET edges (`fplnet/nixos/site-services.json`). The apex is in `cloud-edge/dns.tf`.
 
-| Subdomain | DNS | TLS terminated at | Use case |
-|:----------|:----|:------------------|:---------|
+| Name | DNS | TLS terminated at | Use case |
+|:-----|:----|:------------------|:---------|
 | `*.lippok.dev` | Local LB IP | Local Gateway | Local-only services |
-| `*.cloud.lippok.dev` | Oracle IP | HAProxy | Cloud-hosted services |
-| `*.relay.lippok.dev` | Oracle IP | HAProxy TLS passthrough to Local | Proxied services |
+| `lippok.dev` | Cloudflare (proxied), origin `2a0c:b641:f91::80` | FPLNET edges | This website |
+| `dns.relay`, `site-data.relay` | Site anycast (IPv6), every edge (IPv4) | The site; the edges pass TLS through | Public site services |
 
-#### DoH Relay
+#### DoH
 
-1. **Entry:** Client (DoH) to `dns.relay.lippok.dev` via Oracle HAProxy.
-2. **Tunnel:** TLS relay over WireGuard to homelab (E2EE).
-3. **Homelab:** Terminates TLS and resolves through Blocky (filtering) then Unbound (DNSSEC).
-4. **Upstream:** ODoH-style via VPN + DoT to 1.1.1.1.
+1. **Entry:** Client (DoH) to `dns.relay.lippok.dev`: over IPv6 straight to the site anycast address `2a0c:b641:f92::53`, over IPv4 to any edge, whose HAProxy passes the TLS stream by SNI over the WireGuard backbone.
+2. **Homelab:** Blocky terminates TLS and filters, Unbound validates DNSSEC.
+3. **Upstream:** ODoH-style via VPN + DoT to 1.1.1.1.
 
-![DNS resolution flow](docs/diagrams/dns-resolution.svg)
-
-**Validation:** `dns-check.cloud.lippok.dev` only resolves to `oci.cloud.lippok.dev` behind Blocky.
+**Validation:** `dns-check.fplnet.net` resolves only through Blocky.
 
 ### 02 Infrastructure
 
@@ -187,10 +184,6 @@ Provisions VMs and containers on a Proxmox host (Intel NUC) and bootstraps a Tal
 #### NFS Server
 
 Debian 12 LXC container with dual storage (SSD for OS, HDD for data). Exports `/srv/nfs/kubernetes` to the cluster. Proxmox firewall defaults to `DROP`; only K8s nodes and the NUC are whitelisted via IP set. Configured via Ansible.
-
-#### Mesh Router
-
-A Debian LXC running WireGuard as the homelab end of the Cloud Edge tunnel (Ansible-provisioned). It NATs the Oracle edge into the Athena VLAN, letting the cloud HAProxy reach the internal services (for the `*.relay.lippok.dev` path.)
 
 #### Outputs
 
@@ -286,16 +279,14 @@ Secondary site running services via Docker Compose. Deployed via `minerva-deploy
 
 ## Cloud Edge
 
-Public-facing edge node on Oracle Cloud's Always Free ARM tier. Provides:
+Oracle Cloud Always Free ARM VM. Public traffic goes through the FPLNET edges; this node only runs:
 
-- **HAProxy:** SNI routing for `*.cloud` and `*.relay` subdomains
-- **WireGuard:** encrypted tunnel back to the homelab
 - **Tailscale:** out-of-band management
 - **SSH:** certificate-only, both directions; the NixOS host trusts the Vault user CA and presents its own host certificate
 
 | Layer | Scope |
 |:------|:------|
-| `cloud-edge/*.tf` | OCI instance, VCN, security list, edge subnet/firewall, Cloudflare `*.cloud` and `*.relay` records |
+| `cloud-edge/*.tf` | OCI instance, VCN, security list (SSH, Tailscale), Cloudflare zone settings and the `lippok.dev` apex record |
 | `cloud-edge/nixos/` | NixOS flake (deployed via nixos-anywhere); full host configuration for the `oracle-edge` node |
 
 ---

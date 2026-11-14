@@ -60,7 +60,6 @@ jobs:
       TF_VAR_proxmox_insecure: ${{ vars.PROXMOX_INSECURE }}
       TF_VAR_proxmox_node: ${{ vars.PROXMOX_NODE }}
       TF_VAR_cluster_name: ${{ vars.TALOS_CLUSTER_NAME }}
-      TF_VAR_mesh_wg_peer_pubkey: ${{ vars.CLOUD_WG_PUBKEY }}
       TF_VAR_acme_email: ${{ vars.ACME_EMAIL }}
 
     steps:
@@ -79,9 +78,7 @@ jobs:
             kv/data/cloudflare api-token | TF_VAR_cloudflare_api_token ;
             kv/data/vieta/unifi api-key | TF_VAR_unifi_api_key ;
             kv/data/vieta/proxmox ssh-password | TF_VAR_proxmox_ssh_password ;
-            kv/data/vieta/nfs root-password | TF_VAR_nfs_root_password ;
-            kv/data/vieta/mesh-router root-password | TF_VAR_mesh_router_root_password ;
-            kv/data/vieta/mesh-router wg-private-key | TF_VAR_mesh_wg_private_key
+            kv/data/vieta/nfs root-password | TF_VAR_nfs_root_password
 
       - name: Tailscale
         if: inputs.needs_homelab

@@ -416,16 +416,6 @@ write_ssh_keys_nix() {
 EOF
 }
 
-write_acme_email_nix() {
-  require_var ACME_EMAIL
-
-  cat > "$CLOUD_EDGE_DIR/nixos/hosts/oracle-edge/acme-email.nix" << EOF
-{
-  security.acme.defaults.email = "$ACME_EMAIL";
-}
-EOF
-}
-
 refresh_ssh_after_install() {
   require_var IP
 
@@ -525,133 +515,6 @@ reboot_edge() {
   echo "Rebooted into $booted"
 }
 
-deploy_wireguard_keys() {
-  require_var IP
-  require_var WG_PRIVATE_KEY
-  require_var WG_PEER_PUBKEY
-
-  local ssh_opts=(
-    -i ~/.ssh/edge_key
-    -o BatchMode=yes
-    -o ConnectTimeout=10
-    -o UserKnownHostsFile=~/.ssh/known_hosts
-    -o StrictHostKeyChecking=yes
-  )
-  echo "Deploying WireGuard keys to edge node..."
-  ssh "${ssh_opts[@]}" "root@$IP" '
-    mkdir -p /etc/wireguard
-    cat > /etc/wireguard/private.key
-    chmod 600 /etc/wireguard/private.key
-  ' <<< "$WG_PRIVATE_KEY"
-
-  ssh "${ssh_opts[@]}" "root@$IP" '
-    mkdir -p /etc/wireguard
-    cat > /etc/wireguard/peer-pubkey
-    chmod 644 /etc/wireguard/peer-pubkey
-  ' <<< "$WG_PEER_PUBKEY"
-
-  ssh "${ssh_opts[@]}" "root@$IP" 'systemctl restart homelab-wg || true'
-
-  echo "WireGuard keys deployed and service triggered."
-}
-
-wait_for_wireguard() {
-  require_var IP
-
-  local ssh_opts=(
-    -i ~/.ssh/edge_key
-    -o BatchMode=yes
-    -o ConnectTimeout=10
-    -o UserKnownHostsFile=~/.ssh/known_hosts
-    -o StrictHostKeyChecking=yes
-  )
-  local attempts=15
-  local delay_seconds=5
-
-  echo "Waiting for WireGuard tunnel to come up..."
-
-  local i
-  for ((i = 1; i <= attempts; i++)); do
-    if ssh "${ssh_opts[@]}" "root@$IP" 'ip link show wg0 2>/dev/null' >/dev/null 2>&1; then
-      echo "WireGuard tunnel is up."
-      return 0
-    fi
-
-    echo "WireGuard not ready yet (attempt $i/$attempts)"
-    if [ "$i" -lt "$attempts" ]; then
-      sleep "$delay_seconds"
-    fi
-  done
-
-  error "WireGuard tunnel did not come up after $attempts attempts"
-}
-
-deploy_myip_secrets() {
-  require_var IP
-
-  local ssh_opts=(
-    -i ~/.ssh/edge_key
-    -o BatchMode=yes
-    -o ConnectTimeout=10
-    -o UserKnownHostsFile=~/.ssh/known_hosts
-    -o StrictHostKeyChecking=yes
-  )
-
-  echo "Deploying MyIP API key env file..."
-  # Local (client-side) expansion is intended: these secrets live in the runner env
-  # and must be interpolated here, then streamed to the remote `cat`. Quoting EOF would
-  # ship literal ${VAR} text to a host that has no such vars.
-  # shellcheck disable=SC2087
-  ssh "${ssh_opts[@]}" "root@$IP" '
-    install -d -m 0700 /etc/myip
-    umask 077
-    cat > /etc/myip/secrets.env
-    chmod 600 /etc/myip/secrets.env
-  ' <<EOF
-CLOUDFLARE_API=${MYIP_CLOUDFLARE_API:-}
-MAXMIND_ACCOUNT_ID=${MAXMIND_ACCOUNT_ID:-}
-MAXMIND_LICENSE_KEY=${MAXMIND_LICENSE_KEY:-}
-MAXMIND_AUTO_UPDATE=${MAXMIND_AUTO_UPDATE:-false}
-EOF
-
-  ssh "${ssh_opts[@]}" "root@$IP" 'systemctl restart podman-myip.service || true'
-  echo "MyIP secrets deployed and container restarted."
-}
-
-deploy_cloudflare_credentials() {
-  require_var IP
-  require_var CLOUDFLARE_API_TOKEN
-
-  local ssh_opts=(
-    -i ~/.ssh/edge_key
-    -o BatchMode=yes
-    -o ConnectTimeout=10
-    -o UserKnownHostsFile=~/.ssh/known_hosts
-    -o StrictHostKeyChecking=yes
-  )
-
-  echo "Deploying Cloudflare credentials for ACME DNS-01..."
-  # Local expansion is intended (see deploy_myip_secrets): $CLOUDFLARE_API_TOKEN is a
-  # runner env secret interpolated here, then streamed to the remote `cat`.
-  # shellcheck disable=SC2087
-  ssh "${ssh_opts[@]}" "root@$IP" '
-    install -d -m 0700 /etc/cloudflare
-    umask 077
-    cat > /etc/cloudflare/credentials
-    chmod 600 /etc/cloudflare/credentials
-  ' <<EOF
-CLOUDFLARE_DNS_API_TOKEN=$CLOUDFLARE_API_TOKEN
-EOF
-
-  # Kick acme to issue/renew now that credentials exist. The unit is a oneshot
-  # backed by a daily timer; starting it manually is safe and idempotent.
-  ssh "${ssh_opts[@]}" "root@$IP" '
-    systemctl start acme-cloud.lippok.dev.service || true
-  '
-
-  echo "Cloudflare credentials deployed and acme issuance triggered."
-}
-
 deploy_tailscale_credentials() {
   require_var IP
   require_var TAILSCALE_AUTHKEY
@@ -742,15 +605,10 @@ Commands:
   check-host-cert-expiry
   detect-nixos-state
   write-ssh-keys-nix
-  write-acme-email-nix
   refresh-ssh-after-install
   reboot-edge
-  deploy-cloudflare-credentials
-  deploy-myip-secrets
   deploy-tailscale-credentials
-  deploy-wireguard-keys
   wait-for-tailscale
-  wait-for-wireguard
 EOF
 }
 
@@ -785,32 +643,17 @@ main() {
     write-ssh-keys-nix)
       write_ssh_keys_nix
       ;;
-    write-acme-email-nix)
-      write_acme_email_nix
-      ;;
     refresh-ssh-after-install)
       refresh_ssh_after_install
       ;;
     reboot-edge)
       reboot_edge
       ;;
-    deploy-cloudflare-credentials)
-      deploy_cloudflare_credentials
-      ;;
-    deploy-myip-secrets)
-      deploy_myip_secrets
-      ;;
     deploy-tailscale-credentials)
       deploy_tailscale_credentials
       ;;
-    deploy-wireguard-keys)
-      deploy_wireguard_keys
-      ;;
     wait-for-tailscale)
       wait_for_tailscale
-      ;;
-    wait-for-wireguard)
-      wait_for_wireguard
       ;;
     *)
       usage
