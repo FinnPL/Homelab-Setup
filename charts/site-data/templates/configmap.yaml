@@ -63,6 +63,7 @@ data:
     }
     # Reached through the edges' TLS passthrough to the site-anycast address
     server {
+      listen [::]:8443 ssl;
       listen 8443 ssl;
       http2 on;
       server_name {{ .Values.relay.name }};
