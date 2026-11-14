@@ -11,9 +11,11 @@
     '')
     siteServices);
 
-  siteBackends = lib.concatStrings (lib.mapAttrsToList (name: s: ''
+  siteBackends = lib.concatStrings (lib.mapAttrsToList (name: s: let
+      proxy = s ? proxyPort;
+    in ''
       backend site_${name}
-        server site [${s.address}]:443 check inter 10s check-ssl check-sni ${name} verify required verifyhost ${name} ca-file /etc/ssl/certs/ca-certificates.crt
+        server site [${s.address}]:${toString (s.proxyPort or 443)}${lib.optionalString proxy " send-proxy-v2 check-send-proxy"} check inter 10s check-ssl check-sni ${name} verify required verifyhost ${name} ca-file /etc/ssl/certs/ca-certificates.crt
     '')
     siteServices);
 in {
