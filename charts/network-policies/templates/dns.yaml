@@ -18,7 +18,14 @@ spec:
               protocol: UDP
             - port: "53"
               protocol: TCP
-            - port: "443"
+            - port: "8443"
+              protocol: TCP
+    # DoH with PROXY v2 only from the edges
+    - fromCIDR:
+        - 2a0c:b641:f98::/46
+      toPorts:
+        - ports:
+            - port: "8444"
               protocol: TCP
     {{- include "np.fromPrometheus" (list 4000 9167) | nindent 4 }}
   egress:

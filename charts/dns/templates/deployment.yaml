@@ -22,6 +22,7 @@ spec:
       annotations:
         checksum/blocky-config: {{ include (print $.Template.BasePath "/configmap-blocky.yaml") . | sha256sum }}
         checksum/unbound-config: {{ include (print $.Template.BasePath "/configmap-unbound.yaml") . | sha256sum }}
+        checksum/doh-proxy-config: {{ include (print $.Template.BasePath "/configmap-doh-proxy.yaml") . | sha256sum }}
     spec:
 
       # Prefer worker nodes but tolerate control-plane as a fallback
@@ -66,9 +67,6 @@ spec:
             - name: http
               containerPort: 4000
               protocol: TCP
-            - name: https
-              containerPort: 443
-              protocol: TCP
 
           env:
             - name: TZ
@@ -81,9 +79,6 @@ spec:
               readOnly: true
             - name: blocky-tmp
               mountPath: /tmp
-            - name: tls-cert
-              mountPath: /tls
-              readOnly: true
 
           resources:
             requests:
@@ -215,6 +210,63 @@ spec:
             capabilities:
               drop: ["ALL"]
 
+        - name: doh-proxy
+          # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
+          image: docker.io/nginxinc/nginx-unprivileged:1.31-alpine@sha256:b5047b9b76845eac124358373c6852377c52e4b05834a47647e955dd91cb8f1e
+          imagePullPolicy: IfNotPresent
+
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              nginx -g 'daemon off;' &
+              pid=$!
+              trap 'kill -QUIT "$pid"' TERM INT
+              (while sleep 86400; do nginx -s reload; done) &
+              wait "$pid"
+
+          ports:
+            - name: doh
+              containerPort: 8443
+              protocol: TCP
+            - name: doh-pp
+              containerPort: 8444
+              protocol: TCP
+
+          volumeMounts:
+            - name: doh-proxy-config
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+              readOnly: true
+            - name: doh-proxy-tmp
+              mountPath: /tmp
+            - name: tls-cert
+              mountPath: /tls
+              readOnly: true
+
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 300m
+              memory: 64Mi
+
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: doh
+              scheme: HTTPS
+            periodSeconds: 10
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 101
+            runAsGroup: 101
+            capabilities:
+              drop: ["ALL"]
+
       volumes:
         - name: blocky-config
           configMap:
@@ -237,3 +289,12 @@ spec:
         - name: tls-cert
           secret:
             secretName: dns-relay-tls
+
+        - name: doh-proxy-config
+          configMap:
+            name: doh-proxy
+
+        - name: doh-proxy-tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi
