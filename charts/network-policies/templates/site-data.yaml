@@ -1,0 +1,21 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: site-data
+  namespace: site-data
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: site-data
+  ingress:
+    {{- include "np.fromGateway" (list 8080) | nindent 4 }}
+  egress:
+    {{- include "np.dnsProxy" . | nindent 4 }}
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+            app.kubernetes.io/name: prometheus
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP

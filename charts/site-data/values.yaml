@@ -1,0 +1,28 @@
+site: vieta
+
+prometheusUrl: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+
+feed:
+  # renovate: datasource=docker depName=python
+  image: docker.io/library/python:3.13-alpine@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e
+  resources:
+    requests: { cpu: 5m, memory: 24Mi }
+    limits: { memory: 64Mi }
+
+web:
+  # renovate: datasource=docker depName=nginxinc/nginx-unprivileged
+  image: docker.io/nginxinc/nginx-unprivileged:1.29-alpine@sha256:0c79d56aee561a1d81c63f00eee5fb5fe29279560cdc55e91425133104c7fbe6
+  resources:
+    requests: { cpu: 5m, memory: 16Mi }
+    limits: { memory: 48Mi }
+
+corsOrigins:
+  - https://lippok.dev
+
+httproute:
+  gateway:
+    name: main-gateway
+    namespace: gateway
+    sectionName: https
+  hostnames:
+    - site-data.lippok.dev

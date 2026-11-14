@@ -196,6 +196,20 @@ gatus:
             failure-threshold: 3
             success-threshold: 2
 
+      - name: "DNS Vieta"
+        group: "DNS"
+        url: "10.10.1.201"
+        interval: 60s
+        dns:
+          query-name: "lippok.dev"
+          query-type: "A"
+        conditions:
+          - "[DNS_RCODE] == NOERROR"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
       - name: "Router Vieta"
         group: "Routers"
         url: "icmp://10.10.0.1"

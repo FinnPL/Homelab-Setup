@@ -23,6 +23,14 @@ spec:
               family: IPv4
             - type: EchoRequest
               family: IPv6
+    - toEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: dns
+            app: dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
     {{- include "np.dnsProxy" . | nindent 4 }}
     - toFQDNs:
         - matchName: lippok.dev

@@ -105,7 +105,7 @@ spec:
     matchLabels:
       app.kubernetes.io/name: argocd-application-controller
   ingress:
-    - {}
+    {{- include "np.fromPrometheus" (list 8082) | nindent 4 }}
   egress:
     - toEndpoints:
         {{- include "np.argocd" "argocd-repo-server" | nindent 8 }}

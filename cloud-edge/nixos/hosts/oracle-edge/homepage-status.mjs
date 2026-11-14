@@ -1,5 +1,5 @@
 // Writes the homepage's status.json from Gatus. Runs on every 5 minutes (homepage.nix).
-// Gatus only returns the last 100 results per check, so the 30-day history is kept here.
+// Gatus only returns the last 100 results per check, so the 90-day history is kept here.
 // Each run folds the new results into STATE.
 import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -8,7 +8,7 @@ const GATUS = process.env.GATUS_URL;
 const DIR = process.env.STATE_DIRECTORY ?? ".";
 const STATE = join(DIR, "state.json");
 const OUT = join(DIR, "status.json");
-const DAYS = 30;
+const DAYS = 90;
 const TZ = "Europe/Berlin";
 const MIN_OUTAGE_MS = 10 * 60 * 1000;
 const DAY_MS = 86400000;
@@ -16,8 +16,9 @@ const DAY_MS = 86400000;
 const ROWS = [
   { label: "Website", match: (e) => e.name === "Website" },
   { label: "Mail", match: (e) => e.group === "Mail" },
-  { label: "Storage", match: (e) => e.group === "NAS" },
+  { label: "NAS", match: (e) => e.group === "NAS" },
   { label: "Authentik", match: (e) => e.name === "Authentik" },
+  { label: "DNS Vieta", match: (e) => e.name === "DNS Vieta" },
 ];
 
 if (!GATUS) {

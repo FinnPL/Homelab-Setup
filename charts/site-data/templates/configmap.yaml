@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: site-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: site-data
+data:
+  feed.py: |
+    # Writes site.json from the site:* recording rules every 15 s. On a failed query the old file
+    # stays, so its "generated" time shows how stale it is.
+    import json, os, time, urllib.parse, urllib.request
+    from datetime import datetime, timezone
+
+    PROM = os.environ["PROMETHEUS_URL"]
+    OUT = "/data/site.json"
+    SOURCE = os.environ["SITE"]
+    FIELDS = {
+        "site:nodes:count": "nodes",
+        "site:nodes_ready:count": "nodes_ready",
+        "site:pods_running:count": "pods_running",
+        "site:cpu_used:ratio": "cpu_used",
+        "site:memory_used:ratio": "memory_used",
+        "site:argocd_apps:count": "apps",
+        "site:argocd_apps_synced:count": "apps_synced",
+        "site:argocd_apps_healthy:count": "apps_healthy",
+        "site:nas_pool_online:bool": "nas_pool_online",
+        "site:nas_free:bytes": "nas_free_bytes",
+    }
+    QUERY = urllib.parse.urlencode({"query": '{__name__=~"site:.+"}'})
+
+    def read():
+        with urllib.request.urlopen(f"{PROM}/api/v1/query?{QUERY}", timeout=10) as r:
+            body = json.load(r)
+        sites = {}
+        for series in body["data"]["result"]:
+            field = FIELDS.get(series["metric"]["__name__"])
+            site = series["metric"].get("site")
+            if field and site:
+                v = float(series["value"][1])
+                sites.setdefault(site, {})[field] = round(v, 4) if field.endswith("used") else int(v)
+        return sites
+
+    while True:
+        try:
+            data = {
+                "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                "source": SOURCE,
+                "sites": read(),
+            }
+            with open(OUT + ".tmp", "w") as f:
+                json.dump(data, f, separators=(",", ":"))
+            os.replace(OUT + ".tmp", OUT)
+        except Exception as e:
+            print(f"query failed: {e}", flush=True)
+        time.sleep(15)
+  default.conf: |
+    map $http_origin $cors_origin {
+      {{- range .Values.corsOrigins }}
+      {{ . | quote }} $http_origin;
+      {{- end }}
+      default "";
+    }
+    server {
+      listen 8080;
+      root /data;
+      access_log off;
+      location = /site.json {
+        add_header Access-Control-Allow-Origin $cors_origin always;
+        add_header Vary Origin always;
+        add_header Cache-Control "no-store" always;
+        default_type application/json;
+      }
+      location = /healthz {
+        default_type text/plain;
+        return 200 "ok\n";
+      }
+      location / {
+        return 404;
+      }
+    }

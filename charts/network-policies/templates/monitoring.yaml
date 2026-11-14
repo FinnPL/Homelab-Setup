@@ -24,6 +24,14 @@ spec:
               protocol: TCP
             - port: "8080"
               protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: site-data
+            app.kubernetes.io/name: site-data
+      toPorts:
+        - ports:
+            - port: "9090"
+              protocol: TCP
   egress:
     # Scrape targets in pods (ServiceMonitors and PodMonitors)
     - toEndpoints:
@@ -32,7 +40,7 @@ spec:
               operator: Exists
       toPorts:
         - ports:
-          {{- range list 2113 3000 4000 8000 8080 9090 9093 9130 9153 9167 9221 9300 9966 10250 }}
+          {{- range list 2113 3000 4000 8000 8080 8082 9090 9093 9130 9153 9167 9221 9300 9966 10250 }}
             - port: {{ . | quote }}
               protocol: TCP
           {{- end }}
