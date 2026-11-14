@@ -1,3 +1,4 @@
 {
-  "dns.relay.lippok.dev": { "address": "2a0c:b641:f92::53", "tcp": [443] }
+  "dns.relay.lippok.dev": { "address": "2a0c:b641:f92::53", "tcp": [443] },
+  "site-data.relay.lippok.dev": { "address": "2a0c:b641:f92::80", "tcp": [443] }
 }

@@ -16,13 +16,11 @@ web:
     requests: { cpu: 5m, memory: 16Mi }
     limits: { memory: 48Mi }
 
+relay:
+  name: site-data.relay.lippok.dev
+  address: 2a0c:b641:f92::80
+
+staleAfterSeconds: 90
+
 corsOrigins:
   - https://lippok.dev
-
-httproute:
-  gateway:
-    name: main-gateway
-    namespace: gateway
-    sectionName: https
-  hostnames:
-    - site-data.lippok.dev

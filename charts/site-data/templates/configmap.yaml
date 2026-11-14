@@ -61,8 +61,14 @@ data:
       {{- end }}
       default "";
     }
+    # Reached through the edges' TLS passthrough to the site-anycast address
     server {
-      listen 8080;
+      listen 8443 ssl;
+      http2 on;
+      server_name {{ .Values.relay.name }};
+      ssl_certificate /tls/tls.crt;
+      ssl_certificate_key /tls/tls.key;
+      ssl_protocols TLSv1.3;
       root /data;
       access_log off;
       location = /site.json {
@@ -79,3 +85,10 @@ data:
         return 404;
       }
     }
+  fresh.py: |
+    # Readiness: site.json exists and was rewritten within STALE_AFTER seconds
+    import os, sys, time
+    try:
+        sys.exit(0 if time.time() - os.path.getmtime("/data/site.json") < int(os.environ["STALE_AFTER"]) else 1)
+    except OSError:
+        sys.exit(1)
