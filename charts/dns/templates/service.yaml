@@ -28,6 +28,32 @@ spec:
       targetPort: 443
 
 ---
+# DoH for dns.relay.lippok.dev on the f92 site anycast (fplnet/nixos/site-services.json).
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns-relay
+  namespace: dns
+  labels:
+    app: dns
+    lippok.dev/public: site-anycast
+  annotations:
+    lbipam.cilium.io/ips: "2a0c:b641:f92::53"
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Local
+  ipFamilyPolicy: SingleStack
+  ipFamilies:
+    - IPv6
+  selector:
+    app: dns
+  ports:
+    - name: https
+      protocol: TCP
+      port: 443
+      targetPort: https
+
+---
 apiVersion: v1
 kind: Service
 metadata:

@@ -3,7 +3,9 @@
   lib,
   modulesPath,
   ...
-}: {
+}: let
+  siteServices = lib.concatLists (lib.mapAttrsToList (_: s: map (port: "${s.address} . ${toString port}") s.tcp) (lib.importJSON ../../site-services.json));
+in {
   imports = [
     "${modulesPath}/virtualisation/proxmox-lxc.nix"
     ./bgp.nix
@@ -20,14 +22,18 @@
     hostName = "gw1-aah1";
     useHostResolvConf = false;
 
-    # Inbound to Athena: replies and ICMPv6 only. SSH from the LAN only.
+    # Inbound to Athena: replies, ICMPv6 and the site services. SSH from the LAN only.
     firewall = {
       allowedTCPPorts = lib.mkForce [];
       interfaces.eth0.allowedTCPPorts = [22];
       filterForward = true;
-      extraForwardRules = ''
-        iifname "eth0" oifname "wg-er1-*" ip6 saddr { 2a0c:b641:f94:20::/64, 2a0c:b641:f94:8100::/56 } accept
-      '';
+      extraForwardRules =
+        ''
+          iifname "eth0" oifname "wg-er1-*" ip6 saddr { 2a0c:b641:f94:20::/64, 2a0c:b641:f94:8100::/56 } accept
+        ''
+        + lib.optionalString (siteServices != []) ''
+          iifname "wg-er1-*" oifname "eth0" ip6 daddr . tcp dport { ${lib.concatStringsSep ", " siteServices} } accept
+        '';
     };
 
     # Tunnel MTU 1420 minus 60 bytes of IPv6 and TCP headers.

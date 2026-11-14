@@ -3,7 +3,20 @@
   config,
   lib,
   ...
-}: {
+}: let
+  siteServices = lib.filterAttrs (_: s: lib.elem 443 s.tcp) (lib.importJSON ../site-services.json);
+
+  siteRoutes = lib.concatStrings (lib.mapAttrsToList (name: _: ''
+      use_backend site_${name} if { req.ssl_sni -i ${name} }
+    '')
+    siteServices);
+
+  siteBackends = lib.concatStrings (lib.mapAttrsToList (name: s: ''
+      backend site_${name}
+        server site [${s.address}]:443 check inter 10s check-ssl check-sni ${name} verify required verifyhost ${name} ca-file /etc/ssl/certs/ca-certificates.crt
+    '')
+    siteServices);
+in {
   options.fplnet.haproxy.names = lib.mkOption {
     type = lib.types.listOf lib.types.str;
     default = [];
@@ -45,10 +58,13 @@
 
           # No default_backend: any other name is closed.
           use_backend nginx if { req.ssl_sni -i ${lib.concatStringsSep " " config.fplnet.haproxy.names} }
+          ${siteRoutes}
 
         # TLV 0xe0: the kernel's RTT to the client in microseconds, for the connection page.
         backend nginx
           server nginx 127.0.0.1:8443 send-proxy-v2 set-proxy-v2-tlv-fmt(0xe0) %[fc_rtt(us)] check inter 10s
+
+        ${siteBackends}
       '';
     };
   };

@@ -5,7 +5,8 @@
   ...
 }: let
   sitePrefixes = {
-    wg-gw1-aah1 = ["2a0c:b641:f94::/48"];
+    # Vieta and the site anycast it serves
+    wg-gw1-aah1 = ["2a0c:b641:f94::/48" "2a0c:b641:f92::/48"];
   };
 
   networks = lib.attrValues config.systemd.network.networks;

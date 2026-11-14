@@ -5,7 +5,7 @@
       router id 188.65.164.27;
 
       define OWN_AS = 218255;
-      define OWN_V6 = [ 2a0c:b641:f99::/48, 2a0c:b641:f94::/48, 2a0c:b641:f91::/48 ];
+      define OWN_V6 = [ 2a0c:b641:f99::/48, 2a0c:b641:f94::/48, 2a0c:b641:f91::/48, 2a0c:b641:f92::/48 ];
 
       protocol device {}
 
@@ -36,7 +36,7 @@
       }
 
       filter to_upstream {
-        if net = 2a0c:b641:f94::/48 then {
+        if net = 2a0c:b641:f94::/48 || net = 2a0c:b641:f92::/48 then {
           bgp_path.prepend(OWN_AS);
           bgp_path.prepend(OWN_AS);
         }
@@ -78,7 +78,7 @@
         bfd on;
         ipv6 {
           next hop self;
-          import where net = 2a0c:b641:f94::1/128 || net = 2a0c:b641:f94::/48;
+          import where net = 2a0c:b641:f94::1/128 || net = 2a0c:b641:f94::/48 || net ~ [ 2a0c:b641:f92::/48{128,128} ];
           export where proto = "loopback" || proto = "default_v6";
         };
       }
@@ -156,8 +156,9 @@
       # Full table for HE's route collector
       filter to_collector {
         if net ~ OWN_V6 then accept;
+        if net ~ [ 2a0c:b641:f90::/44+ ] then reject;
         if source != RTS_BGP || net = ::/0 then reject;
-        # eBGP-learned only; iBGP carries just loopbacks and f94
+        # eBGP-learned only; iBGP carries just loopbacks, f94 and f92 addresses
         if bgp_path.len = 0 then reject;
         accept;
       }
