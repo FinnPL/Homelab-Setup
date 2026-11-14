@@ -91,6 +91,17 @@ spec:
           labels:
             severity: warning
 
+        - alert: FplnetSiteAnycastWithdrawn
+          annotations:
+            summary: "{{`{{ $labels.router }}`}}: not announcing the f92 site anycast."
+            description: anycast-f92.service withdraws 2a0c:b641:f92::/48 while gw1-aah1 hands the edge no f92 address over iBGP (no ready dns pod, Cilium not announcing, or the tunnel down). IPv4 clients of dns.relay.lippok.dev still go through the edge's HAProxy.
+          expr: |
+            max by (router) (up{job="fplnet-bird", router=~"er1-.*"}) == 1
+            unless on (router) bird_protocol_up{job="fplnet-bird", name="anycast_f92"} == 1
+          for: 10m
+          labels:
+            severity: warning
+
         - alert: FplnetUnitFailed
           annotations:
             summary: "{{`{{ $labels.router }}`}}: {{`{{ $labels.name }}`}} failed."

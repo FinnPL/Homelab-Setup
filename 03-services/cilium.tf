@@ -164,6 +164,34 @@ resource "kubectl_manifest" "cilium_ip_pool" {
   depends_on = [helm_release.cilium]
 }
 
+# Public IPv6 for Services labelled lippok.dev/public, announced to gw1-aah1 over BGP and reached
+locals {
+  public_v6_pools = {
+    vieta        = "2a0c:b641:f94:8000::/64" #vieta unicast
+    site-anycast = "2a0c:b641:f92::/64"      #site anycast
+  }
+}
+
+resource "kubectl_manifest" "cilium_public_v6_pool" {
+  for_each = local.public_v6_pools
+
+  yaml_body = yamlencode({
+    apiVersion = "cilium.io/v2"
+    kind       = "CiliumLoadBalancerIPPool"
+    metadata = {
+      name = "public-${each.key}"
+    }
+    spec = {
+      blocks = [{ cidr = each.value }]
+      serviceSelector = {
+        matchLabels = { "lippok.dev/public" = each.key }
+      }
+    }
+  })
+
+  depends_on = [helm_release.cilium]
+}
+
 resource "kubectl_manifest" "cilium_l2_policy" {
   yaml_body = yamlencode({
     apiVersion = "cilium.io/v2alpha1"
@@ -174,6 +202,9 @@ resource "kubectl_manifest" "cilium_l2_policy" {
     spec = {
       nodeSelector = {
         matchExpressions = [] # Selects all nodes
+      }
+      serviceSelector = {
+        matchExpressions = [{ key = "lippok.dev/public", operator = "DoesNotExist" }]
       }
       interfaces      = ["eth0", "end0", "ens18"]
       externalIPs     = true
@@ -248,7 +279,7 @@ resource "kubectl_manifest" "cilium_bgp_peer" {
     }
   })
 
-  depends_on = [kubectl_manifest.cilium_bgp_advertisement]
+  depends_on = [kubectl_manifest.cilium_bgp_advertisement, kubectl_manifest.cilium_bgp_public_services]
 }
 
 resource "kubectl_manifest" "cilium_bgp_advertisement" {
@@ -265,6 +296,33 @@ resource "kubectl_manifest" "cilium_bgp_advertisement" {
       advertisements = [
         {
           advertisementType = "PodCIDR"
+        }
+      ]
+    }
+  })
+
+  depends_on = [helm_release.cilium]
+}
+
+# externalTrafficPolicy Local: only nodes running a ready pod announce the address.
+resource "kubectl_manifest" "cilium_bgp_public_services" {
+  yaml_body = yamlencode({
+    apiVersion = "cilium.io/v2"
+    kind       = "CiliumBGPAdvertisement"
+    metadata = {
+      name = "public-services"
+      labels = {
+        advertise = "gw1-aah1"
+      }
+    }
+    spec = {
+      advertisements = [
+        {
+          advertisementType = "Service"
+          service           = { addresses = ["LoadBalancerIP"] }
+          selector = {
+            matchExpressions = [{ key = "lippok.dev/public", operator = "Exists" }]
+          }
         }
       ]
     }

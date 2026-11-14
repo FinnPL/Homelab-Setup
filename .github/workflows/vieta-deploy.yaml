@@ -14,6 +14,8 @@ on:
       - "01-network/**"
       - "02-infrastructure/**"
       - "03-services/**"
+      - "fplnet/nixos/site-services.json"
+      - "fplnet/hosts.json"
       - ".github/workflows/vieta-deploy.yaml"
       - ".github/workflows/_terraform-layer.yaml"
   pull_request:
@@ -22,6 +24,8 @@ on:
       - "01-network/**"
       - "02-infrastructure/**"
       - "03-services/**"
+      - "fplnet/nixos/site-services.json"
+      - "fplnet/hosts.json"
       - ".github/workflows/vieta-deploy.yaml"
       - ".github/workflows/_terraform-layer.yaml"
   # The talos provider renews its own client certificate and the admin kubeconfig only when
@@ -76,6 +80,8 @@ jobs:
               - '02-infrastructure/**'
             services:
               - '03-services/**'
+              - 'fplnet/nixos/site-services.json'
+              - 'fplnet/hosts.json'
 
   deploy-global:
     needs: changes

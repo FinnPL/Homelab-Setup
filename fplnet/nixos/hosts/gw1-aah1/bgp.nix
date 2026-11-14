@@ -4,13 +4,13 @@
   k8sNodes = lib.mapAttrs (_: n: n.node) (lib.importJSON ../../k8s-nodes.json);
   nodeAddress = octet: "2a0c:b641:f94:20::${octet}";
 
-  # A node may announce its pod /64 and LoadBalancer /128s from f94:8000::/64.
+  # A node may announce its pod /64 and LoadBalancer /128s from f94:8000::/64 and the f92 site anycast.
   k8sSessions = lib.concatStrings (lib.mapAttrsToList (octet: name: ''
       protocol bgp k8s_${octet} from k8s {
         description "${name}";
         neighbor ${nodeAddress octet} as K8S_AS;
         ipv6 {
-          import where net ~ [ 2a0c:b641:f94:8100::/56{64,64}, 2a0c:b641:f94:8000::/64{128,128} ];
+          import where net ~ [ 2a0c:b641:f94:8100::/56{64,64}, 2a0c:b641:f94:8000::/64{128,128}, 2a0c:b641:f92::/48{128,128} ];
           import limit 32 action block;
           export none;
         };
@@ -69,7 +69,7 @@ in {
         ipv6 {
           next hop self;
           import filter from_edge;
-          export where proto = "loopback" || proto = "vieta";
+          export where proto = "loopback" || proto = "vieta" || (proto ~ "k8s_*" && net ~ [ 2a0c:b641:f92::/48{128,128} ]);
         };
       }
 
