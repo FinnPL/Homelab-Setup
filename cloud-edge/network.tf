@@ -44,18 +44,6 @@ resource "oci_core_security_list" "edge" {
     stateless   = false
   }
 
-  # Ingress: HTTPS (443) — HAProxy TLS passthrough
-  ingress_security_rules {
-    protocol  = "6" # TCP
-    source    = "0.0.0.0/0"
-    stateless = false
-
-    tcp_options {
-      min = 443
-      max = 443
-    }
-  }
-
   # Ingress: Tailscale WireGuard (UDP 41641)
   ingress_security_rules {
     protocol  = "17" # UDP
@@ -65,18 +53,6 @@ resource "oci_core_security_list" "edge" {
     udp_options {
       min = 41641
       max = 41641
-    }
-  }
-
-  # Ingress: WireGuard tunnel to homelab mesh-router (UDP 51820)
-  ingress_security_rules {
-    protocol  = "17" # UDP
-    source    = "0.0.0.0/0"
-    stateless = false
-
-    udp_options {
-      min = 51820
-      max = 51820
     }
   }
 

@@ -4,44 +4,15 @@ data "cloudflare_zone" "main" {
   }
 }
 
-# Relay endpoints: subdomains under relay.lippok.dev resolve to the OCI edge,
-# where HAProxy SNI-routes them over wg0 to the right homelab backend.
-# proxied=false: TLS terminates in the basement (Blocky), not at Cloudflare.
-resource "cloudflare_dns_record" "relay_wildcard" {
-  zone_id = data.cloudflare_zone.main.id
-  name    = "*.relay"
-  type    = "A"
-  ttl     = 300
-  content = oci_core_instance.edge.public_ip
-  proxied = false
-}
-
-# Stable public name for the cloud-edge IP.
-resource "cloudflare_dns_record" "cloud_oci" {
-  zone_id = data.cloudflare_zone.main.id
-  name    = "oci.cloud"
-  type    = "A"
-  ttl     = 300
-  content = oci_core_instance.edge.public_ip
-  proxied = false
-}
-
-# Devices using Blocky see the customDNS override others will fail by resolving to this IP.
-resource "cloudflare_dns_record" "cloud_dns_check_blackhole" {
-  zone_id = data.cloudflare_zone.main.id
-  name    = "dns-check.cloud"
-  type    = "A"
-  ttl     = 300
-  content = "192.0.2.1"
-  proxied = false
-}
-
-# static homepage
 resource "cloudflare_dns_record" "apex_homepage" {
   zone_id = data.cloudflare_zone.main.id
   name    = "@"
-  type    = "A"
+  type    = "AAAA"
   ttl     = 1
-  content = oci_core_instance.edge.public_ip
+  content = "2a0c:b641:f91::80"
   proxied = true
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }

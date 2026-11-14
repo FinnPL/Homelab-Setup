@@ -187,28 +187,6 @@ variable "nfs_root_password" {
   sensitive   = true
 }
 
-# =============================================================================
-# Mesh Router Configuration (WireGuard router to the cloud edge)
-# =============================================================================
-
-variable "mesh_router_config" {
-  description = "Mesh router LXC container configuration"
-  type = object({
-    vmid      = number
-    name      = string
-    cores     = number
-    memory    = number
-    disk_size = number
-  })
-  default = {
-    vmid      = 420
-    name      = "mesh-router"
-    cores     = 1
-    memory    = 256
-    disk_size = 4
-  }
-}
-
 variable "gw1_aah1_config" {
   description = "FPLNET gateway LXC configuration"
   type = object({
@@ -227,43 +205,4 @@ variable "gw1_aah1_config" {
     mac       = "bc:24:11:00:00:95"
     template  = "gw1-aah1-nixos-26.05.tar.xz"
   }
-}
-
-variable "mesh_router_root_password" {
-  description = "Root password for the mesh router LXC container"
-  type        = string
-  sensitive   = true
-}
-
-variable "mesh_wg_private_key" {
-  description = "WireGuard private key for the mesh router LXC"
-  type        = string
-  sensitive   = true
-}
-
-variable "mesh_wg_peer_pubkey" {
-  description = "WireGuard public key of the cloud-edge node (OCI)"
-  type        = string
-}
-
-variable "cloud_vcn_cidr" {
-  description = "CIDR of the OCI cloud-edge VCN (routed through WG tunnel)"
-  type        = string
-  default     = "10.80.1.0/24"
-}
-
-# The cloud-edge reaches exactly two VIPs: Blocky (pinned by charts/dns/templates/service.yaml),
-# which HAProxy relays DoH to, and the main Gateway, where it reads Gatus for the homepage's
-# status.json. Neither is derivable from state here; both are mirrored in
-# cloud-edge/nixos/hosts/oracle-edge/wireguard.nix.
-variable "cloud_edge_allowed_dests" {
-  description = "Homelab IPs the cloud-edge may reach across the WG tunnel"
-  type        = list(string)
-  default     = ["10.10.1.201", "10.10.1.200"]
-}
-
-variable "cloud_edge_allowed_port" {
-  description = "TCP port on cloud_edge_allowed_dests the cloud-edge may reach"
-  type        = number
-  default     = 443
 }

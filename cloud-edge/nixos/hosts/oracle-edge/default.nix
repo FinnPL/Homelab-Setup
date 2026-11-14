@@ -9,13 +9,6 @@
     ./ssh-keys.nix
     ./ssh-ca.nix
     ./tailscale.nix
-    ./wireguard.nix
-    ./haproxy.nix
-    ./acme.nix
-    ./acme-email.nix
-    ./homepage.nix
-    ./myip.nix
-    ./container-egress.nix
   ];
 
   boot.loader = {
@@ -36,7 +29,6 @@
       enable = true;
       allowedTCPPorts = [
         22 # SSH
-        443 # HTTPS (HAProxy TLS passthrough)
       ];
       allowedUDPPorts = [
         41641 # Tailscale WireGuard
