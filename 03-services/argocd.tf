@@ -38,6 +38,13 @@ resource "helm_release" "argocd" {
           requests = { cpu = "100m", memory = "512Mi" }
           limits   = { memory = "2Gi" }
         }
+        metrics = {
+          enabled = true
+          serviceMonitor = {
+            enabled          = true
+            additionalLabels = { release = "kube-prometheus-stack" }
+          }
+        }
       }
       server = {
         extraArgs = ["--insecure"]

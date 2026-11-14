@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: site-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: site-data
+spec:
+  selector:
+    app.kubernetes.io/name: site-data
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

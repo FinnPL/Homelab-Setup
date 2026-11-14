@@ -1,0 +1,5 @@
+apiVersion: v2
+name: site-data
+description: Site totals for lippok.dev (nodes, pods, apps, CPU, memory, NAS) as one JSON file, from this site's Prometheus.
+version: 1.0.0
+type: application
