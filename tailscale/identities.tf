@@ -21,15 +21,6 @@ resource "tailscale_federated_identity" "fplnet" {
   tags        = ["tag:ci"]
 }
 
-# Mints the edge node's own join key. The runner itself never joins the tailnet.
-resource "tailscale_federated_identity" "cloud_edge" {
-  description = "GitHub Actions cloud-edge environment"
-  issuer      = local.github_issuer
-  subject     = format(local.subject, "cloud-edge")
-  scopes      = ["auth_keys"]
-  tags        = ["tag:cloud-edge"]
-}
-
 resource "tailscale_federated_identity" "minerva" {
   description = "GitHub Actions minerva environment"
   issuer      = local.github_issuer
@@ -59,9 +50,8 @@ resource "vault_kv_secret_v2" "operator_oauth" {
 output "federated_identity_client_ids" {
   description = "Set these as repo variables so the workflows can authenticate"
   value = {
-    vieta      = tailscale_federated_identity.vieta.id
-    cloud_edge = tailscale_federated_identity.cloud_edge.id
-    minerva    = tailscale_federated_identity.minerva.id
-    fplnet     = tailscale_federated_identity.fplnet.id
+    vieta   = tailscale_federated_identity.vieta.id
+    minerva = tailscale_federated_identity.minerva.id
+    fplnet  = tailscale_federated_identity.fplnet.id
   }
 }

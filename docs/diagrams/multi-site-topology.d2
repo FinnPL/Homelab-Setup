@@ -45,22 +45,29 @@ classes: {
   }
 }
 
-# Internet centered, with an invisible DNS-egress target a controlled distance
-# (grid-gap) to its left; the right spacer keeps Internet centered.
+# Top row: FPLNET's edge routers beside the Internet, with an invisible DNS-egress target a
+# controlled distance (grid-gap) to the Internet's right.
 topbar: "" {
   class: invisible
   near: top-center
   grid-columns: 3
   grid-gap: 120
 
-  vpn_egress: "" { class: invisible; width: 4; height: 4 }
+  fplnet: "FPLNET: AS218255" {
+    grid-columns: 4
+    grid-gap: 20
+    nixflake: "" { class: brand; icon: https://api.iconify.design/material-icon-theme/nix.svg }
+    ams1: "er1.ams1\nAmsterdam" { class: dev; icon: https://api.iconify.design/carbon/router.svg?color=%23808080 }
+    dus1: "er1.dus1\nDüsseldorf" { class: dev; icon: https://api.iconify.design/carbon/router.svg?color=%23808080 }
+    fra1: "er1.fra1\nFrankfurt" { class: dev; icon: https://api.iconify.design/carbon/router.svg?color=%23808080 }
+  }
   internet: "Internet" {
     shape: cloud
     width: 170
     height: 150
     icon: https://api.iconify.design/mdi/web.svg?color=%23808080
   }
-  rspacer: "" { class: invisible; width: 4; height: 4 }
+  vpn_egress: "" { class: invisible; width: 4; height: 4 }
 }
 
 sites: "" {
@@ -68,20 +75,11 @@ sites: "" {
   grid-columns: 3
   grid-gap: 70
 
-  # Left column: Cloud Edge (sized to content) with the Terraform state bucket below.
+  # Left column: the Terraform state bucket.
   col1: "" {
     class: invisible
     grid-columns: 1
     grid-gap: 40
-
-    cloud_edge: "Cloud Edge: Oracle" {
-      grid-columns: 1
-      grid-gap: 20
-      nixflake: "" { class: brand; icon: https://api.iconify.design/material-icon-theme/nix.svg }
-      haproxy: "HAProxy\nSNI / TLS relay" { class: dev; icon: https://api.iconify.design/devicon/haproxy-wordmark.svg }
-      wg: "WireGuard" { class: dev; icon: https://api.iconify.design/devicon/wireguard.svg }
-      haproxy -> wg
-    }
 
     s3: "AWS: Terraform State" { class: dev; icon: https://api.iconify.design/logos/aws-s3.svg }
   }
@@ -95,11 +93,11 @@ sites: "" {
       grid-columns: 1
       grid-gap: 20
       pmox: "" { class: brand; icon: https://api.iconify.design/devicon/proxmox-wordmark.svg }
+      gw1: "gw1-aah1 (LXC)\nBIRD, WireGuard" { class: dev; icon: https://api.iconify.design/devicon/wireguard.svg }
       cp: "Talos CP (VM)" { class: dev; icon: https://api.iconify.design/devicon/kubernetes.svg }
       dbw: "DB worker\nTalos (VM)" { class: dev; icon: https://api.iconify.design/devicon/postgresql.svg }
       win: "Windows Server (VM)" { class: dev; icon: https://api.iconify.design/mdi/microsoft-windows.svg?color=%23808080 }
       nfs: "NFS (LXC)" { class: dev; icon: https://api.iconify.design/mdi/folder-network.svg?color=%23808080 }
-      mesh: "mesh-router (LXC)" { class: dev; icon: https://api.iconify.design/devicon/wireguard.svg }
     }
 
     # Right column: the UniFi network stack + cluster workers
@@ -138,10 +136,10 @@ sites: "" {
     minerva: "Minerva: Secondary Site" {
       direction: down
       gw: "UCG-Ultra" { class: dev; icon: https://api.iconify.design/carbon/router.svg?color=%23808080 }
-      host: "Pi 3 Compose" { class: dev; icon: https://api.iconify.design/material-icon-theme/docker.svg }
-      nas: "NAS" { class: dev; icon: https://api.iconify.design/mdi/nas.svg?color=%23808080 }
+      host: "Proxmox (B450)" { class: dev; icon: https://api.iconify.design/devicon/proxmox-wordmark.svg }
+      nas: "nas (NixOS VM)\nZFS mirror" { class: dev; icon: https://api.iconify.design/mdi/nas.svg?color=%23808080 }
       gw -> host
-      gw -> nas
+      host -> nas
     }
 
     spacer: "" { class: invisible; width: 10; height: 382 }
@@ -158,7 +156,7 @@ sites: "" {
 }
 
 # --- Public WAN uplinks ---
-topbar.internet -> sites.col1.cloud_edge.haproxy: "*.cloud, *.relay"
+topbar.internet <-> topbar.fplnet: "BGP: transit, IX\nlippok.dev via Cloudflare"
 topbar.internet -> sites.vieta.net.gw: "WAN"
 topbar.internet -> sites.col3.minerva.gw: "WAN"
 
@@ -166,6 +164,8 @@ topbar.internet -> sites.col3.minerva.gw: "WAN"
 sites.vieta.net.gw -> topbar.vpn_egress: "DoT → 1.1.1.1\nover VPN (≈ Oblivious DNS)" { class: vpn }
 
 # --- Cross-site tunnels ---
-sites.col1.cloud_edge.wg <-> sites.vieta.nuc.mesh: "WireGuard mesh\n(*.relay path)" { class: vpn }
+topbar.fplnet.ams1 <-> topbar.fplnet.dus1: "" { class: vpn }
+topbar.fplnet.dus1 <-> topbar.fplnet.fra1: "" { class: vpn }
+topbar.fplnet -> sites.vieta.nuc.gw1: "WireGuard backbone\niBGP + BFD to every edge" { class: vpn }
 sites.vieta.net.gw <-> sites.col3.minerva.gw: "UniFi site-to-site VPN" { class: vpn }
-sites.vieta.net.nas <-> sites.col3.minerva.nas: "NAS → NAS backup\n(over site-to-site VPN)" { class: vpn }
+sites.col3.minerva.nas -> sites.vieta.net.nas: "pulls backups\n(not built yet)" { class: vpn }
