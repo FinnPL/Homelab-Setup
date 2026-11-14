@@ -36,8 +36,11 @@
     host = "10.10.1.195";
     user = "minerva-pull";
     knownHosts = ../../files/apollo_known_hosts;
-    paths = [];
+    paths = [
+      "/volume1/homes/Paul"
+      "/volume1/homes/Mandy"
+    ];
     # DSM thumbnails/metadata, recycle bins and its own snapshots.
-    excludes = ["@eaDir" "#recycle" "#snapshot"];
+    excludes = ["@eaDir" "#recycle" "#snapshot" "Thumbs.db" ".DS_Store"];
   };
 }
