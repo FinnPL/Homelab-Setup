@@ -12,11 +12,12 @@ data:
 
     customDNS:
       customTTL: 1h
-      # Resolve only via Blocky as Public DNS points this name at 192.0.2.1
-      # Serves as simple "Am I using Blocky?" check.
+      # Resolve only via Blocky: public DNS points dns-check.cloud at 192.0.2.1 and has no
+      # dns-check.fplnet.net at all. lippok.dev fetches the latter for its "uses lippok.dev DNS" line.
       zone: |
         $TTL 3600
         dns-check.cloud.lippok.dev. IN CNAME oci.cloud.lippok.dev.
+        dns-check.fplnet.net. IN CNAME fplnet.net.
 
     log:
       level: warn
