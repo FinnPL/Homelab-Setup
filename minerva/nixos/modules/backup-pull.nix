@@ -18,6 +18,7 @@
       "ssh -i ${key}"
       "-o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes"
       "-o UserKnownHostsFile=${pull.knownHosts} -o GlobalKnownHostsFile=/dev/null"
+      "-o WarnWeakCrypto=no"
     ];
   in
     lib.concatMapStringsSep "\n" (path: let
@@ -132,8 +133,10 @@ in {
           requires = ["backup-pull-${name}-dataset.service" "backup-pull-key.service"];
           after = ["network-online.target" "backup-pull-${name}-dataset.service" "backup-pull-key.service"];
           path = [pkgs.rsync pkgs.openssh];
+          restartIfChanged = false;
           serviceConfig = {
             Type = "oneshot";
+            TimeoutStartSec = "4d";
             User = "backup-pull";
             Group = "backup-pull";
             StateDirectory = "backup-pull";
