@@ -6,7 +6,7 @@ inputs:
     description: "Federated identity client ID. Not a secret; the audience is derived from it."
     required: true
   tags:
-    description: "Comma-separated tags the joining node takes, e.g. tag:cloud-edge"
+    description: "Comma-separated tags the joining node takes, e.g. tag:ci"
     required: true
   description:
     description: "Shows up in the admin console against the key"

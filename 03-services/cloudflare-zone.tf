@@ -1,3 +1,5 @@
+# lippok.dev zone settings, the cache rule and the apex record.
+
 # Zone-wide settings. They only act on proxied names.
 locals {
   zone_settings = {
@@ -54,4 +56,36 @@ resource "cloudflare_ruleset" "cache" {
       }
     }
   ]
+}
+
+# lippok.dev: Cloudflare proxies it to the FPLNET edges' anycast address, where nginx serves the
+# site with a Cloudflare Origin CA certificate (fplnet/nixos/modules/lippok-dev.nix).
+resource "cloudflare_dns_record" "apex_homepage" {
+  zone_id = data.cloudflare_zone.main.id
+  name    = "@"
+  type    = "AAAA"
+  ttl     = 1
+  content = "2a0c:b641:f91::80"
+  proxied = true
+}
+
+import {
+  for_each = local.zone_settings
+  to       = cloudflare_zone_setting.main[each.key]
+  id       = "8c35cb20eeb17f6cc81bb4bc072df7a4/${each.key}"
+}
+
+import {
+  to = cloudflare_zone_setting.hsts
+  id = "8c35cb20eeb17f6cc81bb4bc072df7a4/security_header"
+}
+
+import {
+  to = cloudflare_ruleset.cache
+  id = "zones/8c35cb20eeb17f6cc81bb4bc072df7a4/44673bbb2290495fa2716baabc79248c"
+}
+
+import {
+  to = cloudflare_dns_record.apex_homepage
+  id = "8c35cb20eeb17f6cc81bb4bc072df7a4/e2dee9a94beed1e8f9e7d2592bff8315"
 }

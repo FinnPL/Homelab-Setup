@@ -97,17 +97,17 @@ board: "" {
         s: "03-services" { class: chip }
         g -> n -> i -> s: "" { class: step }
       }
-      cloudedge: "Cloud Edge: cloud-edge-deploy.yaml" {
+      fplnet: "FPLNET: fplnet-deploy.yaml" {
         class: actfill
         grid-columns: 2
         grid-gap: 56
-        octf: "OCI apply" { class: deploybox; width: 470; icon: https://api.iconify.design/devicon/terraform.svg }
-        nix: "nixos-anywhere" { class: deploybox; width: 470; icon: https://api.iconify.design/material-icon-theme/nix.svg }
-        octf -> nix: "" { class: step }
+        nix: "deploy-rs: routers" { class: deploybox; width: 470; icon: https://api.iconify.design/material-icon-theme/nix.svg }
+        site: "lippok.dev release" { class: deploybox; width: 470; icon: https://api.iconify.design/mdi/web.svg?color=%23808080 }
+        nix -> site: "" { class: step }
       }
       minerva: "Minerva: minerva-deploy.yaml\ndocker compose up" { class: actfill; width: 1116; height: 170; icon: https://api.iconify.design/material-icon-theme/docker.svg }
-      orch -> cloudedge: "" { style: { opacity: 0 } }
-      cloudedge -> minerva: "" { style: { opacity: 0 } }
+      orch -> fplnet: "" { style: { opacity: 0 } }
+      fplnet -> minerva: "" { style: { opacity: 0 } }
     }
 
     pr -> deploy: "" { style: { opacity: 0 } }
@@ -133,7 +133,7 @@ board: "" {
       argocd -> workloads: "syncs from git" { class: sync }
     }
 
-    edgehost: "Cloud Edge\nOracle NixOS" { class: dev; icon: https://api.iconify.design/material-icon-theme/nix.svg }
+    edgehost: "FPLNET edges\nNixOS, BIRD, nginx" { class: dev; icon: https://api.iconify.design/material-icon-theme/nix.svg }
     minervahost: "Minerva\nDocker host" { class: dev; icon: https://api.iconify.design/material-icon-theme/docker.svg }
   }
 }
@@ -146,11 +146,13 @@ board.maincol.ci.pr.trivy -> board.maincol.header.sarif: "" { class: pr }
 board.maincol.ci.deploy.orch.g -> board.targets.aws: "" { class: main }
 board.maincol.ci.deploy.orch.n -> board.targets.unifi: "" { class: main }
 board.maincol.ci.deploy.orch.n -> board.targets.cloudflare: "" { class: main }
+board.maincol.ci.deploy.orch.s -> board.targets.cloudflare: "" { class: main }
 board.maincol.ci.deploy.orch.i -> board.targets.proxmox: "" { class: main }
 board.maincol.ci.deploy.orch.i -> board.targets.talos: "" { class: main }
 board.maincol.ci.deploy.orch.s -> board.targets.cluster.argocd: "bootstraps cluster" { class: main }
 board.targets.talos -> board.targets.cluster: "hosts cluster"
-board.maincol.ci.deploy.cloudedge.nix -> board.targets.edgehost: "" { class: main }
+board.maincol.ci.deploy.fplnet.nix -> board.targets.edgehost: "" { class: main }
+board.maincol.ci.deploy.fplnet.site -> board.targets.edgehost: "" { class: main }
 board.maincol.ci.deploy.minerva -> board.targets.minervahost: "self-hosted pi3 runner" { class: main }
 
 # --- Footnote legend: the three edge styles in one row ---

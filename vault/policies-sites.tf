@@ -22,24 +22,7 @@ resource "vault_policy" "vieta_ssh" {
   EOT
 }
 
-resource "vault_policy" "cloud_edge_plan" {
-  name = "cloud-edge-plan"
-
-  policy = <<-EOT
-    path "kv/data/cloud-edge/oci" { capabilities = ["read"] }
-    path "kv/data/cloudflare" { capabilities = ["read"] }
-  EOT
-}
-
-resource "vault_policy" "cloud_edge" {
-  name = "cloud-edge"
-
-  policy = <<-EOT
-    path "kv/data/cloud-edge/*" { capabilities = ["read"] }
-    path "kv/data/cloudflare" { capabilities = ["read"] }
-  EOT
-}
-
+# The tailnet layer owns the operator's OAuth client, so it writes the secret ESO reads.
 resource "vault_policy" "cloud_edge_ssh" {
   name = "cloud-edge-ssh"
 
@@ -53,7 +36,6 @@ resource "vault_policy" "cloud_edge_ssh" {
   EOT
 }
 
-# The tailnet layer owns the operator's OAuth client, so it writes the secret ESO reads.
 resource "vault_policy" "tailscale" {
   name = "tailscale"
 

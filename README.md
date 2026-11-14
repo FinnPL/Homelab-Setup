@@ -39,8 +39,8 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 | Site | Role | Platform | Deploys via |
 |:-----|:-----|:---------|:------------|
 | **Vieta** | Primary homelab: Kubernetes cluster, services, storage | Talos K8s on Proxmox | `vieta-deploy.yaml` |
-| **Minerva** | Secondary site: lightweight services | Docker Compose | `minerva-deploy.yaml` |
-| **Cloud Edge** | Spare VM: Tailscale and SSH only, public traffic goes through the FPLNET edges | NixOS on Oracle Cloud (ARM) | `cloud-edge-deploy.yaml` |
+| **Minerva** | Pull-only backup NAS; a second Talos cluster later | NixOS VM on Proxmox | by hand (deploy-rs) |
+| **FPLNET** | AS218255: three BGP edge routers, WireGuard backbone, anycast; serves lippok.dev | NixOS on provider VMs | `fplnet-deploy.yaml` |
 
 ### Technology Stack
 
@@ -104,7 +104,7 @@ Tailscale mesh across all three sites, managed as its own Terraform root module 
 | `tag:ci` | GitHub runners joining the tailnet (e.g., to reach Vieta) |
 | `tag:vieta-k8s` | Tailscale operator in-cluster; subnet router for `10.10.1.0/24` |
 | `tag:vieta-oob` | Out-of-band Pi, advertising the same route when the cluster is down |
-| `tag:cloud-edge` | Oracle edge node |
+| `tag:cloud-edge` | Spare Oracle VM, SSH and Tailscale only (no longer in this repo) |
 | `tag:minerva` | Minerva site |
 
 The policy file (`policy.hujson`) keeps the machine trust domains apart: CI reaches the Vieta LAN by CIDR, while the edge and Minerva nodes reach nothing there. Its `tests` block asserts exactly that on every plan, so a bad grant fails on PR.
@@ -148,7 +148,7 @@ Inter-VLAN traffic is blocked by default. Only SSH, HTTPS, and SMB are permitted
 
 #### DNS
 
-Cloudflare manages the `lippok.dev` zone. `03-services` points the wildcard at the Kubernetes Gateway LoadBalancer IP and writes the names served through the FPLNET edges (`fplnet/nixos/site-services.json`). The apex is in `cloud-edge/dns.tf`.
+Cloudflare manages the `lippok.dev` zone. `03-services` points the wildcard at the Kubernetes Gateway LoadBalancer IP and writes the names served through the FPLNET edges (`fplnet/nixos/site-services.json`). `03-services/cloudflare-zone.tf` holds the apex record and the zone settings.
 
 | Name | DNS | TLS terminated at | Use case |
 |:-----|:----|:------------------|:---------|
@@ -274,20 +274,6 @@ A unified Grafana-stack for metrics, logs, and alerting (Prometheus + Alloy + Lo
 ## Minerva Site
 
 Secondary site running services via Docker Compose. Deployed via `minerva-deploy.yaml`.
-
----
-
-## Cloud Edge
-
-Oracle Cloud Always Free ARM VM. Public traffic goes through the FPLNET edges; this node only runs:
-
-- **Tailscale:** out-of-band management
-- **SSH:** certificate-only, both directions; the NixOS host trusts the Vault user CA and presents its own host certificate
-
-| Layer | Scope |
-|:------|:------|
-| `cloud-edge/*.tf` | OCI instance, VCN, security list (SSH, Tailscale), Cloudflare zone settings and the `lippok.dev` apex record |
-| `cloud-edge/nixos/` | NixOS flake (deployed via nixos-anywhere); full host configuration for the `oracle-edge` node |
 
 ---
 MIT (c) 2024-2026 Finn Paul Lippok. See [LICENSE](LICENSE).

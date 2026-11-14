@@ -93,7 +93,6 @@
       "description": "Merging here is an unattended apply/deploy, or the bump is not rendered by charts-validate",
       "matchFileNames": [
         "0[0-3]-*/**",
-        "cloud-edge/**",
         "fplnet/**",
         "minerva/**",
         "vault/**",

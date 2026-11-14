@@ -12,7 +12,7 @@ on:
         type: string
         default: ""
       allow_host_tofu:
-        description: "Vieta and Cloud Edge: adopt the host key without a valid certificate (recovery after a lapse)"
+        description: "Vieta and the OCI VM: adopt the host key without a valid certificate (recovery after a lapse)"
         type: boolean
         default: false
   push:
@@ -20,7 +20,7 @@ on:
       - main
     paths:
       - "02-infrastructure/ansible/**"
-      - "cloud-edge/scripts/gha/cloud-edge-workflow.sh"
+      - ".github/scripts/oci-edge-converge.sh"
       - "fplnet/hosts.json"
       - "fplnet/scripts/fplnet-workflow.sh"
       - ".github/workflows/ssh-cert-converge.yaml"
@@ -152,22 +152,23 @@ jobs:
               "02-infrastructure/ansible/$playbook"
           done
 
+  # The OCI VM oracle-edge (SSH + Tailscale only, no longer managed in this repo).
   edge:
-    name: "Cloud Edge"
+    name: "OCI VM"
     runs-on: ubuntu-latest
     environment: cloud-edge
     timeout-minutes: 15
     concurrency:
       group: ssh-cert-converge-edge
     env:
-      AWS_REGION: eu-central-1
-      TFSTATE_BUCKET: finnpl-homelab-tfstate-1766068376
+      # Ephemeral public IP of the instance; it changes only if the instance is recreated.
+      IP: 92.5.163.85
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Read secrets from Vault
+      - name: Log in to Vault
         uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
         with:
           url: https://vault.cloud.lippok.dev
@@ -176,22 +177,6 @@ jobs:
           role: edge-ssh-converge
           jwtGithubAudience: https://vault.cloud.lippok.dev
           exportToken: true # the script signs with it
-          secrets: |
-            aws/creds/tfstate access_key | AWS_ACCESS_KEY_ID ;
-            aws/creds/tfstate secret_key | AWS_SECRET_ACCESS_KEY ;
-            aws/creds/tfstate security_token | AWS_SESSION_TOKEN
-
-      - name: Resolve the edge address from the cloud-edge state
-        id: edge
-        run: |
-          set -euo pipefail
-          state=$(aws s3 cp "s3://${TFSTATE_BUCKET}/cloud-edge/terraform.tfstate" -)
-          if ! ip=$(jq -er '.outputs.instance_public_ip.value' <<< "$state"); then
-            echo "::error::cloud-edge state has no instance_public_ip output"
-            exit 1
-          fi
-          echo "Edge node public IP: $ip"
-          echo "ip=$ip" >> "$GITHUB_OUTPUT"
 
       - name: Mint edge SSH certificate
         uses: ./.github/actions/vault-ssh-client-cert
@@ -199,21 +184,16 @@ jobs:
           role: oci-edge
           key-path: "~/.ssh/edge_key"
 
-      - name: Verify the edge still proves itself by certificate
+      - name: Verify the VM still proves itself by certificate
         env:
-          IP: ${{ steps.edge.outputs.ip }}
           ALLOW_HOST_TOFU: ${{ inputs.allow_host_tofu }}
-        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh setup-ssh
+        run: bash ./.github/scripts/oci-edge-converge.sh setup-ssh
 
-      - name: Renew the edge host certificate
-        env:
-          IP: ${{ steps.edge.outputs.ip }}
-        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh sign-host-cert
+      - name: Renew the host certificate
+        run: bash ./.github/scripts/oci-edge-converge.sh sign-host-cert
 
       - name: Confirm the renewal took
-        env:
-          IP: ${{ steps.edge.outputs.ip }}
-        run: bash ./cloud-edge/scripts/gha/cloud-edge-workflow.sh check-host-cert-expiry
+        run: bash ./.github/scripts/oci-edge-converge.sh check-host-cert-expiry
 
   fplnet:
     name: "FPLNET routers"
