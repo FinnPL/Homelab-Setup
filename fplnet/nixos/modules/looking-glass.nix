@@ -25,11 +25,11 @@
   servers = "[0-9a-f:+]+";
 
   allowed = [
-    "^/summary/${servers}$"
-    "^/detail/${servers}/[A-Za-z0-9_]+$"
-    "^/(route|route_all|route_bgpmap)/${servers}/[0-9A-Fa-f:./]+$"
-    "^/traceroute/${servers}/[A-Za-z0-9.:-]+$"
-    "^/whois/[A-Za-z0-9.:/-]+$"
+    "^/summary/${servers}/?$"
+    "^/detail/${servers}/[A-Za-z0-9_]*$"
+    "^/(route|route_all|route_bgpmap)/${servers}/[0-9A-Fa-f:./]*$"
+    "^/traceroute/${servers}/[A-Za-z0-9.:-]*$"
+    "^/whois/[A-Za-z0-9.:/-]*$"
   ];
 
   proxyToFrontend = ''
@@ -46,6 +46,8 @@ in {
   '';
 
   services.bird-lg = {
+    package = pkgs.callPackage ./looking-glass/bird-lg.nix {};
+
     proxy = {
       enable = true;
       listenAddresses = "[${loopback}]:${toString proxyPort}";
