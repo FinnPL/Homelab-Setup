@@ -34,6 +34,7 @@ h1 { font-size: 1.9rem; margin: 0 0 .75rem; letter-spacing: -.01em; }
 h1 a { color: inherit; text-decoration: none; }
 .top { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1rem; margin: 0 0 .75rem; }
 .top h1 { margin: 0; }
+.actions { display: flex; flex-wrap: wrap; gap: .5rem; }
 .button { display: inline-block; padding: .45rem 1rem; border-radius: .4rem; background: var(--accent); color: var(--bg); text-decoration: none; font-weight: 600; font-size: .95rem; }
 .button:hover { opacity: .9; }
 .lead { font-size: 1.1rem; margin: -.25rem 0 1rem; }

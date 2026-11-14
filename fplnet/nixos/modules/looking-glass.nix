@@ -55,7 +55,7 @@ in {
       allowedIPs = ["2a0c:b641:f98::/46"];
       traceroute = {
         binary = "${pkgs.traceroute}/bin/traceroute";
-        flags = ["-q1" "-N32" "-w1"];
+        flags = ["-q1" "-N1" "-w1" "-m20"];
       };
       extraArgs = ["--traceroute-max-concurrent=2"];
     };
