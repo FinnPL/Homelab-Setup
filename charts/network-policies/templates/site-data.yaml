@@ -8,7 +8,12 @@ spec:
     matchLabels:
       app.kubernetes.io/name: site-data
   ingress:
-    {{- include "np.fromGateway" (list 8080) | nindent 4 }}
+    - fromEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "8443"
+              protocol: TCP
   egress:
     {{- include "np.dnsProxy" . | nindent 4 }}
     - toEndpoints:
