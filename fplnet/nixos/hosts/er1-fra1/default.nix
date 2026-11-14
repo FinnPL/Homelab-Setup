@@ -13,6 +13,7 @@
     ../../modules/fplnet-net.nix
     ../../modules/anycast.nix
     ../../modules/live.nix
+    ../../modules/looking-glass.nix
   ];
 
   boot.loader = {

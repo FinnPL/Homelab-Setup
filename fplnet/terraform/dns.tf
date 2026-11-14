@@ -181,6 +181,39 @@ resource "cloudflare_dns_record" "web_https" {
   }
 }
 
+# lg.fplnet.net
+resource "cloudflare_dns_record" "lg_aaaa" {
+  zone_id = data.cloudflare_zone.forward.id
+  name    = "lg.fplnet.net"
+  type    = "AAAA"
+  ttl     = 300
+  content = local.web_v6
+  proxied = false
+}
+
+resource "cloudflare_dns_record" "lg_a" {
+  for_each = local.web_v4
+
+  zone_id = data.cloudflare_zone.forward.id
+  name    = "lg.fplnet.net"
+  type    = "A"
+  ttl     = 300
+  content = each.value
+  proxied = false
+}
+
+resource "cloudflare_dns_record" "lg_https" {
+  zone_id = data.cloudflare_zone.forward.id
+  name    = "lg.fplnet.net"
+  type    = "HTTPS"
+  ttl     = 300
+  data = {
+    priority = 1
+    target   = "."
+    value    = "alpn=\"h3,h2\" ech=\"${trimspace(file("${path.module}/fplnet-net.echconfig"))}\""
+  }
+}
+
 # Only Let's Encrypt may issue, and only through DNS-01
 resource "cloudflare_dns_record" "caa" {
   for_each = {
