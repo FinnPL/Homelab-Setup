@@ -1,0 +1,205 @@
+---
+import Base from "../layouts/Base.astro";
+import { Image } from "astro:assets";
+import { components, counts } from "../lib/lab";
+import { IDENTITY } from "../lib/identity";
+import rackFront from "../../../docs/Vieta-Front.png";
+import rackBack from "../../../docs/Vieta-Back.png";
+
+const groups = components();
+const n = counts();
+
+// Vieta-Physical-Setup.md in the repo root is the source for the hardware, rack and prints.
+const hardware: [string, string][] = [
+  ["Intel NUC (7th gen)", "Proxmox host: Talos control plane, database worker, NFS and gateway containers"],
+  ["Raspberry Pi 4 × 3", "Talos workers, PoE powered"],
+  ["Raspberry Pi 3 × 2", "Out-of-band: Tailscale entry for recovery when the cluster is down"],
+  ["JetKVM", "KVM for the NUC, with power control"],
+  ["UniFi Cloud Gateway Ultra", "Router and UniFi controller"],
+  ["UniFi USW Flex 2.5G 8 PoE", "Core switch, powers the USW Ultra"],
+  ["UniFi USW Ultra", "Cluster switch, powers the Pis"],
+  ["Digitus 1U PDU, 210 W PSU", "Power"],
+  ["Noctua 80 mm × 2", "Rear airflow across the Pis"],
+];
+
+const rack: [string, string][] = [
+  ["1", "UCG-Ultra"],
+  ["2", "USW Flex 2.5G 8 PoE"],
+  ["3", "Keystone patch panel"],
+  ["4", "USW Ultra"],
+  ["5–6", "Pi cluster, 3 × Pi 4 + 2 × Pi 3, snap-in system"],
+  ["7–8", "Intel NUC + JetKVM, snap-in system"],
+  ["9", "Free"],
+];
+
+const prints: [string, string][] = [
+  ["USW Flex 2.5G 8 PoE mount", "https://makerworld.com/en/models/1024496-usw-flex-2-5g-8-poe-10-inch-rack-mount"],
+  ["USW Ultra mount", "https://makerworld.com/en/models/773130-unifi-usw-ultra-10-inch-rack-mount"],
+  ["USW Ultra 210 W PSU mount", "https://makerworld.com/en/models/1295688-unifi-usw-ultra-210w-power-supply-10-rack-mount"],
+  ["UCG-Max 1U mount, fits the UCG-Ultra", "https://makerworld.com/en/models/1175026-10in-mini-rack-ucg-max-1u-mount"],
+  ["8-bay Raspberry Pi snap-in system", "https://makerworld.com/en/models/2314737-rack-snap-in-system-8-bay-raspberry-pi-cluster"],
+  ["2U Intel NUC mount", "https://makerworld.com/en/models/2437633-10-inch-server-rack-2u-intel-nuc-6cay"],
+  ["2U 80 mm fan blank panel", "https://makerworld.com/en/models/2062371-10-inch-2u-80mm-fan-blank-panel-bridged-remix"],
+  ["Keystone patch panel", "https://makerworld.com/en/models/2875409-10-inch-rack-patch-panel-keystone-bonanza"],
+  ["USB labels for the Pis", "https://makerworld.com/en/models/2408572-usb-label"],
+];
+---
+
+<Base
+  title={`Vieta · ${IDENTITY.shortName}`}
+  description="Vieta, the homelab site in Aachen: a 10 inch rack with a Talos Kubernetes cluster."
+  heading="Vieta"
+  tagline={'Aachen. A 10" mini rack with a Talos Kubernetes cluster on an Intel NUC and three Raspberry Pis.'}
+  parent={{ href: "/#sites", label: "Sites" }}
+>
+  <a slot="head-aside" href="https://github.com/FinnPL/Homelab-Setup">github.com/FinnPL/Homelab-Setup →</a>
+
+  <div class="wrap" style="margin-bottom:44px">
+    <dl class="livestrip" id="strip">
+      <div><dt>nodes</dt><dd data-k="nodes"></dd></div>
+      <div><dt>apps</dt><dd data-k="apps"></dd></div>
+      <div><dt>pods</dt><dd data-k="pods"></dd></div>
+      <div><dt>cpu</dt><dd data-k="cpu"></dd></div>
+      <div><dt>memory</dt><dd data-k="mem"></dd></div>
+      <div><dt>backbone</dt><dd data-k="bgp"></dd></div>
+      <div><dt>default via</dt><dd data-k="via"></dd></div>
+    </dl>
+  </div>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Photos</span></div>
+      <div class="shots">
+        <figure>
+          <Image src={rackFront} alt="Front of the Vieta rack" widths={[420, 840]} sizes="(max-width: 560px) 92vw, 310px" loading="lazy" />
+          <figcaption>Front</figcaption>
+        </figure>
+        <figure>
+          <Image src={rackBack} alt="Rear cabling of the Vieta rack" widths={[420, 840]} sizes="(max-width: 560px) 92vw, 310px" loading="lazy" />
+          <figcaption>Back, before the JetKVM</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Hardware</span></div>
+      <dl class="deflist">{hardware.map(([k, v]) => <><dt>{k}</dt><dd>{v}</dd></>)}</dl>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Rack</span></div>
+      <div>
+        <table class="t">
+          <thead><tr><th>U</th><th>unit</th></tr></thead>
+          <tbody>{rack.map(([u, x]) => <tr><td class="mono">{u}</td><td>{x}</td></tr>)}</tbody>
+        </table>
+        <p class="dim small" style="margin-top:14px">Tecmojo 10" 9U.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">3D-printed</span></div>
+      <div>
+        <p class="muted">All from MakerWorld, printed in ASA.</p>
+        <ul class="plain inv">{prints.map(([name, href]) => <li><a href={href}>{name}</a></li>)}</ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Network</span></div>
+      <dl class="deflist">
+        <dt>Gateway</dt><dd>UniFi, VLANs and zone-based firewall</dd>
+        <dt>Cluster</dt><dd>Cilium without kube-proxy, Gateway API, dual-stack</dd>
+        <dt>IPv6</dt><dd><span class="mono">2a0c:b641:f94::/48</span> from <a href="https://fplnet.net/">AS218255</a>, via gw1.aah1</dd>
+        <dt>Backbone</dt><dd>WireGuard, iBGP and BFD to all three edges</dd>
+        <dt>DNS</dt><dd><a href="/dns">Blocky and Unbound</a></dd>
+        <dt>Storage</dt><dd>NFS from a container on the NUC by default, node-local volumes on the database worker</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Deployment</span></div>
+      <dl class="deflist">
+        <dt>Source</dt><dd><a href="https://github.com/FinnPL/Homelab-Setup">Homelab-Setup</a>, the repo is the source of truth</dd>
+        <dt>Infrastructure</dt><dd>Terraform in four layers: state, network, machines, cluster platform</dd>
+        <dt>Workloads</dt><dd>ArgoCD, one Application per chart, auto-sync, prune, self-heal</dd>
+        <dt>CI</dt><dd>GitHub Actions plans on every PR and applies on merge, including Talos upgrades</dd>
+        <dt>Secrets</dt><dd><a href="https://github.com/FinnPL/Vault-Deployment">Vault</a>: CI logs in with its GitHub OIDC token, the cluster with a ServiceAccount token, SSH hosts and clients get Vault-signed certificates</dd>
+        <dt>Updates</dt><dd>Renovate, patch versions merge on their own</dd>
+        <dt>Policy</dt><dd>Kyverno policies run against every rendered chart before merge, Trivy scans the repo</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label">
+        <span class="eyebrow">Inventory</span>
+        <p class="dim small" style="margin-top:10px">Generated from <code>charts/</code> and the Terraform layers.</p>
+      </div>
+      <div class="stack-lg">
+        <dl class="deflist">
+          <dt>applications</dt><dd>{n.apps} reconciled by ArgoCD</dd>
+          <dt>platform</dt><dd>{n.platform} charts installed by Terraform</dd>
+          <dt>charts</dt><dd>{n.wrappers} wrapper charts, {n.pinned} upstream versions pinned</dd>
+        </dl>
+        {groups.map((g) => (
+          <div>
+            <h2 class="grp">{g.group}</h2>
+            <ul class="plain inv">
+              {g.items.map((c) => (
+                <li>
+                  <div class="inv-head">
+                    <span class="inv-name">{c.name}</span>
+                    {c.namespace && <span class="tag">{c.namespace}</span>}
+                    {c.pins.map((p) => <span class="dim small mono">{p.chart} {p.version}</span>)}
+                  </div>
+                  {c.blurb && <p>{c.blurb}</p>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { EDGES, EDGE_IDS, GW1_AAH1_PREFERENCE } from "../lib/net";
+  import { state, on, want, fresh, NO_DATA } from "../scripts/feed";
+
+  const box = document.getElementById("strip")!;
+  const set = (k: string, v: string) => (box.querySelector(`[data-k="${k}"]`)!.innerHTML = v);
+  const up = (e: (typeof EDGE_IDS)[number]) => fresh(e)?.sessions.find((x) => x.name === "ibgp_gw1_aah1")?.up;
+
+  on(() => {
+    const v = state.site.ok ? state.site.data?.sites.vieta : undefined;
+    if (v) {
+      set("nodes", `${v.nodes_ready}/${v.nodes} <small>ready</small>`);
+      set("apps", `${v.apps_synced}/${v.apps} <small>synced</small>`);
+      set("pods", String(v.pods_running));
+      set("cpu", (v.cpu_used * 100).toFixed(0) + " %");
+      set("mem", (v.memory_used * 100).toFixed(0) + " %");
+    } else for (const k of ["nodes", "apps", "pods", "cpu", "mem"]) set(k, state.site.tried ? NO_DATA : "");
+
+    const seen = EDGE_IDS.filter((e) => fresh(e));
+    const none = EDGE_IDS.some((e) => state.edges[e].tried) ? NO_DATA : "";
+    set("bgp", seen.length ? `${seen.filter(up).length}/${EDGE_IDS.length} <small>edges</small>` : none);
+    const via = GW1_AAH1_PREFERENCE.find(up);
+    const rtt = via && fresh(via)?.links.find((l) => l.target === "gw1.aah1")?.rtt_ms;
+    set("via", via ? `${EDGES[via].name}${rtt != null ? ` <small>${rtt.toFixed(1)} ms</small>` : ""}` : seen.length ? NO_DATA : none);
+  });
+  want("site", 15_000);
+  want("edges", 5_000);
+</script>

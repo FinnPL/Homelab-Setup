@@ -1,14 +1,12 @@
 ---
 import Base from "../layouts/Base.astro";
-import Status from "../components/Status.astro";
 import { projects } from "../lib/projects";
 import { IDENTITY } from "../lib/identity";
+import { ASN, AGGREGATE, CONNECTION, LOOKING_GLASS } from "../lib/net";
 import { stamp } from "../lib/build";
 
 const { featured, fetchedAt } = await projects();
 const shown = featured.filter((p) => p.home !== false);
-// Small cards split the row evenly however many there are, so the grid never ends in a hole.
-const small = shown.filter((p) => !p.image).length;
 ---
 
 <Base
@@ -22,40 +20,104 @@ const small = shown.filter((p) => !p.image).length;
       In my free time I tinker with a three-site homelab running Kubernetes, and
       the CI that deploys it.
     </p>
+    <a class="more" href="/about">More about me →</a>
   </div>
 
-  <section class="wrap work">
-    <div class="work-head">
-      <span class="eyebrow" style="margin:0">Selected work</span>
-      <a href="/projects">All projects →</a>
-    </div>
+  <div class="wrap">
+    <section class="net" aria-label="Network">
+      <div class="net-head">
+        <div class="nh-id"><span class="title">{ASN}</span><span class="pfx">{AGGREGATE}</span></div>
+        <nav class="nh-links">
+          <a href="https://fplnet.net/">fplnet.net →</a>
+          <a href={LOOKING_GLASS}>Looking glass →</a>
+          <a href={CONNECTION}>Your connection →</a>
+          <a href="/status">Status →</a>
+        </nav>
+        <div class="nh-stats" id="nh-stats"></div>
+      </div>
+      <div class="net-body">
+        <div class="map">
+          <svg id="map" viewBox="12 32 976 590" role="img" aria-label="Network map: edge routers in Amsterdam, Düsseldorf and Frankfurt joined by a WireGuard backbone, with the Vieta and Minerva sites below">
+            <g id="g-sites"></g><g id="g-links"></g><g id="g-pkts"></g><g id="g-labels"></g><g id="g-nodes"></g>
+          </svg>
+          <noscript>The map draws live data from the edge routers and needs JavaScript.</noscript>
+        </div>
+        <aside class="side"><div class="side-scroll" id="side-scroll" aria-live="polite"></div></aside>
+      </div>
+    </section>
+  </div>
 
-    <div class="grid" data-small={small}>
+  <section class="wrap sec" id="sites">
+    <div class="sec-head"><span class="eyebrow">Sites</span></div>
+    <div class="grid two">
+      <a class="card big" href="/vieta">
+        <div class="where">Aachen</div>
+        <h3>Vieta</h3>
+        <p>The main Kubernetes cluster, in a 10" mini rack. Talos on Proxmox and three Raspberry Pis.</p>
+        <dl class="facts">
+          <dt>hosts</dt><dd>Intel NUC, 3 Raspberry Pi 4</dd>
+          <dt>cluster</dt><dd>1 control plane, 4 workers</dd>
+          <dt>network</dt><dd>Cilium, Gateway API, dual-stack</dd>
+          <dt>uplink</dt><dd>gw1.aah1 to all three edges</dd>
+        </dl>
+        <span class="go">Hardware and software →</span>
+      </a>
+      <a class="card big" href="/minerva">
+        <div class="where">Freiburg · not moved yet</div>
+        <h3>Minerva</h3>
+        <p>The second site. A Proxmox box with a pull-only backup NAS.</p>
+        <dl class="facts">
+          <dt>hosts</dt><dd>Proxmox on a Ryzen box, 32 GB</dd>
+          <dt>storage</dt><dd>ZFS mirror, 2 × 8 TB SAS</dd>
+          <dt>cluster</dt><dd><span class="nb">not built yet</span></dd>
+          <dt>uplink</dt><dd><span class="nb">not built yet</span></dd>
+        </dl>
+        <span class="go">Hardware and software →</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="wrap sec" id="fplnet">
+    <div class="sec-head"><span class="eyebrow">Network</span><a href="https://fplnet.net/">fplnet.net →</a></div>
+    <a class="card big" href="https://fplnet.net/">
+      <div class="where">{ASN}</div>
+      <h3>FPLNET</h3>
+      <p>My own autonomous system. Three edge routers announce it, a WireGuard backbone joins them and the sites.</p>
+      <dl class="facts">
+        <dt>prefix</dt><dd class="mono">{AGGREGATE}</dd>
+        <dt>edges</dt><dd>Düsseldorf, Amsterdam, Frankfurt</dd>
+        <dt>exchanges</dt><dd>LocIX Düsseldorf, InterIX Amsterdam</dd>
+        <dt>routing</dt><dd>BIRD 3, RPKI origin validation, anycast</dd>
+      </dl>
+      <span class="go">fplnet.net →</span>
+    </a>
+  </section>
+
+  <section class="wrap sec" id="services">
+    <div class="sec-head"><span class="eyebrow">Services</span></div>
+    <div class="grid two">
+      <a class="card" href="/dns">
+        <h3>DNS</h3>
+        <div class="host">dns.relay.lippok.dev</div>
+        <p>Blocky filters, Unbound validates DNSSEC and forwards over TLS. Answered on an anycast address.</p>
+      </a>
+      <a class="card" href="/ntp">
+        <h3>NTP</h3>
+        <div class="host">not public yet</div>
+        <p>Stratum 1 time from a GPS-disciplined oscillator. The PPS edge is timestamped by an Intel i210, chrony disciplines the clock to it.</p>
+      </a>
+    </div>
+  </section>
+
+  <section class="wrap sec" id="repos">
+    <div class="sec-head"><span class="eyebrow">Repos</span><a href="/repos">All repos →</a></div>
+    <div class="grid">
       {shown.map((p) => (
-        <article class={p.image ? "card feature" : "card"}>
-          {p.image && (
-            <a class="shot" href={p.page?.href ?? `https://github.com/${p.slug}`}>
-              <img
-                src={p.image.src}
-                alt={p.image.alt}
-                width={p.image.width}
-                height={p.image.height}
-                loading="eager"
-                decoding="async"
-              />
-            </a>
-          )}
-          <div class="body">
-            <h2>
-              <a href={p.page?.href ?? `https://github.com/${p.slug}`}>{p.title}</a>
-            </h2>
-            <p class="muted">{p.summary}</p>
-            <div class="chips">
-              {p.topics.map((s) => <span class="tag">{s}</span>)}
-            </div>
-            {p.page && <p class="more"><a href={p.page.href}>What runs on it →</a></p>}
-          </div>
-        </article>
+        <a class="card" href={`https://github.com/${p.slug}`}>
+          <h3>{p.title}</h3>
+          <p>{p.summary}</p>
+          <div class="chips">{p.topics.slice(0, 5).map((t) => <span class="tag">{t}</span>)}</div>
+        </a>
       ))}
     </div>
     <p class="sourced" style="margin-top:12px">
@@ -63,86 +125,14 @@ const small = shown.filter((p) => !p.image).length;
     </p>
   </section>
 
-  <div class="wrap" style="margin-top:56px">
-    <Status />
-  </div>
+  <section class="wrap sec" id="status">
+    <div class="sec-head"><span class="eyebrow">Status, 30 days</span><a href="/status">90 days →</a></div>
+    <div class="uptime"><ul id="uptime-rows"></ul><p class="sourced" id="uptime-stamp"></p></div>
+  </section>
 </Base>
 
-<style>
-  .hero { padding-block: 76px 34px; }
-  .hero .lede { margin-top: 20px; font-size: 1.2rem; max-width: 58ch; }
-
-  .work-head {
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: 16px; margin-bottom: 20px;
-  }
-  .work-head a { font-family: var(--mono); font-size: 0.8rem; text-decoration: none; }
-  .work-head a:hover { text-decoration: underline; }
-
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: 22px;
-  }
-
-  .card {
-    grid-column: span 6;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--rule);
-    border-radius: 10px;
-    background: var(--paper);
-    overflow: hidden;
-  }
-
-  .card .body { padding: 18px 20px 20px; }
-  .card.feature .body { padding: 22px 24px 24px; }
-
-  .card h2 { font-size: 1.05rem; }
-  .card.feature h2 { font-size: 1.35rem; }
-  .card h2 a { color: var(--ink); text-decoration: none; }
-  .card h2 a:hover { color: var(--accent); }
-
-  .card p { margin: 8px 0 14px; font-size: 0.93rem; }
-  .card.feature p { font-size: 1rem; max-width: 70ch; }
-
-  .shot {
-    display: grid; place-items: center;
-    background: var(--paper-2);
-    border-bottom: 1px solid var(--rule);
-    padding: 14px;
-  }
-  .shot img { display: block; width: 100%; height: auto; max-height: 46vh; object-fit: contain; }
-
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .more { margin: 16px 0 0 !important; font-family: var(--mono); font-size: 0.8rem; }
-  .more a { text-decoration: none; }
-  .more a:hover { text-decoration: underline; }
-
-  /* Wide enough for the diagram to sit beside its text instead of stacking above it. */
-  @media (min-width: 900px) {
-    .card.feature { flex-direction: row; align-items: stretch; }
-    .card.feature .shot {
-      flex: 0 0 57%;
-      border-bottom: 0;
-      border-right: 1px solid var(--rule);
-      padding: 18px;
-    }
-    .card.feature .shot img { max-height: 330px; }
-    .card.feature .body {
-      flex: 1 1 0;
-      display: flex; flex-direction: column; justify-content: center;
-      padding: 26px 28px;
-    }
-    .card.feature p { max-width: none; }
-  }
-
-  @media (min-width: 561px) and (max-width: 860px) {
-    .card:not(.feature) { grid-column: span 3; }
-  }
-  @media (min-width: 861px) {
-    .card:not(.feature) { grid-column: span 2; }
-    .grid[data-small="2"] .card:not(.feature) { grid-column: span 3; }
-    .grid[data-small="1"] .card:not(.feature) { grid-column: span 6; }
-  }
-</style>
+<script>
+  import "../scripts/map";
+  import { renderStatus } from "../scripts/status";
+  renderStatus(document.getElementById("uptime-rows")!, document.getElementById("uptime-stamp"), 30);
+</script>

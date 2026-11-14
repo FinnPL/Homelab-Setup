@@ -1,0 +1,45 @@
+---
+import Base from "../layouts/Base.astro";
+import { projects } from "../lib/projects";
+import { IDENTITY } from "../lib/identity";
+import { stamp } from "../lib/build";
+
+const { featured, fetchedAt } = await projects();
+---
+
+<Base title={`Repos · ${IDENTITY.shortName}`} description={`Public repositories by ${IDENTITY.name}.`} heading="Repos">
+  <a slot="head-aside" href="https://github.com/FinnPL">github.com/FinnPL →</a>
+
+  <section class="wrap">
+    {featured.map((p) => (
+      <article class="repo">
+        <div class="cols">
+          <div class="label">
+            <span class="eyebrow">{p.meta.language ?? "Repository"}</span>
+            <p class="dim small" style="margin:6px 0 0">updated {p.meta.pushed}</p>
+          </div>
+          <div>
+            <div class="head-row">
+              <h2>{p.title}</h2>
+              <span class="repo-links">
+                <a href={`https://github.com/${p.slug}`}>GitHub →</a>
+                {(p.pages ?? []).map((l) => <a href={l.href}>{l.label} →</a>)}
+              </span>
+            </div>
+            <p class="muted" style="margin-top:10px">{p.summary}</p>
+            <div class="chips">{p.topics.map((t) => <span class="tag">{t}</span>)}</div>
+          </div>
+        </div>
+      </article>
+    ))}
+    <p class="sourced" style="margin-top:14px">
+      from the GitHub API · <time datetime={fetchedAt.toISOString()}>{stamp(fetchedAt)}</time>
+    </p>
+  </section>
+</Base>
+
+<style>
+  .repo { padding-block: 30px; border-bottom: 1px solid var(--rule); }
+  .repo:first-child { padding-top: 0; }
+  .repo-links { display: flex; gap: 14px; font-family: var(--mono); font-size: 0.8rem; flex-wrap: wrap; }
+</style>

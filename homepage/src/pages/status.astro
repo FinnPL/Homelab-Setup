@@ -1,0 +1,24 @@
+---
+import Base from "../layouts/Base.astro";
+import { IDENTITY } from "../lib/identity";
+---
+
+<Base
+  title={`Status · ${IDENTITY.shortName}`}
+  description="Status of the public services over the last 90 days."
+  heading="Status"
+  tagline="Last 90 days."
+>
+  <div class="wrap">
+    <div class="uptime">
+      <ul id="uptime-rows"></ul>
+      <div class="foot"><span>90 days ago</span><span>today</span></div>
+      <p class="sourced" id="uptime-stamp"></p>
+    </div>
+  </div>
+</Base>
+
+<script>
+  import { renderStatus } from "../scripts/status";
+  renderStatus(document.getElementById("uptime-rows")!, document.getElementById("uptime-stamp"), 90);
+</script>

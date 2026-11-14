@@ -1,0 +1,89 @@
+---
+import Base from "../layouts/Base.astro";
+import { IDENTITY } from "../lib/identity";
+---
+
+<Base
+  title={`DNS · ${IDENTITY.shortName}`}
+  description="A filtering, DNSSEC-validating resolver over DoH, reached through the FPLNET edges on an anycast address."
+  heading="DNS"
+  tagline="Filtering, DNSSEC validation and DNS over HTTPS, on one anycast address."
+>
+  <span slot="head-aside" class="mono small dim">dns.relay.lippok.dev</span>
+
+  <div class="wrap" style="margin-bottom:44px">
+    <div class="dnsuse">
+      <div class="dns-check" id="dns-check"></div>
+      <dl class="kv3">
+        <dt>DoH</dt><dd><code>https://dns.relay.lippok.dev/dns-query</code></dd>
+      </dl>
+      <a class="small" href="/lippok-dns.mobileconfig" download>Profile for Apple devices</a>
+    </div>
+  </div>
+
+  <div class="wrap" style="margin-bottom:44px">
+    <dl class="livestrip" id="dns-strip">
+      <div><dt>anycast</dt><dd class="mono" style="font-size:.9rem">2a0c:b641:f92::53</dd></div>
+      <div><dt>Vieta</dt><dd data-k="v"></dd></div>
+      <div><dt>Minerva</dt><dd><span class="nb">not built yet</span></dd></div>
+    </dl>
+  </div>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Path</span></div>
+      <div class="dns-path">
+        <div class="dnsflow-wrap"><svg class="dnsflow" viewBox="16 0 964 214" role="img" aria-label="DNS path: device, edge router, Blocky, Unbound, VPN, 1.1.1.1"><rect class="grp" x="346" y="22" width="304" height="168" rx="12"/><text class="grp-l" x="348" y="16">Vieta</text><line class="hopl enc" x1="120" y1="106" x2="188" y2="106"/><text class="hopt" x="154.0" y="96" text-anchor="middle">TLS</text><line class="hopl enc tun" x1="292" y1="106" x2="360" y2="106"/><text class="hopt" x="326.0" y="96" text-anchor="middle">WireGuard</text><line class="hopl " x1="464" y1="106" x2="532" y2="106"/><text class="hopt" x="498.0" y="96" text-anchor="middle">plain :53</text><line class="hopl enc tun" x1="636" y1="106" x2="704" y2="106"/><text class="hopt" x="670.0" y="96" text-anchor="middle">DoT</text><line class="hopl enc" x1="808" y1="106" x2="876" y2="106"/><text class="hopt" x="842.0" y="96" text-anchor="middle">DoT</text><g transform="translate(16,44)"><rect class="step" width="104" height="124" rx="10"/><g class="ic" transform="translate(38.0,18) scale(1.17)"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></g><text class="nt" x="52.0" y="80" text-anchor="middle">Device</text><text class="ns" x="52.0" y="100" text-anchor="middle">DoH</text></g><g transform="translate(188,44)"><rect class="step" width="104" height="124" rx="10"/><g class="ic" transform="translate(38.0,18) scale(1.17)"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3.5 3.5 3.5 14.5 0 18M12 3c-3.5 3.5-3.5 14.5 0 18"/></g><text class="nt" x="52.0" y="80" text-anchor="middle">Edge</text><text class="ns" x="52.0" y="100" text-anchor="middle">passes TLS on</text></g><g transform="translate(360,44)"><rect class="step" width="104" height="124" rx="10"/><g class="ic" transform="translate(38.0,18) scale(1.17)"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"/></g><text class="nt" x="52.0" y="80" text-anchor="middle">Blocky</text><text class="ns" x="52.0" y="100" text-anchor="middle">filter, cache</text></g><g transform="translate(532,44)"><rect class="step" width="104" height="124" rx="10"/><g class="ic" transform="translate(38.0,18) scale(1.17)"><path d="M12 2.5l8 3v6c0 5-3.4 8.7-8 10.5-4.6-1.8-8-5.5-8-10.5v-6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></g><text class="nt" x="52.0" y="80" text-anchor="middle">Unbound</text><text class="ns" x="52.0" y="100" text-anchor="middle">DNSSEC</text></g><g transform="translate(704,44)"><rect class="step" width="104" height="124" rx="10"/><g class="ic" transform="translate(38.0,18) scale(1.17)"><rect x="5" y="10.5" width="14" height="10.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></g><text class="nt" x="52.0" y="80" text-anchor="middle">VPN</text><text class="ns" x="52.0" y="100" text-anchor="middle">ProtonVPN</text></g><g transform="translate(876,44)"><rect class="step" width="104" height="124" rx="10"/><g class="ic" transform="translate(38.0,18) scale(1.17)"><path d="M7 19h10.5a4 4 0 0 0 .4-8 6 6 0 0 0-11.6 1.6A3.3 3.3 0 0 0 7 19z"/></g><text class="nt" x="52.0" y="80" text-anchor="middle">1.1.1.1</text><text class="ns" x="52.0" y="100" text-anchor="middle">Cloudflare</text></g></svg></div>
+        <div class="legend flow-legend"><span><i class="ln enc"></i>encrypted</span><span><i class="ln enc tun"></i>encrypted, in a tunnel</span><span><i class="ln"></i>plain, inside one pod</span></div>
+        <p style="margin-top:26px">Cloudflare answers the query but sees a ProtonVPN exit address. ProtonVPN carries the traffic but the payload is DoT, so it sees only that a DNS connection happened. Neither side holds both halves, the same separation Oblivious DNS was built for, but self-hosted.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Anycast</span></div>
+      <div>
+        <p>Vieta announces <span class="mono">2a0c:b641:f92::53</span> to gw1.aah1, and each edge announces <span class="mono">2a0c:b641:f92::/48</span> while a site holds the address. Over IPv4 the edges pass the TLS connection through to the site by its server name.</p>
+        <p class="dim small">Minerva's instance: not built yet.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Parts</span></div>
+      <dl class="deflist">
+        <dt>Blocky</dt><dd>Filtering and caching, the DoH endpoint</dd>
+        <dt>Unbound</dt><dd>DNSSEC validation, prefetching, DoT upstream to Cloudflare</dd>
+        <dt>Chart</dt><dd><a href="https://github.com/FinnPL/Homelab-Setup/tree/main/charts/dns">charts/dns</a></dd>
+      </dl>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { DNS_CHECK } from "../lib/net";
+
+  // The canary name only resolves through Blocky; public DNS has no address for it.
+  const check = document.getElementById("dns-check")!;
+  check.textContent = "Checking this browser's resolver";
+  fetch(DNS_CHECK, { cache: "no-store", signal: AbortSignal.timeout(5000) })
+    .then((r) => r.ok)
+    .catch(() => false)
+    .then((yes) => {
+      check.classList.toggle("no", !yes);
+      check.innerHTML = `<span class="dot"></span>This browser ${yes ? "uses" : "does not use"} lippok.dev DNS`;
+    });
+
+  const v = document.querySelector('#dns-strip [data-k="v"]')!;
+  fetch("/status.json", { cache: "no-store" })
+    .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null)
+    .then((d) => {
+      const row = d?.rows?.find((x: { label: string }) => x.label === "DNS Vieta");
+      v.innerHTML = !row
+        ? '<span class="nb stale">no data</span>'
+        : row.state === "ok" ? '<span class="dot"></span>answering' : '<span class="dot down"></span>not answering';
+    });
+</script>

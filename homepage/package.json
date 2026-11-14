@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "sync:assets": "node scripts/sync-assets.mjs && node scripts/og-image.mjs",
+    "sync:assets": "node scripts/og-image.mjs",
     "dev": "npm run sync:assets && astro dev",
     "build": "npm run sync:assets && astro build",
     "preview": "astro preview",

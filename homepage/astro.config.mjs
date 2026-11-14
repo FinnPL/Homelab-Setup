@@ -6,5 +6,6 @@ export default defineConfig({
   build: { format: "file" },
   devToolbar: { enabled: false },
   compressHTML: true,
-  integrations: [sitemap({ filter: (page) => !page.endsWith("/datenschutz") })],
+  redirects: { "/homelab": "/vieta", "/projects": "/repos" },
+  integrations: [sitemap({ filter: (page) => !/\/(datenschutz|homelab|projects)$/.test(page) })],
 });

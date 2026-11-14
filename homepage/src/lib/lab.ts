@@ -86,6 +86,14 @@ const COPY: Record<string, { group: string; blurb: string }> = {
     blurb:
       "Node-local volumes on the database node. Everything else uses the NFS storage class.",
   },
+  "network-policies": {
+    group: "Networking",
+    blurb: "Default deny in both directions, one allow template per namespace.",
+  },
+  "site-data": {
+    group: "Observability",
+    blurb: "Serves the site numbers on this website from Prometheus, through the edges.",
+  },
   "it-tools": { group: "Applications", blurb: "A self-hosted collection of small conversion and encoding utilities." },
 };
 

@@ -1,0 +1,116 @@
+---
+import Base from "../layouts/Base.astro";
+import { IDENTITY } from "../lib/identity";
+
+const NB = "not built yet";
+---
+
+<Base
+  title={`Minerva · ${IDENTITY.shortName}`}
+  description="Minerva, the second homelab site: a Proxmox box with a pull-only backup NAS."
+  heading="Minerva"
+  tagline="The second site. A Proxmox box with a pull-only backup NAS."
+  parent={{ href: "/#sites", label: "Sites" }}
+>
+  <a slot="head-aside" href="https://github.com/FinnPL/Homelab-Setup/tree/main/minerva">github.com/FinnPL/Homelab-Setup →</a>
+
+  <div class="wrap" style="margin-bottom:44px">
+    <dl class="livestrip" id="strip">
+      <div><dt>nas pool</dt><dd data-k="pool"></dd></div>
+      <div><dt>free</dt><dd data-k="free"></dd></div>
+      <div><dt>cluster</dt><dd><span class="nb">{NB}</span></dd></div>
+      <div><dt>backbone</dt><dd><span class="nb">{NB}</span></dd></div>
+    </dl>
+  </div>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Photos</span></div>
+      <div class="nb-box">No photos yet.</div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Hardware</span></div>
+      <dl class="deflist">
+        <dt>Location</dt><dd>Aachen, until the move to Freiburg</dd>
+        <dt>Board</dt><dd>Gigabyte B450 AORUS ELITE</dd>
+        <dt>CPU</dt><dd>AMD Ryzen 5 5600GT</dd>
+        <dt>Memory</dt><dd>32 GB</dd>
+        <dt>HBA</dt><dd>Broadcom SAS3008 in IT mode, passed through to the NAS VM</dd>
+        <dt>Pool disks</dt><dd>2 × 8 TB SAS, ZFS mirror</dd>
+        <dt>Out-of-band</dt><dd><span class="nb">{NB}</span></dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Machines</span></div>
+      <table class="t">
+        <thead><tr><th>machine</th><th>type</th><th>runs</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">pve</td><td>host</td><td>Proxmox VE 9</td></tr>
+          <tr><td class="mono">nas</td><td>VM</td><td>NixOS, the ZFS pool, snapshots and exporters</td></tr>
+          <tr><td class="mono">gw1.fbg1</td><td>VM</td><td><span class="nb">{NB}</span></td></tr>
+          <tr><td class="mono">talos</td><td>VMs</td><td><span class="nb">{NB}</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="wrap section" id="backups">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Backups</span></div>
+      <div>
+        <p>Nothing writes to the NAS. It pulls from the other sites with read-only accounts, so ransomware on a source cannot reach its history.</p>
+        <dl class="deflist" style="margin-top:22px">
+          <dt>Snapshots</dt><dd>sanoid on <code>nas/backup</code>: 24 hourly, 30 daily, 6 monthly</dd>
+          <dt>Scrub</dt><dd>Monthly</dd>
+          <dt>Apollo</dt><dd>rsync pull over SSH with a read-only DSM account: <span class="nb">{NB}</span></dd>
+          <dt>Vieta</dt><dd>syncoid pull: <span class="nb">{NB}</span></dd>
+          <dt>Monitoring</dt><dd>Per-disk ZFS errors, scrub results, snapshot ages, SCSI self-tests and HBA temperature, scraped and alerted on by Vieta</dd>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Network</span></div>
+      <dl class="deflist">
+        <dt>IPv6</dt><dd><span class="mono">2a0c:b641:f95::/48</span> from <a href="https://fplnet.net/">AS218255</a>: <span class="nb">{NB}</span></dd>
+        <dt>Backbone</dt><dd>gw1.fbg1 to the edges: <span class="nb">{NB}</span></dd>
+        <dt>Site link</dt><dd>gw1.aah1 to gw1.fbg1: <span class="nb">{NB}</span></dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Deployment</span></div>
+      <dl class="deflist">
+        <dt>Source</dt><dd><a href="https://github.com/FinnPL/Homelab-Setup/tree/main/minerva">Homelab-Setup/minerva</a></dd>
+        <dt>Infrastructure</dt><dd>Terraform creates the NAS VM and attaches the HBA</dd>
+        <dt>NAS</dt><dd>Its own NixOS flake, deployed with deploy-rs</dd>
+        <dt>CI</dt><dd><span class="nb">{NB}</span></dd>
+        <dt>Access</dt><dd>No static keys: SSH logins use Vault-signed certificates only</dd>
+      </dl>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { state, on, want, NO_DATA } from "../scripts/feed";
+
+  const box = document.getElementById("strip")!;
+  const set = (k: string, v: string) => (box.querySelector(`[data-k="${k}"]`)!.innerHTML = v);
+  on(() => {
+    const m = state.site.ok ? state.site.data?.sites.minerva : undefined;
+    const none = state.site.tried ? NO_DATA : "";
+    set("pool", m?.nas_pool_online == null ? none : m.nas_pool_online ? '<span class="dot"></span>online' : '<span class="dot down"></span>not online');
+    set("free", m?.nas_free_bytes == null ? none : `${(m.nas_free_bytes / 1e12).toFixed(2)} <small>TB</small>`);
+  });
+  want("site", 15_000);
+</script>
