@@ -4,7 +4,9 @@
   modulesPath,
   ...
 }: let
-  siteServices = lib.concatLists (lib.mapAttrsToList (_: s: map (port: "${s.address} . ${toString port}") s.tcp) (lib.importJSON ../../site-services.json));
+  services = lib.importJSON ../../site-services.json;
+  siteServices = lib.concatLists (lib.mapAttrsToList (_: s: map (port: "${s.address} . ${toString port}") s.tcp) services);
+  proxyPorts = lib.mapAttrsToList (_: s: "${s.address} . ${toString s.proxyPort}") (lib.filterAttrs (_: s: s ? proxyPort) services);
 in {
   imports = [
     "${modulesPath}/virtualisation/proxmox-lxc.nix"
@@ -33,6 +35,9 @@ in {
         ''
         + lib.optionalString (siteServices != []) ''
           iifname "wg-er1-*" oifname "eth0" ip6 daddr . tcp dport { ${lib.concatStringsSep ", " siteServices} } accept
+        ''
+        + lib.optionalString (proxyPorts != []) ''
+          iifname "wg-er1-*" oifname "eth0" ip6 saddr 2a0c:b641:f98::/46 ip6 daddr . tcp dport { ${lib.concatStringsSep ", " proxyPorts} } accept
         '';
     };
 
