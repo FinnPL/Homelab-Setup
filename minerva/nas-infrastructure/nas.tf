@@ -1,16 +1,5 @@
 # The NAS VM.
-# It boots a Debian cloud image only once then replaces with nixos-anywhere
-
-resource "proxmox_download_file" "debian_cloud" {
-  content_type       = "import"
-  datastore_id       = "local"
-  node_name          = var.pve_node
-  file_name          = "debian-13-genericcloud-amd64-20261103-2651.qcow2"
-  url                = "https://cloud.debian.org/images/cloud/trixie/20261103-2651/debian-13-genericcloud-amd64-20261103-2651.qcow2"
-  checksum           = "d25999de0770d4cde1be72c299ba3ad94eac7ea8fd4d18f8cc86c69df69337e2e8a91d64465a9bfd8f2a78c566fcbcb0842eacc91c09efdef72d719d9f13b535"
-  checksum_algorithm = "sha512"
-  overwrite          = false
-}
+# It boots the Debian cloud image (../02-infrastructure/images.tf) only once, then nixos-anywhere replaces it.
 
 resource "proxmox_hardware_mapping_pci" "nas_hba" {
   name    = "nas-hba"
@@ -58,7 +47,7 @@ resource "proxmox_virtual_environment_vm" "nas" {
 
   disk {
     datastore_id = "local-zfs"
-    import_from  = proxmox_download_file.debian_cloud.id
+    import_from  = var.bootstrap_image
     interface    = "scsi0"
     size         = var.nas_vm.disk_size
     iothread     = true
@@ -90,10 +79,10 @@ resource "proxmox_virtual_environment_vm" "nas" {
     dns {
       servers = [var.nas_vm.gateway]
     }
-    # Any Vault-signed user certificate logs into the bootstrap image, as on the installed system.
+    # The bootstrap image takes the same YubiKeys as the installed system.
     user_account {
       username = "debian"
-      keys     = ["cert-authority ${trimspace(file("${path.module}/../nixos/modules/vault_user_ca.pub"))}"]
+      keys     = [for l in split("\n", file("${path.module}/../nixos/files/admin-keys.pub")) : l if l != "" && !startswith(l, "#")]
     }
   }
 

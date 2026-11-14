@@ -1,4 +1,4 @@
-{
+{lib, ...}: {
   imports = [
     ./disk-config.nix
     ./hardware.nix
@@ -21,6 +21,12 @@
     routes = [{Gateway = "10.10.1.1";}];
     dns = ["10.10.1.1"];
     networkConfig.IPv6AcceptRA = false;
+  };
+
+  # Neither Vault nor CI can open a root shell here; only the YubiKeys in admin-keys.pub.
+  minerva.ssh = {
+    trustVaultCA = false;
+    adminKeys = lib.filter (l: l != "" && !lib.hasPrefix "#" l) (lib.splitString "\n" (lib.fileContents ../../files/admin-keys.pub));
   };
 
   minerva.monitoring.scrapeSources = ["10.10.1.0/24"];
