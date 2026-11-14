@@ -89,7 +89,3 @@ data:
     ports:
       dns: 53
       http: 4000
-      https: 443
-
-    certFile: /tls/tls.crt
-    keyFile: /tls/tls.key

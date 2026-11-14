@@ -8,9 +8,11 @@ misconfigurations:
   - id: KSV-0125
     paths:
       - "**/site-data/templates/deployment.yaml"
+      - "**/dns/templates/deployment.yaml"
     statement: >-
-      The images are the official Docker Hub python and nginxinc/nginx-unprivileged
-      builds, pinned by digest and bumped by Renovate. Trivy's default trusted
+      The images are official upstream builds (Docker Hub python and
+      nginxinc/nginx-unprivileged, the Blocky and Unbound images), pinned and
+      bumped by Renovate. Trivy's default trusted
       registry list does not include Docker Hub.
   - id: KSV-01010
     paths:

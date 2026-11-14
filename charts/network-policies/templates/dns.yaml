@@ -18,7 +18,9 @@ spec:
               protocol: UDP
             - port: "53"
               protocol: TCP
-            - port: "443"
+            - port: "8443"
+              protocol: TCP
+            - port: "8444"
               protocol: TCP
     {{- include "np.fromPrometheus" (list 4000 9167) | nindent 4 }}
   egress:
