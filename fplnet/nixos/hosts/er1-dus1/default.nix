@@ -14,6 +14,7 @@
     ../../modules/haproxy.nix
     ../../modules/fplnet-net.nix
     ../../modules/anycast.nix
+    ../../modules/live.nix
   ];
 
   boot.loader.grub.enable = true;

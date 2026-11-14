@@ -5,7 +5,7 @@
   lib,
   ...
 }: let
-  names = ["v4.fplnet.net" "v6.fplnet.net" "${lib.replaceStrings ["-"] ["."] config.networking.hostName}.fplnet.net"];
+  names = ["v4.fplnet.net" "v6.fplnet.net" "dns-check.fplnet.net" "${lib.replaceStrings ["-"] ["."] config.networking.hostName}.fplnet.net"];
 in {
   fplnet.haproxy.names = ["fplnet.net"] ++ names;
 
@@ -54,6 +54,12 @@ in {
         "~:" 6;
         default 4;
       }
+      # lippok.dev reads /live.json from every edge
+      map $http_origin $cors_origin {
+        "https://fplnet.net" $http_origin;
+        "https://lippok.dev" $http_origin;
+        default "https://fplnet.net";
+      }
     '';
 
     virtualHosts."fplnet.net" = {
@@ -94,8 +100,9 @@ in {
         add_header X-Content-Type-Options nosniff always;
         add_header Referrer-Policy no-referrer always;
         add_header Cross-Origin-Opener-Policy same-origin always;
-        add_header Access-Control-Allow-Origin "https://fplnet.net" always;
-        add_header Timing-Allow-Origin "https://fplnet.net" always;
+        add_header Access-Control-Allow-Origin $cors_origin always;
+        add_header Timing-Allow-Origin $cors_origin always;
+        add_header Vary Origin always;
       '';
       locations = {
         "/".extraConfig = ''
