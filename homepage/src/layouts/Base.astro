@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import { IDENTITY, PROFILES, personJsonLd } from "../lib/identity";
 import { BUILD, stamp } from "../lib/build";
+import { NAV, CONNECTION } from "../lib/net";
 
 interface Props {
   title: string;
@@ -14,12 +15,6 @@ interface Props {
 
 const { title, description, heading, tagline, parent } = Astro.props;
 const path = Astro.url.pathname.replace(/\.html$/, "").replace(/(^|\/)index$/, "").replace(/\/$/, "") || "/";
-
-const nav: { href: string; label: string; children?: { href: string; label: string }[] }[] = [
-  { href: "/projects", label: "projects", children: [{ href: "/homelab", label: "homelab" }] },
-  { href: "/writing", label: "writing" },
-  { href: "/about", label: "about" },
-];
 ---
 
 <html lang="en">
@@ -47,29 +42,24 @@ const nav: { href: string; label: string; children?: { href: string; label: stri
   <body>
     <header class="site-head">
       <div class="wrap">
-        <a class="brand" href="/" rel="me">finn lippok<span class="tld">.dev</span></a>
+        <a class="brand" href="/" rel="me">{IDENTITY.shortName}</a>
         <nav class="nav">
-          {nav.map((n) => {
-            const inSection = path === n.href || (n.children ?? []).some((c) => c.href === path);
-            return n.children ? (
-              <span class="nav-group" data-open={inSection ? "" : undefined}>
+          {NAV.map((grp) => (
+            <span class="nav-grp">
+              {grp.map((n) => (
                 <a href={n.href} aria-current={path === n.href ? "page" : undefined}>{n.label}</a>
-                {n.children.map((c) => (
-                  <>
-                    <span class="nav-sep" aria-hidden="true">/</span>
-                    <a class="nav-sub" href={c.href} aria-current={path === c.href ? "page" : undefined}>
-                      {c.label}
-                    </a>
-                  </>
-                ))}
-              </span>
-            ) : (
-              <a href={n.href} aria-current={path === n.href ? "page" : undefined}>{n.label}</a>
-            );
-          })}
+              ))}
+            </span>
+          ))}
         </nav>
       </div>
     </header>
+    <div class="statusbar">
+      <div class="wrap">
+        <a class="sb-net" id="sb-net" href="/status"></a>
+        <a class="sb-conn" id="sb-conn" href={CONNECTION} title="Your connection"></a>
+      </div>
+    </div>
 
     {heading && (
       <div class="wrap page-head">
@@ -84,7 +74,7 @@ const nav: { href: string; label: string; children?: { href: string; label: stri
           <h1>{heading}</h1>
           <slot name="head-aside" />
         </div>
-        {tagline && <p class="lede" style="margin-top:14px">{tagline}</p>}
+        {tagline && <p class="lede">{tagline}</p>}
       </div>
     )}
 
@@ -96,6 +86,7 @@ const nav: { href: string; label: string; children?: { href: string; label: stri
       <div class="wrap">
         <span>Aachen, Germany</span>
         <a href="/datenschutz">Datenschutz</a>
+        <a href="/status">Status</a>
         <span class="spacer"></span>
         <a href={`mailto:${IDENTITY.email}`} rel="me">{IDENTITY.email}</a>
         {PROFILES.map((p) => <a href={p.href} rel="me">{p.label}</a>)}
@@ -108,5 +99,8 @@ const nav: { href: string; label: string; children?: { href: string; label: stri
         </span>
       </div>
     </footer>
+    <script>
+      import "../scripts/feed";
+    </script>
   </body>
 </html>

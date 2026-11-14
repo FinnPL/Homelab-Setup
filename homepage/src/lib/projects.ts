@@ -3,30 +3,29 @@ export type Repo = {
   title: string;
   summary: string;
   topics: string[];
-  /** Set false to keep the project off the front page. */
+  /** Set false to keep the repo off the front page. */
   home?: boolean;
-  /** Set when the project has a page of its own under /projects. */
-  page?: { href: string; label: string };
-  image?: { src: string; alt: string; width: number; height: number };
+  /** Pages on this site about the repo. */
+  pages?: { href: string; label: string }[];
   meta: { stars: number; language: string | null; pushed: string };
 };
 
-type Featured = Pick<Repo, "slug" | "home" | "page" | "image">;
+type Featured = Pick<Repo, "slug" | "home" | "pages">;
 
 const FEATURED: Featured[] = [
   {
     slug: "FinnPL/Homelab-Setup",
-    page: { href: "/homelab", label: "Homelab" },
-    image: {
-      src: "/diagrams/multi-site-topology.svg",
-      alt: "Topology of the three sites: a Kubernetes cluster on Proxmox, a Docker Compose host, and a NixOS edge on Oracle Cloud, joined by a WireGuard tunnel.",
-      width: 2540,
-      height: 1754,
-    },
+    pages: [
+      { href: "/vieta", label: "Vieta" },
+      { href: "/minerva", label: "Minerva" },
+      { href: "https://fplnet.net/", label: "fplnet.net" },
+    ],
   },
   { slug: "FinnPL/Vault-Deployment" },
   { slug: "FinnPL/NixOS-Configuration" },
   { slug: "FinnPL/Forum", home: false },
+  { slug: "FinnPL/Secure-Multiparty-Communication-Systems", home: false, pages: [{ href: "/writing", label: "Writing" }] },
+  { slug: "FinnPL/Introduction-to-Kotlin", home: false, pages: [{ href: "/writing", label: "Writing" }] },
 ];
 
 type ApiRepo = {

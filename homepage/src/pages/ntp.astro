@@ -1,0 +1,58 @@
+---
+import Base from "../layouts/Base.astro";
+import { IDENTITY } from "../lib/identity";
+
+const NB = "not built yet";
+---
+
+<Base
+  title={`NTP · ${IDENTITY.shortName}`}
+  description="A stratum 1 NTP server from a surplus GPS-disciplined oscillator, an Intel i210 and chrony."
+  heading="NTP"
+  tagline="Stratum 1 time from a GPS-disciplined oscillator."
+>
+  <div class="wrap" style="margin-bottom:44px">
+    <dl class="livestrip">
+      <div><dt>server</dt><dd><span class="nb">not public yet</span></dd></div>
+      <div><dt>live data</dt><dd><span class="nb">{NB}</span></dd></div>
+      <div><dt>host</dt><dd><span class="nb">{NB}</span></dd></div>
+    </dl>
+  </div>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Hardware</span></div>
+      <dl class="deflist">
+        <dt>Reference</dt><dd>Samsung UCCM-LP: OCXO and a u-blox LEA-6T GPS receiver</dd>
+        <dt>Timestamping</dt><dd>Intel i210, the PPS edge goes into SDP0</dd>
+        <dt>Display</dt><dd>SSD1322 OLED, 256 × 64</dd>
+        <dt>Host</dt><dd>Raspberry Pi CM4 on the official IO board: <span class="nb">{NB}</span></dd>
+        <dt>Front panel</dt><dd>3D-printed in ASA for U9 of the <a href="/vieta">Vieta rack</a>: <span class="nb">{NB}</span></dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">How</span></div>
+      <div class="stack-lg">
+        <div>
+          <h2 class="grp">Pulse</h2>
+          <p>The UCCM's 1PPS output reaches the i210's SDP0 through a 1 kΩ resistor. The NIC's PHC timestamps every rising edge, and chrony reads those timestamps as an <code>extpps</code> reference clock.</p>
+        </div>
+        <div>
+          <h2 class="grp">Seconds</h2>
+          <p>A pulse says when a second starts, not which second it is. The UCCM reports its time in SCPI over a serial port, not NMEA, so a small daemon listens on that port, reads the time and passes chrony the second over a socket. The UCCM counts GPS time, which runs 18 s ahead of UTC, and the daemon subtracts the difference.</p>
+        </div>
+        <div>
+          <h2 class="grp">Serving</h2>
+          <p>chrony also timestamps the NTP packets themselves in the i210's hardware, not in the kernel.</p>
+        </div>
+        <div>
+          <h2 class="grp">Holdover</h2>
+          <p>Without a GPS lock the UCCM switches to holdover and the oven keeps the frequency. When GPS returns, it reports a lock again about 14 minutes after its loop has settled.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>

@@ -4,6 +4,20 @@ import { IDENTITY } from "../lib/identity";
 
 const works = [
   {
+    title: "Secure Multiparty Communication Systems",
+    venue: "Seminar on Internet Technology, COMSYS, RWTH Aachen",
+    year: "2026",
+    authors: ["Finn Paul Lippok"],
+    supervision: "",
+    abstract:
+      "A comparison of end-to-end encrypted group messaging: deployed protocols such as Sender Keys (Signal, WhatsApp) and MLS (Discord, RCS) against proposed improvements, under one threat model and one set of security goals. We also discuss what deploying them costs, and how misbehaving members can split a group.",
+    links: [
+      { label: "Paper (PDF)", href: "https://finnpl.github.io/Secure-Multiparty-Communication-Systems/paper/seminar-paper.pdf", primary: true },
+      { label: "Slides (PDF)", href: "https://finnpl.github.io/Secure-Multiparty-Communication-Systems/talk/slides.pdf", primary: true },
+      { label: "Source", href: "https://github.com/FinnPL/Secure-Multiparty-Communication-Systems", primary: false },
+    ],
+  },
+  {
     title: "Introduction to Kotlin",
     venue: "Proseminar “Advanced Programming Concepts”, RWTH Aachen",
     year: "2025",
@@ -19,18 +33,6 @@ const works = [
   },
 ];
 
-const upcoming = [
-  {
-    title: "Secure Multiparty Communication Systems",
-    venue: "Seminar, COMSYS, RWTH Aachen",
-    note: "In progress.",
-    links: [
-      { label: "Survey paper (PDF)", href: "https://finnpl.github.io/Secure-Multiparty-Communication-Systems/paper/seminar-paper.pdf", primary: true },
-      { label: "Slides (PDF)", href: "https://finnpl.github.io/Secure-Multiparty-Communication-Systems/talk/slides.pdf", primary: true },
-      { label: "Source", href: "https://github.com/FinnPL/Secure-Multiparty-Communication-Systems", primary: false },
-    ],
-  },
-];
 ---
 
 <Base
@@ -49,7 +51,7 @@ const upcoming = [
             <p class="authors">{w.authors.join(", ")}</p>
             <p class="dim small mono venue">{w.venue} · {w.year}</p>
             <p class="muted">{w.abstract}</p>
-            <p class="dim small" style="margin:0">{w.supervision}</p>
+            {w.supervision && <p class="dim small" style="margin:0">{w.supervision}</p>}
             <p class="links">
               {w.links.map((l) => (
                 <a href={l.href} class={l.primary ? "primary" : ""}>{l.label}</a>
@@ -61,25 +63,6 @@ const upcoming = [
     </div>
   </section>
 
-  <section class="wrap section">
-    <div class="cols">
-      <div class="label"><span class="eyebrow">Upcoming</span></div>
-      <div class="stack-lg">
-        {upcoming.map((w) => (
-          <article>
-            <h2 class="muted">{w.title}</h2>
-            <p class="dim small mono venue">{w.venue}</p>
-            <p class="muted">{w.note}</p>
-            <p class="links">
-              {w.links.map((l) => (
-                <a href={l.href} class={l.primary ? "primary" : ""}>{l.label}</a>
-              ))}
-            </p>
-          </article>
-        ))}
-      </div>
-    </div>
-  </section>
 </Base>
 
 <style>
