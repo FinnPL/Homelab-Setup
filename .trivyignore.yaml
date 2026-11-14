@@ -5,3 +5,16 @@ misconfigurations:
     statement: >-
       A CiliumNetworkPolicy applies only to pods in its own namespace, so the
       CoreDNS and Hubble policies have to live in kube-system.
+  - id: KSV-0125
+    paths:
+      - "**/site-data/templates/deployment.yaml"
+    statement: >-
+      The images are the official Docker Hub python and nginxinc/nginx-unprivileged
+      builds, pinned by digest and bumped by Renovate. Trivy's default trusted
+      registry list does not include Docker Hub.
+  - id: KSV-01010
+    paths:
+      - "**/site-data/templates/configmap.yaml"
+    statement: >-
+      The ConfigMap holds the feed and status scripts; the match is Python source
+      ("key=lambda" in a sort call), not a credential.
