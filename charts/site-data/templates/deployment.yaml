@@ -63,6 +63,30 @@ spec:
               mountPath: /app/fresh.py
               subPath: fresh.py
               readOnly: true
+        - name: status
+          image: {{ .Values.feed.image }}
+          command: ["python3", "-u", "/app/status.py"]
+          env:
+            - name: GATUS_URL
+              value: {{ .Values.gatusUrl | quote }}
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+          securityContext:
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          resources:
+            {{- toYaml .Values.status.resources | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: status-state
+              mountPath: /state
+            - name: config
+              mountPath: /app/status.py
+              subPath: status.py
+              readOnly: true
         - name: web
           image: {{ .Values.web.image }}
           ports:
@@ -103,6 +127,9 @@ spec:
         - name: tmp
           emptyDir:
             medium: Memory
+        - name: status-state
+          persistentVolumeClaim:
+            claimName: site-data-status
         - name: config
           configMap:
             name: site-data

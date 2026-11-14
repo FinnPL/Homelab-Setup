@@ -2,6 +2,7 @@
 # CI steps for the FPLNET routers in fplnet/hosts.json.
 #   converge  verify each host by its Vault host certificate, re-sign it, assert the expiry
 #   deploy    verify each host, restore its backbone key, deploy-rs it, then require its BGP sessions back
+#   homepage  copy the lippok.dev build in HOMEPAGE_DIST to every edge as release HOMEPAGE_RELEASE and switch to it
 set -euo pipefail
 
 ROOT="${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}"
@@ -161,6 +162,30 @@ restore_ech_key() {
     || error "Could not restore the ECH key on $host (is kv/fplnet/ech set?)."
 }
 
+restore_lippok_origin() {
+  local host="$1" secret d=/var/lib/lippok-dev/tls
+  case "$host" in er1-*) ;; *) return 0 ;; esac
+  secret=$(curl -sSf -H "X-Vault-Token: ${VAULT_TOKEN:?}" "$VAULT_ADDR/v1/kv/data/fplnet/lippok-dev-origin") \
+    || error "Could not read kv/fplnet/lippok-dev-origin for $host (is it set?)."
+  jq -er '.data.data.cert' <<< "$secret" \
+    | ssh_host "$host" "install -d -m 755 $d && cat > $d/origin.pem.new" \
+    || error "Could not copy the lippok.dev origin certificate to $host."
+  jq -er '.data.data.key' <<< "$secret" \
+    | ssh_host "$host" "umask 077 && cat > $d/origin.key.new" \
+    || error "Could not copy the lippok.dev origin key to $host."
+  ssh_host "$host" "set -e
+    cd $d
+    grep -q 'BEGIN CERTIFICATE' origin.pem.new && grep -q 'PRIVATE KEY' origin.key.new
+    if cmp -s origin.pem.new origin.pem && cmp -s origin.key.new origin.key; then rm origin.pem.new origin.key.new; exit 0; fi
+    getent group nginx > /dev/null && chgrp nginx origin.key.new
+    chmod 644 origin.pem.new
+    chmod 640 origin.key.new
+    mv origin.key.new origin.key
+    mv origin.pem.new origin.pem
+    systemctl is-active -q nginx && systemctl reload nginx || true" \
+    || error "Could not install the lippok.dev origin certificate on $host."
+}
+
 site_up() {
   case "$1" in er1-*) ;; *) return 0 ;; esac
   ssh_host "$1" curl -fs -o /dev/null --max-time 5 --resolve 'fplnet.net:443:[2a0c:b641:f91::80]' https://fplnet.net/healthz
@@ -191,6 +216,25 @@ deploy_host() {
   site_up "$host" || error "$host deployed, but fplnet.net does not answer on its anycast address."
   error "$host deployed, but these BGP sessions did not come back within 3 min: \
 $(comm -23 <(sort <<< "$before") <(established "$host" | sort) | xargs)"
+}
+
+deploy_homepage() {
+  local host="$1" dist="${HOMEPAGE_DIST:?}" release="${HOMEPAGE_RELEASE:?}"
+  [ -f "$dist/index.html" ] || error "$dist has no index.html."
+  [[ "$release" =~ ^[0-9a-f]{7,40}$ ]] || error "HOMEPAGE_RELEASE must be a commit hash."
+  rsync -rlt --delete --chmod=D755,F644 -e "ssh ${SSH_OPTS[*]}" \
+    "$dist/" "root@$(host_addr "$host"):/var/lib/lippok-dev/releases/$release/" \
+    || error "Could not copy the site to $host."
+  # shellcheck disable=SC2016 # expands on the router
+  ssh_host "$host" "set -e
+    cd /var/lib/lippok-dev
+    ln -sfn releases/$release current.new
+    mv -T current.new current
+    ls -1t releases | grep -vx '$release' | tail -n +3 | sed 's|^|releases/|' | xargs -r rm -rf" \
+    || error "Could not switch $host to release $release."
+  ssh_host "$host" curl -fsk -o /dev/null --max-time 5 --resolve 'lippok.dev:443:[2a0c:b641:f91::80]' https://lippok.dev/ \
+    || error "$host does not serve lippok.dev after the switch."
+  echo "$host serves lippok.dev release $release."
 }
 
 # After every host is deployed, every iBGP session must be up.
@@ -226,9 +270,17 @@ case "${1:-}" in
       restore_bgp_secrets "$host"
       restore_cloudflare_token "$host"
       restore_ech_key "$host"
+      restore_lippok_origin "$host"
       deploy_host "$host"
     done
     check_backbone
     ;;
-  *) error "usage: $0 converge|deploy" ;;
+  homepage)
+    for host in $(hosts); do
+      case "$host" in er1-*) ;; *) continue ;; esac
+      verify_host "$host"
+      deploy_homepage "$host"
+    done
+    ;;
+  *) error "usage: $0 converge|deploy|homepage" ;;
 esac

@@ -1,10 +1,17 @@
 site: vieta
 
 prometheusUrl: http://kube-prometheus-stack-prometheus.monitoring.svc:9090
+gatusUrl: http://gatus.gatus.svc
 
 feed:
   # renovate: datasource=docker depName=python
   image: docker.io/library/python:3.13-alpine@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e
+  resources:
+    requests: { cpu: 5m, memory: 24Mi }
+    limits: { memory: 64Mi }
+
+# status.json: the 90-day history from Gatus, kept on the volume between restarts
+status:
   resources:
     requests: { cpu: 5m, memory: 24Mi }
     limits: { memory: 64Mi }

@@ -11,6 +11,7 @@
     ../../modules/anti-spoofing.nix
     ../../modules/haproxy.nix
     ../../modules/fplnet-net.nix
+    ../../modules/lippok-dev.nix
     ../../modules/anycast.nix
     ../../modules/live.nix
     ../../modules/looking-glass.nix
