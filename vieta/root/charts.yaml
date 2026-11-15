@@ -20,11 +20,8 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   syncPolicy:
-    # Never delete an Application: a generator that matches no files (a moved path) would otherwise
-    # cascade-delete every workload. Removing a chart means deleting its Application by hand.
+    # Removing a chart means deleting its Application by hand.
     applicationsSync: create-update
-    # Without this the controller adds the resources finalizer to every Application before
-    # templatePatch runs, so cascadeDelete: false had no effect.
     preserveResourcesOnDeletion: true
   generators:
     - git:
