@@ -11,11 +11,15 @@ metadata:
   name: charts
   namespace: argocd
   annotations:
-    # Deleting this object deletes every Application it owns, so the root app must never prune or delete it.
+    # The root app must never prune or delete this object.
     argocd.argoproj.io/sync-options: Prune=false,Delete=false
 spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
+  syncPolicy:
+    # Removing a chart means deleting its Application by hand.
+    applicationsSync: create-update
+    preserveResourcesOnDeletion: true
   generators:
     - git:
         repoURL: https://github.com/FinnPL/Homelab-Setup.git
