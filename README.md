@@ -61,7 +61,7 @@ Three sites with distinct roles, each deployed by its own GitHub Actions workflo
 
 ![CI/CD flow](docs/diagrams/cicd-flow.svg)
 
-Push to `main` triggers an orchestrator workflow that detects which layers changed and runs them in order. PRs get a Terraform plan comment for review, and changes under `charts/`/`apps/` are gated by a chart-and-policy workflow that renders the affected wrapper charts (every chart on push to main, only the changed ones on a PR), schema-checks them with kubeconform, and runs the cluster's real Kyverno policies against the output before they can reach ArgoCD. Tailscale connects the GitHub runner to the homelab network. Renovate keeps dependencies (Helm charts, container images, Terraform providers, Action versions, Nix flake refs, and more) up to date by opening PRs against the repo.
+Push to `main` triggers an orchestrator workflow that detects which layers changed and runs them in order. PRs get a Terraform plan comment for review, and changes under `charts/` or a site's app files (`vieta/apps/`) are gated by a chart-and-policy workflow that renders the affected wrapper charts (every chart on push to main, only the changed ones on a PR), schema-checks them with kubeconform, and runs the cluster's real Kyverno policies against the output before they can reach ArgoCD. Tailscale connects the GitHub runner to the homelab network. Renovate keeps dependencies (Helm charts, container images, Terraform providers, Action versions, Nix flake refs, and more) up to date by opening PRs against the repo.
 
 **Secrets**: no infrastructure credentials are stored in GitHub. Every workflow logs in to Vault with its GitHub OIDC token and receives a 20-minute token scoped to that workflow and environment alone.
 
@@ -113,16 +113,15 @@ The policy file (`policy.hujson`) keeps the machine trust domains apart: CI reac
 
 ## Vieta Site
 
-The primary site, structured as four Terraform layers plus the applications deployed by ArgoCD. State flows forward via remote state outputs.
+The primary site, in `vieta/`: three Terraform layers plus the applications deployed by ArgoCD. State flows forward via remote state outputs. The S3 bucket that holds the state of every Terraform root in the repo is its own root, `state-bucket/`.
 
-> For the physical build the (10" mini-rack, hardware, and 3D-printed mounts) see the [Vieta physical setup](Vieta-Physical-Setup.md).
+> For the physical build the (10" mini-rack, hardware, and 3D-printed mounts) see the [Vieta physical setup](vieta/physical-setup.md).
 
 | Layer | Scope |
 |:------|:------|
-| [`00-global`](#) | S3 state backend, shared config |
-| [`01-network`](#01-network) | UniFi VLANs, firewall, DHCP, DNS; Cloudflare records |
-| [`02-infrastructure`](#02-infrastructure) | Proxmox VMs/LXCs, Talos cluster bootstrap, NFS |
-| [`03-services`](#03-services-cluster-platform) | Cluster platform (CNI, certs, ingress, secrets) |
+| [`vieta/01-network`](#01-network) | UniFi VLANs, firewall, DHCP, DNS; Cloudflare records |
+| [`vieta/02-infrastructure`](#02-infrastructure) | Proxmox VMs/LXCs, Talos cluster bootstrap, NFS |
+| [`vieta/03-services`](#03-services-cluster-platform) | Cluster platform (CNI, certs, ingress, secrets) |
 | [ArgoCD](#argocd--applications) | Applications via GitOps |
 
 ### 01 Network
@@ -148,7 +147,7 @@ Inter-VLAN traffic is blocked by default. Only SSH, HTTPS, and SMB are permitted
 
 #### DNS
 
-Cloudflare manages the `lippok.dev` zone. `03-services` points the wildcard at the Kubernetes Gateway LoadBalancer IP and writes the names served through the FPLNET edges (`fplnet/nixos/site-services.json`). `03-services/cloudflare-zone.tf` holds the apex record and the zone settings.
+Cloudflare manages the `lippok.dev` zone. `03-services` points the wildcard at the Kubernetes Gateway LoadBalancer IP and writes the names served through the FPLNET edges (`fplnet/nixos/site-services.json`). `vieta/03-services/cloudflare-zone.tf` holds the apex record and the zone settings.
 
 | Name | DNS | TLS terminated at | Use case |
 |:-----|:----|:------------------|:---------|
@@ -225,7 +224,7 @@ Distributes secrets from Vault into the namespaces that need them.
 
 ### ArgoCD & Applications
 
-ArgoCD is deployed via Helm in `03-services`. Everything beyond the platform services is managed by ArgoCD: a root Application syncs `apps/`, which holds a single **ApplicationSet** that generates one Application per `charts/<name>/app.yaml`. Adding a service is adding a chart directory.
+ArgoCD is deployed via Helm in `03-services`. Everything beyond the platform services is managed by ArgoCD: a root Application syncs `vieta/root/`, which holds a single **ApplicationSet** that generates one Application per `vieta/apps/<chart>.yaml`, rendering `charts/<chart>` with its `values.yaml` plus `values-vieta.yaml` where the chart has one. Charts are shared between sites; each site picks its charts with its own app files. Adding a service is a chart directory plus an app file.
 
 #### Platform
 

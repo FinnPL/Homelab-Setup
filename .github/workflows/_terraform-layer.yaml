@@ -1,13 +1,13 @@
 name: "Terraform: layer"
 
-# Reusable building block for the four Vieta layers (00-global..03-services).
-# Called only via workflow_call from vieta-deploy.yaml.
+# Reusable building block for the Vieta layers (vieta/01-network..vieta/03-services) and the state bucket.
+# Called only via workflow_call from vieta-deploy.yaml and state-bucket-deploy.yaml.
 
 on:
   workflow_call:
     inputs:
       layer:
-        description: "Layer directory name (e.g. 01-network)"
+        description: "Layer directory, relative to the repo root (e.g. vieta/01-network)"
         required: true
         type: string
       needs_homelab:
@@ -146,14 +146,14 @@ jobs:
         with:
           role: homelab
           key-path: ${{ runner.temp }}/vault_ssh_key
-          host-ca-file: 02-infrastructure/ansible/files/vault_host_ca.pub
+          host-ca-file: vieta/02-infrastructure/ansible/files/vault_host_ca.pub
           host-patterns: "10.10.1.*,*.athena"
 
       - name: Pin the Proxmox host key
         if: inputs.needs_homelab
         run: |
           mkdir -p ~/.ssh
-          cat "${GITHUB_WORKSPACE}/02-infrastructure/ansible/files/proxmox_known_hosts" >> ~/.ssh/known_hosts
+          cat "${GITHUB_WORKSPACE}/vieta/02-infrastructure/ansible/files/proxmox_known_hosts" >> ~/.ssh/known_hosts
 
       - name: Hand the certificate to the Ansible provisioners
         if: inputs.needs_ansible

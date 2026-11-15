@@ -19,7 +19,7 @@ on:
     branches:
       - main
     paths:
-      - "02-infrastructure/ansible/**"
+      - "vieta/02-infrastructure/ansible/**"
       - ".github/scripts/oci-edge-converge.sh"
       - "fplnet/hosts.json"
       - "fplnet/scripts/fplnet-workflow.sh"
@@ -78,7 +78,7 @@ jobs:
         uses: ./.github/actions/vault-ssh-client-cert
         with:
           role: homelab
-          host-ca-file: 02-infrastructure/ansible/files/vault_host_ca.pub
+          host-ca-file: vieta/02-infrastructure/ansible/files/vault_host_ca.pub
           host-patterns: "10.10.1.*,*.athena"
 
       - name: Resolve targets from the 01-network state
@@ -148,7 +148,7 @@ jobs:
               --user root \
               --tags ssh-ca \
               "${extra_vars[@]}" \
-              "02-infrastructure/ansible/$playbook"
+              "vieta/02-infrastructure/ansible/$playbook"
           done
 
   # The OCI VM oracle-edge (SSH + Tailscale only, no longer managed in this repo).

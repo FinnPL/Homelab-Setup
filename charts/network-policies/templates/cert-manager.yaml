@@ -20,7 +20,7 @@ spec:
         - ports:
             - port: "443"
               protocol: TCP
-    # DNS-01 propagation check over DoH (03-services/cert-manager.tf)
+    # DNS-01 propagation check over DoH (vieta/03-services/cert-manager.tf)
     - toCIDR:
         - 1.1.1.1/32
         - 1.0.0.1/32

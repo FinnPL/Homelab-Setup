@@ -91,11 +91,11 @@ board: "" {
         icon: https://api.iconify.design/devicon/terraform.svg
         grid-rows: 1
         grid-gap: 56
-        g: "00-global" { class: chip }
-        n: "01-network" { class: chip }
-        i: "02-infra" { class: chip }
-        s: "03-services" { class: chip }
-        g -> n -> i -> s: "" { class: step }
+        # Three chips at 285 keep the job as wide as the two below.
+        n: "01-network" { class: chip; width: 285 }
+        i: "02-infra" { class: chip; width: 285 }
+        s: "03-services" { class: chip; width: 285 }
+        n -> i -> s: "" { class: step }
       }
       fplnet: "FPLNET: fplnet-deploy.yaml" {
         class: actfill
@@ -129,7 +129,7 @@ board: "" {
     cluster: "Kubernetes" {
       icon: https://api.iconify.design/devicon/kubernetes.svg
       argocd: "ArgoCD\nApplicationSet" { class: dev; icon: https://api.iconify.design/devicon/argocd.svg }
-      workloads: "Workloads\napps/ + charts/" { class: dev; icon: https://api.iconify.design/mdi/apps.svg?color=%23808080 }
+      workloads: "Workloads\nvieta/apps + charts/" { class: dev; icon: https://api.iconify.design/mdi/apps.svg?color=%23808080 }
       argocd -> workloads: "syncs from git" { class: sync }
     }
 
@@ -143,7 +143,7 @@ board.maincol.header.repo -> board.maincol.ci.pr: "on pull_request" { class: pr 
 board.maincol.header.repo -> board.maincol.ci.deploy: "on push to main" { class: main }
 board.maincol.ci.pr.trivy -> board.maincol.header.sarif: "" { class: pr }
 
-board.maincol.ci.deploy.orch.g -> board.targets.aws: "" { class: main }
+board.maincol.ci.deploy.orch -> board.targets.aws: "" { class: main }
 board.maincol.ci.deploy.orch.n -> board.targets.unifi: "" { class: main }
 board.maincol.ci.deploy.orch.n -> board.targets.cloudflare: "" { class: main }
 board.maincol.ci.deploy.orch.s -> board.targets.cloudflare: "" { class: main }

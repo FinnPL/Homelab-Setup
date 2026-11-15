@@ -122,7 +122,7 @@ const GROUP_ORDER = [
 ];
 
 function platformComponents(): Component[] {
-  const dir = join(REPO, "03-services");
+  const dir = join(REPO, "vieta", "03-services");
   const files = readdirSync(dir).filter((f) => f.endsWith(".tf"));
   const out: Component[] = [];
 
@@ -157,9 +157,13 @@ function platformComponents(): Component[] {
   return out;
 }
 
-// Every charts/<dir>/app.yaml becomes one Application via the ApplicationSet in apps/charts.yaml
-function appDirs(): string[] {
-  return readdirSync(join(REPO, "charts")).filter((d) => existsSync(join(REPO, "charts", d, "app.yaml")));
+// Every vieta/apps/<chart>.yaml becomes one Application via the ApplicationSet in vieta/root/charts.yaml
+const APPS = join(REPO, "vieta", "apps");
+
+function appCharts(): string[] {
+  return readdirSync(APPS)
+    .filter((f) => f.endsWith(".yaml"))
+    .map((f) => f.slice(0, -".yaml".length));
 }
 
 function chartPins(chartPath: string): Component["pins"] {
@@ -176,12 +180,12 @@ function chartPins(chartPath: string): Component["pins"] {
 export function components(): { group: string; items: Component[] }[] {
   const all: Component[] = platformComponents();
 
-  for (const dir of appDirs()) {
-    const app = parse(readFileSync(join(REPO, "charts", dir, "app.yaml"), "utf8")) ?? {};
+  for (const chart of appCharts()) {
+    const app = parse(readFileSync(join(APPS, `${chart}.yaml`), "utf8")) ?? {};
 
-    const name = (app.name as string) ?? dir;
+    const name = (app.name as string) ?? chart;
     const namespace = (app.namespace as string) ?? "";
-    const pins = chartPins(join("charts", dir));
+    const pins = chartPins(join("charts", chart));
 
     const copy = COPY[name];
     all.push({
