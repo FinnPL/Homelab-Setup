@@ -1,6 +1,6 @@
 name: "Vieta: deploy"
 
-# Single entrypoint for all four Terraform layers.
+# Single entrypoint for the three Vieta Terraform layers (the state bucket has state-bucket-deploy.yaml).
 #   push to main      -> plan + apply only the changed layers, in order
 #   pull_request      -> plan + comment the changed layers
 #   workflow_dispatch -> manually run/apply a chosen layer (or all)
@@ -10,20 +10,18 @@ on:
     branches:
       - main
     paths:
-      - "00-global/**"
-      - "01-network/**"
-      - "02-infrastructure/**"
-      - "03-services/**"
+      - "vieta/01-network/**"
+      - "vieta/02-infrastructure/**"
+      - "vieta/03-services/**"
       - "fplnet/nixos/site-services.json"
       - "fplnet/hosts.json"
       - ".github/workflows/vieta-deploy.yaml"
       - ".github/workflows/_terraform-layer.yaml"
   pull_request:
     paths:
-      - "00-global/**"
-      - "01-network/**"
-      - "02-infrastructure/**"
-      - "03-services/**"
+      - "vieta/01-network/**"
+      - "vieta/02-infrastructure/**"
+      - "vieta/03-services/**"
       - "fplnet/nixos/site-services.json"
       - "fplnet/hosts.json"
       - ".github/workflows/vieta-deploy.yaml"
@@ -40,10 +38,9 @@ on:
         default: all
         options:
           - all
-          - 00-global
-          - 01-network
-          - 02-infrastructure
-          - 03-services
+          - vieta/01-network
+          - vieta/02-infrastructure
+          - vieta/03-services
       apply:
         description: "Run terraform apply (dangerous)"
         type: boolean
@@ -61,7 +58,6 @@ jobs:
       contents: read
       pull-requests: read
     outputs:
-      global: ${{ steps.filter.outputs.global }}
       network: ${{ steps.filter.outputs.network }}
       infra: ${{ steps.filter.outputs.infra }}
       services: ${{ steps.filter.outputs.services }}
@@ -72,41 +68,24 @@ jobs:
         id: filter
         with:
           filters: |
-            global:
-              - '00-global/**'
             network:
-              - '01-network/**'
+              - 'vieta/01-network/**'
             infra:
-              - '02-infrastructure/**'
+              - 'vieta/02-infrastructure/**'
             services:
-              - '03-services/**'
+              - 'vieta/03-services/**'
               - 'fplnet/nixos/site-services.json'
               - 'fplnet/hosts.json'
 
-  deploy-global:
+  deploy-network:
     needs: changes
     if: |
-      (github.event_name != 'workflow_dispatch' && needs.changes.outputs.global == 'true') ||
-      (github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == '00-global'))
+      (github.event_name != 'workflow_dispatch' && needs.changes.outputs.network == 'true') ||
+      (github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == 'vieta/01-network'))
     uses: ./.github/workflows/_terraform-layer.yaml
     secrets: inherit
     with:
-      layer: 00-global
-      apply: ${{ github.event_name == 'workflow_dispatch' && inputs.apply || false }}
-
-  deploy-network:
-    needs: [changes, deploy-global]
-    if: |
-      always() &&
-      (needs.deploy-global.result == 'success' || needs.deploy-global.result == 'skipped') &&
-      (
-        (github.event_name != 'workflow_dispatch' && needs.changes.outputs.network == 'true') ||
-        (github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == '01-network'))
-      )
-    uses: ./.github/workflows/_terraform-layer.yaml
-    secrets: inherit
-    with:
-      layer: 01-network
+      layer: vieta/01-network
       needs_homelab: true
       apply: ${{ github.event_name == 'workflow_dispatch' && inputs.apply || false }}
 
@@ -118,12 +97,12 @@ jobs:
       (
         github.event_name == 'schedule' ||
         (github.event_name != 'workflow_dispatch' && needs.changes.outputs.infra == 'true') ||
-        (github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == '02-infrastructure'))
+        (github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == 'vieta/02-infrastructure'))
       )
     uses: ./.github/workflows/_terraform-layer.yaml
     secrets: inherit
     with:
-      layer: 02-infrastructure
+      layer: vieta/02-infrastructure
       needs_homelab: true
       needs_ansible: true
       upgrade_cluster: true
@@ -136,12 +115,12 @@ jobs:
       (needs.deploy-infra.result == 'success' || needs.deploy-infra.result == 'skipped') &&
       (
         (github.event_name != 'workflow_dispatch' && needs.changes.outputs.services == 'true') ||
-        (github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == '03-services'))
+        (github.event_name == 'workflow_dispatch' && (inputs.layer == 'all' || inputs.layer == 'vieta/03-services'))
       )
     uses: ./.github/workflows/_terraform-layer.yaml
     secrets: inherit
     with:
-      layer: 03-services
+      layer: vieta/03-services
       needs_homelab: true
       needs_cluster_cert: true
       apply: ${{ github.event_name == 'workflow_dispatch' && inputs.apply || false }}

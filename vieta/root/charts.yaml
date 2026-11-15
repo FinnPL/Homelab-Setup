@@ -1,8 +1,11 @@
-# One Application per charts/<name>/app.yaml. Keys in app.yaml (all optional):
-#   name               Application name (default: directory name)
+# One Application per vieta/apps/<chart>.yaml, rendering charts/<chart> with values.yaml plus
+# values-vieta.yaml where the chart has one (Vieta's deltas from the shared defaults).
+# Keys in the app file (all optional):
+#   name               Application name (default: file name)
 #   namespace          destination namespace
 #   cascadeDelete      false drops the resources finalizer, so deleting the Application leaves its resources
-#   directoryRecurse   plain manifest directory instead of a Helm chart
+#   directory          plain manifest directory instead of a Helm chart (no values files)
+#   directoryRecurse   the same, including subdirectories
 #   syncOptions        appended to CreateNamespace=true
 #   ignoreDifferences  passed through verbatim
 apiVersion: argoproj.io/v1alpha1
@@ -25,17 +28,17 @@ spec:
         repoURL: https://github.com/FinnPL/Homelab-Setup.git
         revision: main
         files:
-          - path: charts/*/app.yaml
+          - path: vieta/apps/*.yaml
   template:
     metadata:
-      name: '{{ dig "name" .path.basename . }}'
+      name: '{{ dig "name" (trimSuffix ".yaml" .path.filename) . }}'
       namespace: argocd
     spec:
       project: default
       source:
         repoURL: https://github.com/FinnPL/Homelab-Setup.git
         targetRevision: main
-        path: '{{ .path.path }}'
+        path: 'charts/{{ trimSuffix ".yaml" .path.filename }}'
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{ dig "namespace" "" . }}'
@@ -61,7 +64,11 @@ spec:
       source:
         directory:
           recurse: true
-          exclude: app.yaml
+      {{- else if not (dig "directory" false .) }}
+      source:
+        helm:
+          valueFiles: [values-vieta.yaml]
+          ignoreMissingValueFiles: true
       {{- end }}
       syncPolicy:
         syncOptions: {{ prepend (dig "syncOptions" (list) .) "CreateNamespace=true" | toJson }}

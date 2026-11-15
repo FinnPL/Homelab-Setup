@@ -44,7 +44,7 @@ Desktop.ini
 .terraform/
 
 # Ansible
-02-infrastructure/.ansible/
+vieta/02-infrastructure/.ansible/
 
 kubeconfig.yaml
 

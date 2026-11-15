@@ -6,12 +6,14 @@ on:
       - main
     paths:
       - "charts/**"
-      - "apps/**"
+      - "*/apps/**"
+      - "*/root/**"
       - ".github/workflows/charts-validate.yaml"
   pull_request:
     paths:
       - "charts/**"
-      - "apps/**"
+      - "*/apps/**"
+      - "*/root/**"
       - ".github/workflows/charts-validate.yaml"
 
 permissions:
@@ -38,31 +40,43 @@ jobs:
           EVENT: ${{ github.event_name }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
-          # On a PR, render only charts whose own files changed. On push to main, or when
-          # this workflow or the ApplicationSet changes, render all.
+          # On a PR, render only the apps whose chart or app file changed. On push to main, or when
+          # this workflow, an ApplicationSet or the kyverno policies change, render all.
           render_all=0
           declare -A WANT
           if [ "$EVENT" = "pull_request" ]; then
             while IFS= read -r f; do
               case "$f" in
-                .github/workflows/charts-validate.yaml|apps/*) render_all=1 ;;
-                charts/kyverno/*) render_all=1 ;;
+                .github/workflows/charts-validate.yaml|*/root/*|charts/kyverno/*) render_all=1 ;;
                 charts/*/*) WANT["$(echo "$f" | cut -d/ -f2)"]=1 ;;
+                */apps/*.yaml) WANT["$(basename "$f" .yaml)"]=1 ;;
               esac
             done < <(git diff --name-only "$BASE_SHA" HEAD)
           else
             render_all=1
           fi
 
-          # Namespace and release name as the ApplicationSet derives them from app.yaml
-          entries=()
           for dir in charts/*/; do
             c=$(basename "$dir")
+            compgen -G "*/apps/$c.yaml" > /dev/null || { echo "::error file=$dir::no <site>/apps/$c.yaml deploys this chart"; exit 1; }
+          done
+
+          # One entry per site and app, with namespace and release name as the ApplicationSet derives them
+          entries=()
+          for f in */apps/*.yaml; do
+            site=${f%%/*} c=$(basename "$f" .yaml)
+            [ -d "charts/$c" ] || { echo "::error file=$f::no chart charts/$c"; exit 1; }
+            # Without the directory keys the ApplicationSet renders charts/$c as a Helm chart
+            plain=$(yq e '.directory // .directoryRecurse // false' "$f")
+            if [ -f "charts/$c/Chart.yaml" ] && [ "$plain" = "true" ]; then
+              echo "::error file=$f::charts/$c is a Helm chart, drop directory/directoryRecurse"; exit 1
+            elif [ ! -f "charts/$c/Chart.yaml" ] && [ "$plain" != "true" ]; then
+              echo "::error file=$f::charts/$c has no Chart.yaml, set directory: true (or directoryRecurse: true)"; exit 1
+            fi
             if [ "$render_all" = "0" ] && [ -z "${WANT[$c]:-}" ]; then continue; fi
-            [ -f "$dir/app.yaml" ] || { echo "::error file=$dir::missing app.yaml, the ApplicationSet will not deploy this chart"; exit 1; }
-            ns=$(yq e '.namespace // ""' "$dir/app.yaml"); [ -z "$ns" ] && ns="$c"
-            release=$(yq e ".name // \"$c\"" "$dir/app.yaml")
-            entries+=("$(jq -nc --arg n "$c" --arg s "$ns" --arg r "$release" '{name:$n, ns:$s, release:$r}')")
+            ns=$(yq e '.namespace // ""' "$f"); [ -z "$ns" ] && ns="$c"
+            release=$(yq e ".name // \"$c\"" "$f")
+            entries+=("$(jq -nc --arg n "$c" --arg site "$site" --arg s "$ns" --arg r "$release" '{name:$n, site:$site, ns:$s, release:$r}')")
           done
           if [ ${#entries[@]} -eq 0 ]; then
             charts='[]'
@@ -73,7 +87,7 @@ jobs:
           echo "$charts" | jq .
 
   render:
-    name: "render: ${{ matrix.chart.name }}"
+    name: "render: ${{ matrix.chart.site }}/${{ matrix.chart.name }}"
     needs: discover
     if: needs.discover.outputs.charts != '[]'
     runs-on: ubuntu-latest
@@ -105,14 +119,17 @@ jobs:
           [ -f "$d/Chart.yaml" ] || { echo "plain manifest dir — skipping lint"; exit 0; }
           helm lint "$d"
 
-      # Render into the real destination namespace. Nulls are dropped as the apiserver does before admission.
+      # Render into the real destination namespace, with the site's values file as the ApplicationSet adds it.
+      # Nulls are dropped as the apiserver does before admission.
       - name: Render
         run: |
           d="charts/${{ matrix.chart.name }}"
+          site_values=()
+          [ -f "$d/values-${{ matrix.chart.site }}.yaml" ] && site_values=(-f "$d/values-${{ matrix.chart.site }}.yaml")
           if [ -f "$d/Chart.yaml" ]; then
-            helm template "${{ matrix.chart.release }}" "$d" --namespace "${{ matrix.chart.ns }}"
+            helm template "${{ matrix.chart.release }}" "$d" --namespace "${{ matrix.chart.ns }}" "${site_values[@]}"
           else
-            find "$d" -type f \( -name '*.yaml' -o -name '*.yml' \) ! -path "$d/app.yaml" \
+            find "$d" -type f \( -name '*.yaml' -o -name '*.yml' \) \
               -exec sh -c 'for f; do cat "$f"; echo; echo "---"; done' _ {} +
           fi \
             | NS="${{ matrix.chart.ns }}" yq eval '
@@ -121,7 +138,7 @@ jobs:
                 | .metadata.namespace = (.metadata.namespace // strenv(NS))
                 | del(.. | select(tag == "!!null"))
               ' - \
-            > "rendered-${{ matrix.chart.name }}.yaml"
+            > "rendered-${{ matrix.chart.site }}-${{ matrix.chart.name }}.yaml"
 
       # -ignore-missing-schemas: own CRDs (e.g. database.lippok.dev)
       - name: Schema validation (kubeconform)
@@ -132,12 +149,12 @@ jobs:
             -summary \
             -schema-location default \
             -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-            "rendered-${{ matrix.chart.name }}.yaml"
+            "rendered-${{ matrix.chart.site }}-${{ matrix.chart.name }}.yaml"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: rendered-${{ matrix.chart.name }}
-          path: rendered-${{ matrix.chart.name }}.yaml
+          name: rendered-${{ matrix.chart.site }}-${{ matrix.chart.name }}
+          path: rendered-${{ matrix.chart.site }}-${{ matrix.chart.name }}.yaml
 
   kyverno:
     name: "kyverno"
@@ -164,30 +181,39 @@ jobs:
           path: rendered
           merge-multiple: true
 
-      - name: Render policies & exceptions
-        run: |
-          helm dependency build charts/kyverno || helm dependency update charts/kyverno
-          helm template kyverno charts/kyverno --namespace kyverno > kyverno-rendered.yaml
-          yq eval 'select(.kind == "ClusterPolicy" or .kind == "Policy" or .kind == "ValidatingPolicy")' kyverno-rendered.yaml > policies.yaml
-          yq eval 'select(.kind == "PolicyException")' kyverno-rendered.yaml > exceptions.yaml
-          echo "Policies:";   grep -c '^kind:' policies.yaml || true
-          echo "Exceptions:"; grep -c '^kind:' exceptions.yaml || true
+      - name: Fetch kyverno chart dependencies
+        run: helm dependency build charts/kyverno || helm dependency update charts/kyverno
 
-      # Every chart except kyverno itself becomes a resource to test
-      - name: Assemble workload resources
-        run: |
-          : > resources.yaml
-          for f in rendered/rendered-*.yaml; do
-            [ "$(basename "$f")" = "rendered-kyverno.yaml" ] && continue
-            cat "$f" >> resources.yaml
-            echo '---' >> resources.yaml
-          done
-
-      # Same policies + exceptions the cluster enforces at admission.
-      # --continue-on-fail so one run reports every violation, not just the first.
+      # Each site's rendered apps (kyverno itself excluded) against the policies + exceptions its cluster
+      # enforces at admission. --continue-on-fail so one run reports every violation, not just the first.
       - name: Kyverno apply
         run: |
-          kyverno apply policies.yaml \
-            --resource resources.yaml \
-            --exception exceptions.yaml \
-            --continue-on-fail
+          status=0
+          for app in */apps/kyverno.yaml; do
+            site=${app%%/*}
+            echo "::group::$site"
+            site_values=()
+            [ -f "charts/kyverno/values-$site.yaml" ] && site_values=(-f "charts/kyverno/values-$site.yaml")
+            helm template kyverno charts/kyverno --namespace kyverno "${site_values[@]}" > "kyverno-$site.yaml"
+            yq eval 'select(.kind == "ClusterPolicy" or .kind == "Policy" or .kind == "ValidatingPolicy")' "kyverno-$site.yaml" > "policies-$site.yaml"
+            yq eval 'select(.kind == "PolicyException")' "kyverno-$site.yaml" > "exceptions-$site.yaml"
+            echo "Policies:";   grep -c '^kind:' "policies-$site.yaml" || true
+            echo "Exceptions:"; grep -c '^kind:' "exceptions-$site.yaml" || true
+
+            : > "resources-$site.yaml"
+            for f in rendered/rendered-"$site"-*.yaml; do
+              [ -e "$f" ] || continue
+              [ "$(basename "$f")" = "rendered-$site-kyverno.yaml" ] && continue
+              cat "$f" >> "resources-$site.yaml"
+              echo '---' >> "resources-$site.yaml"
+            done
+
+            if [ -s "resources-$site.yaml" ]; then
+              kyverno apply "policies-$site.yaml" \
+                --resource "resources-$site.yaml" \
+                --exception "exceptions-$site.yaml" \
+                --continue-on-fail || status=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$status"

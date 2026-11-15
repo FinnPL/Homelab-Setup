@@ -253,7 +253,7 @@ resource "kubectl_manifest" "argocd_root_app" {
       source = {
         repoURL        = "https://github.com/FinnPL/Homelab-Setup.git"
         targetRevision = "main"
-        path           = "apps"
+        path           = "vieta/root"
       }
       destination = {
         server    = "https://kubernetes.default.svc"
