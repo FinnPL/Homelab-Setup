@@ -49,6 +49,16 @@ repos:
         files: ^inventory/
         pass_filenames: false
 
+  # ---- README diagrams, drawn from inventory/ and vieta/apps/
+  - repo: local
+    hooks:
+      - id: diagrams
+        name: diagrams
+        entry: python -I docs/diagrams/render.py
+        language: python
+        files: ^(inventory/.*\.json|vieta/apps/.*\.yaml|docs/diagrams/.*)$
+        pass_filenames: false
+
   # ---- Spelling
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.3
