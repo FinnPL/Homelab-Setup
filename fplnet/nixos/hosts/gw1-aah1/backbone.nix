@@ -1,5 +1,8 @@
 # Tunnels to every edge.
-let
+{inventory, ...}: let
+  inherit (inventory) address;
+  inherit (inventory.fplnet) routers links;
+
   tunnel = {
     name,
     publicKey,
@@ -33,25 +36,29 @@ let
     };
   };
 
+  dus1Link = links."er1-dus1/gw1-aah1";
+  ams1Link = links."er1-ams1/gw1-aah1";
+  fra1Link = links."er1-fra1/gw1-aah1";
+
   dus1 = tunnel {
     name = "wg-er1-dus1";
-    publicKey = "iLTzJJz4odvQm1RKR4Eui/N/KfM5VwfNkWoQFsFzCSM=";
-    endpoint = "194.28.99.178:51822";
-    address = "2a0c:b641:f98:1000::1/127";
+    publicKey = routers.er1-dus1.wireguard;
+    endpoint = "${address routers.er1-dus1.uplink.v4}:${toString dus1Link.port}";
+    address = "${dus1Link.addresses.gw1-aah1}/127";
   };
 
   ams1 = tunnel {
     name = "wg-er1-ams1";
-    publicKey = "YLDF1BARenJHs6sMK9RYwmnxd/ICcnurOWpTy/iWJ1g=";
-    endpoint = "188.65.164.27:51822";
-    address = "2a0c:b641:f99:1000::1/127";
+    publicKey = routers.er1-ams1.wireguard;
+    endpoint = "${address routers.er1-ams1.uplink.v4}:${toString ams1Link.port}";
+    address = "${ams1Link.addresses.gw1-aah1}/127";
   };
 
   fra1 = tunnel {
     name = "wg-er1-fra1";
-    publicKey = "en+tsQ4OFy1jtCVxO3EY4mq1YfXqgomo/rBjf2aKHXc=";
-    endpoint = "209.250.233.8:51822";
-    address = "2a0c:b641:f9a:1000::1/127";
+    publicKey = routers.er1-fra1.wireguard;
+    endpoint = "${address routers.er1-fra1.uplink.v4}:${toString fra1Link.port}";
+    address = "${fra1Link.addresses.gw1-aah1}/127";
   };
 in {
   systemd.network = {

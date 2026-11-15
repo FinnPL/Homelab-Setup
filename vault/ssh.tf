@@ -95,15 +95,15 @@ locals {
   # 90 days, in seconds. ssh-cert-converge.yaml renews both sites weekly
   ssh_host_cert_ttl = "7776000"
 
-  # Mirrors the DHCP reservations in 01-network/static_hosts.tf
-  homelab_host_principals = [
-    "10.10.1.80", "nfs.athena",
-    "10.10.1.90", "mesh-router.athena",
-  ]
+  # The Vieta LXCs whose Ansible tasks/vault-ssh-ca.yml requests a host certificate
+  homelab_host_principals = flatten([
+    for h in ["nfs"] : [local.vieta_hosts[h].ipv4, local.vieta_hosts[h].dns]
+  ])
+  vieta_hosts = jsondecode(file("${path.module}/../inventory/vieta.json")).inventory.vieta.hosts
 
   # The FPLNET router addresses and names
   fplnet_host_principals = distinct(flatten([
-    for host in jsondecode(file("${path.module}/../fplnet/hosts.json")) : host.principals
+    for host in jsondecode(file("${path.module}/../inventory/fplnet.json")).inventory.fplnet.routers : host.principals
   ]))
 }
 

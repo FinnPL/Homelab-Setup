@@ -5,7 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-pve=${PVE_SSH:-root@10.10.1.10}
+pve=${PVE_SSH:-root@$(jq -er .inventory.minerva.pve ../../inventory/minerva.json)}
 # Apple's OpenSSH cannot use FIDO keys but Homebrew's can.
 ssh_bin=${SSH_BIN:-$(brew --prefix openssh)/bin/ssh}
 key=${NAS_SSH_KEY:-$HOME/.ssh/id_ed25519_sk_minerva}

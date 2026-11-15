@@ -7,7 +7,7 @@ metadata:
   labels:
     app: dns
   annotations:
-    io.cilium/lb-ipam-ips: "10.10.1.201"
+    io.cilium/lb-ipam-ips: {{ .Values.inventory.vieta.lan.loadBalancerIPs.dns | quote }}
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Cluster
@@ -28,7 +28,7 @@ spec:
       targetPort: doh
 
 ---
-# DoH for dns.relay.lippok.dev on the f92 site anycast (fplnet/nixos/site-services.json).
+# DoH for dns.relay.lippok.dev on the f92 site anycast
 apiVersion: v1
 kind: Service
 metadata:
@@ -38,7 +38,7 @@ metadata:
     app: dns
     lippok.dev/public: site-anycast
   annotations:
-    lbipam.cilium.io/ips: "2a0c:b641:f92::53"
+    lbipam.cilium.io/ips: {{ (index .Values.inventory.fplnet.siteServices .Values.relay.name).address | quote }}
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
@@ -55,7 +55,7 @@ spec:
     # The edges' HAProxy with PROXY v2
     - name: doh-pp
       protocol: TCP
-      port: 8444
+      port: {{ (index .Values.inventory.fplnet.siteServices .Values.relay.name).proxyPort }}
       targetPort: doh-pp
 
 ---

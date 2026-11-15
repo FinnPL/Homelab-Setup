@@ -1,4 +1,10 @@
-{lib, ...}: {
+{
+  inventory,
+  lib,
+  ...
+}: let
+  site = inventory.minerva;
+in {
   imports = [
     ./disk-config.nix
     ./hardware.nix
@@ -17,9 +23,9 @@
   # On Vieta's Athena VLAN until the move to Freiburg
   systemd.network.networks."10-lan" = {
     matchConfig.Type = "ether";
-    address = ["10.10.1.11/24"];
-    routes = [{Gateway = "10.10.1.1";}];
-    dns = ["10.10.1.1"];
+    address = [site.nas];
+    routes = [{Gateway = site.lan.gateway;}];
+    dns = [site.lan.dns];
     networkConfig.IPv6AcceptRA = false;
   };
 
@@ -29,11 +35,11 @@
     adminKeys = lib.filter (l: l != "" && !lib.hasPrefix "#" l) (lib.splitString "\n" (lib.fileContents ../../files/admin-keys.pub));
   };
 
-  minerva.monitoring.scrapeSources = ["10.10.1.0/24"];
+  minerva.monitoring.scrapeSources = [site.lan.network];
 
   # Synology DSM
   minerva.backupPulls.apollo = {
-    host = "10.10.1.195";
+    host = inventory.vieta.hosts.apollo.ipv4;
     user = "minerva-pull";
     knownHosts = ../../files/apollo_known_hosts;
     paths = [

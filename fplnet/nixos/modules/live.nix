@@ -15,7 +15,8 @@ in {
     wantedBy = ["multi-user.target"];
     after = ["prometheus-smokeping-exporter.service" "prometheus-bird-exporter.service"];
     environment = {
-      LIVE_LOOPBACK = loopback;
+      LIVE_SMOKEPING = "http://[${loopback}]:${toString config.services.prometheus.exporters.smokeping.port}/metrics";
+      LIVE_BIRD = "http://[${loopback}]:${toString config.services.prometheus.exporters.bird.port}/metrics";
       LIVE_OUT = "${dir}/live.json";
       LIVE_EDGE = config.networking.hostName;
     };

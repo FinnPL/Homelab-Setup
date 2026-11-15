@@ -1,10 +1,11 @@
 # HAProxy on :443 on every edge and routes by SNI without decrypting
 {
   config,
+  inventory,
   lib,
   ...
 }: let
-  siteServices = lib.filterAttrs (_: s: lib.elem 443 s.tcp) (lib.importJSON ../site-services.json);
+  siteServices = lib.filterAttrs (_: s: lib.elem 443 s.tcp) inventory.fplnet.siteServices;
 
   siteRoutes = lib.concatStrings (lib.mapAttrsToList (name: _: ''
       use_backend site_${name} if { req.ssl_sni -i ${name} }

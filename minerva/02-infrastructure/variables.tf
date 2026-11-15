@@ -1,9 +1,6 @@
-# The box sits on Vieta's Athena VLAN until it moves to Freiburg; pve_host changes with the move.
-
-variable "pve_host" {
-  description = "Address of the Minerva Proxmox host"
-  type        = string
-  default     = "10.10.1.10"
+# The host's address comes from inventory/minerva.json.
+locals {
+  minerva = jsondecode(file("${path.module}/../../inventory/minerva.json")).inventory.minerva
 }
 
 variable "pve_node" {

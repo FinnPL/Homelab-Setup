@@ -229,7 +229,7 @@ spec:
               containerPort: 8443
               protocol: TCP
             - name: doh-pp
-              containerPort: 8444
+              containerPort: {{ (index .Values.inventory.fplnet.siteServices .Values.relay.name).proxyPort }}
               protocol: TCP
 
           volumeMounts:

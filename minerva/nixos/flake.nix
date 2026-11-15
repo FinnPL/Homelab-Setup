@@ -22,6 +22,8 @@
     deploy-rs,
     ...
   } @ inputs: let
+    inventory = import ../../inventory;
+
     deployPkgs = import nixpkgs {
       system = "x86_64-linux";
       overlays = [
@@ -39,7 +41,7 @@
       # NAS VM on the Minerva Proxmox host
       nas = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs = {inherit inputs;};
+        specialArgs = {inherit inputs inventory;};
         modules = [
           disko.nixosModules.disko
           ./hosts/nas
@@ -49,7 +51,7 @@
 
     # Built on the target (remoteBuild)
     deploy.nodes.nas = {
-      hostname = "10.10.1.11";
+      hostname = inventory.address inventory.minerva.nas;
       sshUser = "root";
       remoteBuild = true;
       profiles.system.path = deployPkgs.deploy-rs.lib.activate.nixos self.nixosConfigurations.nas;

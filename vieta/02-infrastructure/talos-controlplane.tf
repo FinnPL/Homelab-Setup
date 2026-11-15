@@ -5,7 +5,7 @@ locals {
   talos_version      = local.talos_versions.talos
   kubernetes_version = local.talos_versions.kubernetes
 
-  # Pi workers with IPs from 01-network
+  # Pi workers with IPs from inventory/vieta.json
   talos_workers = {
     for idx, ip in local.talos_worker_ips : "talos-worker-${idx + 1}" => ip
   }

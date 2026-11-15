@@ -1,4 +1,6 @@
-{
+{inventory, ...}: let
+  host = inventory.fplnet.routers.er1-fra1;
+in {
   imports = [
     ./disk-config.nix
     ./hardware.nix
@@ -30,15 +32,15 @@
   systemd.network.networks."10-uplink" = {
     matchConfig.MACAddress = "56:00:07:06:39:83";
     address = [
-      "209.250.233.8/23"
-      "2a05:f480:1800:28:5400:7ff:fe06:3983/64"
+      host.uplink.v4
+      host.uplink.v6
     ];
     routes = [
       {Gateway = "209.250.232.1";}
       # Source from the loopback so traceroute shows er1.fra1.fplnet.net.
       {
         Gateway = "fe80::fc00:7ff:fe06:3983";
-        PreferredSource = "2a0c:b641:f9a::1";
+        PreferredSource = host.loopback;
       }
     ];
     networkConfig = {

@@ -47,12 +47,12 @@ spec:
             - 169.254.0.0/16
         - cidr: ::/0
           except:
-            - 2a0c:b641:f94::/48
+            - {{ .Values.inventory.vieta.prefix }}
             - fc00::/7
             - fe80::/10
             - ff00::/8
     - toCIDR:
-        - 10.10.1.0/24
+        - {{ .Values.inventory.vieta.lan.network }}
     - toEntities:
         - host
         - remote-node

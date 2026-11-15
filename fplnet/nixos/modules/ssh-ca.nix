@@ -1,7 +1,7 @@
 # PK of the Vault ssh-client-signer user CA.
 # Refresh with: curl -sf https://vault.cloud.lippok.dev/v1/ssh-client-signer/public_key
 {
-  environment.etc."ssh/vault_user_ca.pub".source = ./vault_user_ca.pub;
+  environment.etc."ssh/vault_user_ca.pub".source = ../../../inventory/trust/vault_user_ca.pub;
 
   services.openssh.settings = {
     TrustedUserCAKeys = "/etc/ssh/vault_user_ca.pub";

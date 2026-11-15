@@ -1,44 +1,50 @@
 # Forward-confirmed rDNS: every name gets an AAAA, and a PTR when its address is in our /44.
 locals {
+  inventory = jsondecode(file("${path.module}/../../inventory/fplnet.json")).inventory.fplnet
+  vieta     = jsondecode(file("${path.module}/../../inventory/vieta.json")).inventory.vieta
+  routers   = local.inventory.routers
+  links     = local.inventory.links
+
+  # Interface addresses in the inventory carry their prefix length, split off here.
   hosts = {
-    "er1.ams1"             = "2a0c:b641:f99::1"
-    "er1.dus1"             = "2a0c:b641:f98::1"
-    "er1.fra1"             = "2a0c:b641:f9a::1"
-    "gw1.aah1"             = "2a0c:b641:f94::1"
-    "eth0.gw1.aah1"        = "2a0c:b641:f94:20::1"
-    "ens18.er1.ams1"       = "2602:fa7e:17::3f"
-    "interix.er1.ams1"     = "2001:7f8:134::10e"
-    "ens18.er1.dus1"       = "2a0c:b640:11:178::1"
-    "enp1s0.er1.fra1"      = "2a05:f480:1800:28:5400:7ff:fe06:3983"
-    "wg-er1-ams1.er1.dus1" = "2a0c:b641:f98:1001::"
-    "wg-er1-dus1.er1.ams1" = "2a0c:b641:f98:1001::1"
-    "wg-gw1-aah1.er1.dus1" = "2a0c:b641:f98:1000::"
-    "wg-er1-dus1.gw1.aah1" = "2a0c:b641:f98:1000::1"
-    "wg-gw1-aah1.er1.ams1" = "2a0c:b641:f99:1000::"
-    "wg-er1-ams1.gw1.aah1" = "2a0c:b641:f99:1000::1"
-    "wg-er1-fra1.er1.dus1" = "2a0c:b641:f98:1002::"
-    "wg-er1-dus1.er1.fra1" = "2a0c:b641:f98:1002::1"
-    "wg-er1-fra1.er1.ams1" = "2a0c:b641:f99:1001::"
-    "wg-er1-ams1.er1.fra1" = "2a0c:b641:f99:1001::1"
-    "wg-gw1-aah1.er1.fra1" = "2a0c:b641:f9a:1000::"
-    "wg-er1-fra1.gw1.aah1" = "2a0c:b641:f9a:1000::1"
-    "wg-r64-fra4.er1.dus1" = "2a11:6c7:f00:2b4::2"
+    "er1.ams1"             = local.routers["er1-ams1"].loopback
+    "er1.dus1"             = local.routers["er1-dus1"].loopback
+    "er1.fra1"             = local.routers["er1-fra1"].loopback
+    "gw1.aah1"             = local.routers["gw1-aah1"].loopback
+    "eth0.gw1.aah1"        = split("/", local.routers["gw1-aah1"].uplink.v6)[0]
+    "ens18.er1.ams1"       = split("/", local.routers["er1-ams1"].uplink.v6)[0]
+    "interix.er1.ams1"     = split("/", local.routers["er1-ams1"].interfaces.interix.v6)[0]
+    "ens18.er1.dus1"       = split("/", local.routers["er1-dus1"].uplink.v6)[0]
+    "enp1s0.er1.fra1"      = split("/", local.routers["er1-fra1"].uplink.v6)[0]
+    "wg-er1-ams1.er1.dus1" = local.links["er1-dus1/er1-ams1"].addresses["er1-dus1"]
+    "wg-er1-dus1.er1.ams1" = local.links["er1-dus1/er1-ams1"].addresses["er1-ams1"]
+    "wg-gw1-aah1.er1.dus1" = local.links["er1-dus1/gw1-aah1"].addresses["er1-dus1"]
+    "wg-er1-dus1.gw1.aah1" = local.links["er1-dus1/gw1-aah1"].addresses["gw1-aah1"]
+    "wg-gw1-aah1.er1.ams1" = local.links["er1-ams1/gw1-aah1"].addresses["er1-ams1"]
+    "wg-er1-ams1.gw1.aah1" = local.links["er1-ams1/gw1-aah1"].addresses["gw1-aah1"]
+    "wg-er1-fra1.er1.dus1" = local.links["er1-dus1/er1-fra1"].addresses["er1-dus1"]
+    "wg-er1-dus1.er1.fra1" = local.links["er1-dus1/er1-fra1"].addresses["er1-fra1"]
+    "wg-er1-fra1.er1.ams1" = local.links["er1-ams1/er1-fra1"].addresses["er1-ams1"]
+    "wg-er1-ams1.er1.fra1" = local.links["er1-ams1/er1-fra1"].addresses["er1-fra1"]
+    "wg-gw1-aah1.er1.fra1" = local.links["er1-fra1/gw1-aah1"].addresses["er1-fra1"]
+    "wg-er1-fra1.gw1.aah1" = local.links["er1-fra1/gw1-aah1"].addresses["gw1-aah1"]
+    "wg-r64-fra4.er1.dus1" = split("/", local.routers["er1-dus1"].interfaces["wg-r64-fra4"].v6)[0]
   }
 
-  # Talos nodes by role, at f94:20::<last v4 octet>; gw1-aah1's BGP sessions read the same file.
+  # Talos nodes by role, at f94:20::<last v4 octet>; gw1-aah1's BGP sessions read the same list.
   k8s_nodes = {
-    for octet, n in jsondecode(file("${path.module}/../nixos/k8s-nodes.json")) :
-    "${n.name}.k8s.aah1" => "2a0c:b641:f94:20::${octet}"
+    for name, h in local.vieta.hosts :
+    "${name}.k8s.aah1" => "${trimsuffix(local.vieta.nodeNetwork, "/64")}${split(".", h.ipv4)[3]}" if can(h.k8sNode)
   }
 
   names = merge(local.hosts, local.k8s_nodes)
 
   # The PTR of these lives with the provider, set in its panel.
   hosts_v4 = {
-    "ens18.er1.ams1"   = "188.65.164.27"
-    "interix.er1.ams1" = "185.1.185.17"
-    "ens18.er1.dus1"   = "194.28.99.178"
-    "enp1s0.er1.fra1"  = "209.250.233.8"
+    "ens18.er1.ams1"   = split("/", local.routers["er1-ams1"].uplink.v4)[0]
+    "interix.er1.ams1" = split("/", local.routers["er1-ams1"].interfaces.interix.v4)[0]
+    "ens18.er1.dus1"   = split("/", local.routers["er1-dus1"].uplink.v4)[0]
+    "enp1s0.er1.fra1"  = split("/", local.routers["er1-fra1"].uplink.v4)[0]
   }
 
   reverse_zone = "9.f.0.1.4.6.b.c.0.a.2.ip6.arpa"
@@ -105,7 +111,7 @@ resource "cloudflare_dns_record" "ptr" {
 
 # fplnet.net: the edge anycast address over IPv6, every edge's provider address over IPv4 (no own v4).
 locals {
-  web_v6 = "2a0c:b641:f91::80"
+  web_v6 = local.inventory.edgeAnycastAddress
 
   # Each edge's uplink in hosts_v4
   edge_uplinks = {

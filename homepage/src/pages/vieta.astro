@@ -197,7 +197,7 @@ const prints: [string, string][] = [
     const none = EDGE_IDS.some((e) => state.edges[e].tried) ? NO_DATA : "";
     set("bgp", seen.length ? `${seen.filter(up).length}/${EDGE_IDS.length} <small>edges</small>` : none);
     const via = GW1_AAH1_PREFERENCE.find(up);
-    const rtt = via && fresh(via)?.links.find((l) => l.target === "gw1.aah1")?.rtt_ms;
+    const rtt = via ? fresh(via)?.links.find((l) => l.target === "gw1.aah1")?.rtt_ms : undefined;
     set("via", via ? `${EDGES[via].name}${rtt != null ? ` <small>${rtt.toFixed(1)} ms</small>` : ""}` : seen.length ? NO_DATA : none);
   });
   want("site", 15_000);

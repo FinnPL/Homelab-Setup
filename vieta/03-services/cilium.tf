@@ -155,7 +155,7 @@ resource "kubectl_manifest" "cilium_ip_pool" {
     spec = {
       blocks = [
         {
-          cidr = data.terraform_remote_state.network.outputs.athena_lb_cidr
+          cidr = local.vieta.lan.loadBalancers
         }
       ]
     }
@@ -166,9 +166,11 @@ resource "kubectl_manifest" "cilium_ip_pool" {
 
 # Public IPv6 for Services labelled lippok.dev/public, announced to gw1-aah1 over BGP and reached
 locals {
+  vieta = jsondecode(file("${path.module}/../../inventory/vieta.json")).inventory.vieta
+
   public_v6_pools = {
-    vieta        = "2a0c:b641:f94:8000::/64" #vieta unicast
-    site-anycast = "2a0c:b641:f92::/64"      #site anycast
+    vieta        = local.vieta.publicServicePool
+    site-anycast = cidrsubnet(local.fplnet.prefixes.siteAnycast, 16, 0) # its first /64
   }
 }
 
@@ -231,12 +233,12 @@ resource "kubectl_manifest" "cilium_bgp_cluster" {
       bgpInstances = [
         {
           name     = "vieta"
-          localASN = 4200218255
+          localASN = local.vieta.clusterAsn
           peers = [
             {
               name          = "gw1-aah1"
-              peerASN       = 218255
-              peerAddress   = "2a0c:b641:f94:20::1"
+              peerASN       = local.fplnet.asn
+              peerAddress   = split("/", local.fplnet.routers["gw1-aah1"].uplink.v6)[0]
               peerConfigRef = { name = "gw1-aah1" }
             }
           ]

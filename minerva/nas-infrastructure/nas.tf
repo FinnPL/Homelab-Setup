@@ -72,12 +72,12 @@ resource "proxmox_virtual_environment_vm" "nas" {
     datastore_id = "local-zfs"
     ip_config {
       ipv4 {
-        address = var.nas_vm.address
-        gateway = var.nas_vm.gateway
+        address = local.minerva.nas
+        gateway = local.minerva.lan.gateway
       }
     }
     dns {
-      servers = [var.nas_vm.gateway]
+      servers = [local.minerva.lan.dns]
     }
     # The bootstrap image takes the same YubiKeys as the installed system.
     user_account {

@@ -129,7 +129,7 @@ resource "vault_jwt_auth_backend_role" "vieta_ssh_converge" {
     environment      = "vieta"
   }
 
-  token_policies = [vault_policy.aws_tfstate.name, vault_policy.vieta_ssh.name]
+  token_policies = [vault_policy.vieta_ssh.name]
   token_type     = "service"
   token_ttl      = 1200
   token_max_ttl  = 1200

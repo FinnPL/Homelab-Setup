@@ -1,4 +1,6 @@
-{
+{inventory, ...}: let
+  host = inventory.fplnet.routers.er1-dus1;
+in {
   imports = [
     ./disk-config.nix
     ./hardware.nix
@@ -26,17 +28,17 @@
   fplnet.rpki.validator = true;
 
   systemd.network.networks."10-uplink" = {
-    matchConfig.Name = "ens18";
+    matchConfig.Name = host.uplink.interface;
     address = [
-      "194.28.99.178/27"
-      "2a0c:b640:11:178::1/48"
+      host.uplink.v4
+      host.uplink.v6
     ];
     routes = [
       {Gateway = "194.28.99.190";}
       # Source from the loopback so traceroute shows er1.dus1.fplnet.net.
       {
         Gateway = "2a0c:b640:11::ffff";
-        PreferredSource = "2a0c:b641:f98::1";
+        PreferredSource = host.loopback;
       }
     ];
     networkConfig = {

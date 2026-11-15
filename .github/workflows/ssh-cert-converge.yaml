@@ -21,7 +21,9 @@ on:
     paths:
       - "vieta/02-infrastructure/ansible/**"
       - ".github/scripts/oci-edge-converge.sh"
-      - "fplnet/hosts.json"
+      - "inventory/fplnet.json"
+      - "inventory/vieta.json"
+      - "inventory/trust/**"
       - "fplnet/scripts/fplnet-workflow.sh"
       - ".github/workflows/ssh-cert-converge.yaml"
       - ".github/actions/vault-ssh-client-cert/**"
@@ -38,9 +40,6 @@ jobs:
     timeout-minutes: 20
     concurrency:
       group: ssh-cert-converge-vieta
-    env:
-      AWS_REGION: eu-central-1
-      TFSTATE_BUCKET: finnpl-homelab-tfstate-1766068376
 
     steps:
       - name: Checkout Code
@@ -55,10 +54,6 @@ jobs:
           role: vieta-ssh-converge
           jwtGithubAudience: https://vault.cloud.lippok.dev
           exportToken: true # the playbook signs host keys with it
-          secrets: |
-            aws/creds/tfstate access_key | AWS_ACCESS_KEY_ID ;
-            aws/creds/tfstate secret_key | AWS_SECRET_ACCESS_KEY ;
-            aws/creds/tfstate security_token | AWS_SESSION_TOKEN
 
       - name: Tailscale
         uses: tailscale/github-action@064b10558093f38325e838ddea35486bdc6b1d5c # v4.4.0
@@ -78,22 +73,21 @@ jobs:
         uses: ./.github/actions/vault-ssh-client-cert
         with:
           role: homelab
-          host-ca-file: vieta/02-infrastructure/ansible/files/vault_host_ca.pub
+          host-ca-file: inventory/trust/vault_host_ca.pub
           host-patterns: "10.10.1.*,*.athena"
 
-      - name: Resolve targets from the 01-network state
+      - name: Resolve targets from the inventory
         id: targets
         env:
           PLAYBOOKS: |
-            nfs-server.yml nfs_server
+            nfs-server.yml nfs
         run: |
           set -euo pipefail
-          state=$(aws s3 cp "s3://${TFSTATE_BUCKET}/01-network/terraform.tfstate" -)
           targets=""
-          while read -r playbook key; do
+          while read -r playbook host; do
             [ -n "$playbook" ] || continue
-            if ! ip=$(jq -er --arg k "$key" '.outputs.host_ips.value[$k]' <<< "$state"); then
-              echo "::error::01-network state has no host_ips entry for $key"
+            if ! ip=$(jq -er --arg h "$host" '.inventory.vieta.hosts[$h].ipv4' inventory/vieta.json); then
+              echo "::error::inventory/vieta.json has no host $host"
               exit 1
             fi
             targets+="$playbook $ip"$'\n'

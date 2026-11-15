@@ -9,7 +9,7 @@
 # vault_ssh_host_cert_renew_days of remaining life.
 - name: Install the Vault SSH user CA
   copy:
-    src: files/vault_user_ca.pub
+    src: "{{ playbook_dir }}/../../../inventory/trust/vault_user_ca.pub"
     dest: /etc/ssh/vault_user_ca.pub
     mode: "0644"
   register: vault_ssh_ca_key

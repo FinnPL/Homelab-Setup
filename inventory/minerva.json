@@ -1,0 +1,20 @@
+{
+  "inventory": {
+    "minerva": {
+      "prefix": "2a0c:b641:f95::/48",
+      "network": "10.0.1.0/24",
+      "unifiController": "10.0.0.1",
+      "fritzbox": "192.168.178.1",
+      "hosts": {
+        "zeus": { "ipv4": "10.0.1.63", "dns": "zeus.athena" }
+      },
+      "lan": {
+        "network": "10.10.1.0/24",
+        "gateway": "10.10.1.1",
+        "dns": "10.10.1.1"
+      },
+      "pve": "10.10.1.10",
+      "nas": "10.10.1.11/24"
+    }
+  }
+}

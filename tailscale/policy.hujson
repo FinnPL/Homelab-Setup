@@ -14,13 +14,13 @@
   "autoApprovers": {
     "routes": {
       // Vieta LAN: the in-cluster Connector, and the out-of-band Pi behind it.
-      "10.10.1.0/24": ["tag:vieta-k8s", "tag:vieta-oob"],
+      "${vieta.lan.network}": ["tag:vieta-k8s", "tag:vieta-oob"],
 
       // OCI public subnet, advertised by the edge node.
       "10.80.1.0/24": ["tag:cloud-edge"],
 
       // Minerva LAN.
-      "10.0.1.0/24": ["tag:minerva"],
+      "${minerva.network}": ["tag:minerva"],
     },
 
     "exitNode": ["tag:vieta-k8s", "tag:cloud-edge", "tag:minerva"],
@@ -46,7 +46,7 @@
     // the CIDR rather than a node, so failover needs no second rule.
     {
       "src": ["tag:ci"],
-      "dst": ["10.10.1.0/24"],
+      "dst": ["${vieta.lan.network}"],
       "ip":  ["*"],
     },
   ],
@@ -66,18 +66,18 @@
     {
       "src": "tag:ci",
       "accept": [
-        "10.10.1.42:8006",
-        "10.10.1.60:6443",
+        "${vieta.hosts.nuc.ipv4}:8006",
+        "${vieta.hosts.cp1.ipv4}:6443",
       ],
     },
     {
       // Minerva used to carry tag:ci. It must no longer reach Vieta.
       "src":  "tag:minerva",
-      "deny": ["10.10.1.42:8006"],
+      "deny": ["${vieta.hosts.nuc.ipv4}:8006"],
     },
     {
       "src":  "tag:cloud-edge",
-      "deny": ["10.10.1.42:8006"],
+      "deny": ["${vieta.hosts.nuc.ipv4}:8006"],
     },
   ],
 }

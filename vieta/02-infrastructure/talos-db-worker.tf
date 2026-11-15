@@ -1,6 +1,6 @@
 # Temporary worker for DB and other block-storage workloads until NAS iSCSI/NFS replaces this node and the Proxmox NFS server.
 locals {
-  talos_db_worker_ip = local.host_ips.talos_worker_6
+  talos_db_worker_ip = local.hosts.db1.ipv4
 }
 
 data "talos_machine_configuration" "db_worker" {
@@ -109,7 +109,7 @@ resource "proxmox_virtual_environment_vm" "talos_db_worker" {
   network_device {
     bridge      = var.proxmox_bridge
     model       = "virtio"
-    mac_address = local.host_vm_macs.talos_worker_6
+    mac_address = local.hosts.db1.mac
   }
 
   serial_device {}

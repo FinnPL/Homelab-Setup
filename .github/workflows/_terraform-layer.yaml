@@ -146,7 +146,7 @@ jobs:
         with:
           role: homelab
           key-path: ${{ runner.temp }}/vault_ssh_key
-          host-ca-file: vieta/02-infrastructure/ansible/files/vault_host_ca.pub
+          host-ca-file: inventory/trust/vault_host_ca.pub
           host-patterns: "10.10.1.*,*.athena"
 
       - name: Pin the Proxmox host key

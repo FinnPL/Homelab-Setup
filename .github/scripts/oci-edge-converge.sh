@@ -8,7 +8,7 @@ set -euo pipefail
 
 ROOT="${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}"
 # One Vault host CA for every site.
-HOST_CA_FILE="$ROOT/fplnet/vault_host_ca.pub"
+HOST_CA_FILE="$ROOT/inventory/trust/vault_host_ca.pub"
 
 error() {
   echo "::error::$*"

@@ -25,7 +25,6 @@ web:
 
 relay:
   name: site-data.relay.lippok.dev
-  address: 2a0c:b641:f92::80
 
 staleAfterSeconds: 90
 

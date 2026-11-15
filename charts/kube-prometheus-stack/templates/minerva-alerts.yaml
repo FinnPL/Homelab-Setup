@@ -1,4 +1,4 @@
-{{- if .Values.minervaNas }}
+{{- if .Values.inventory.minerva }}
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:

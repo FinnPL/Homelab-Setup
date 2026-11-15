@@ -79,7 +79,7 @@ spec:
             - name: {{ printf "UP_UNIFI_CONTROLLER_%d_ROLE" $controllerIdx }}
               value: {{ default (printf "controller-%d" $controllerIdx) $controller.role | quote }}
             - name: {{ printf "UP_UNIFI_CONTROLLER_%d_URL" $controllerIdx }}
-              value: {{ $controller.url | quote }}
+              value: {{ tpl $controller.url $ | quote }}
             - name: {{ printf "UP_UNIFI_CONTROLLER_%d_VERIFY_SSL" $controllerIdx }}
               value: {{ ternary "true" "false" $.Values.unifiExporter.verifySsl | quote }}
             - name: {{ printf "UP_UNIFI_CONTROLLER_%d_SAVE_SITES" $controllerIdx }}

@@ -1,0 +1,3 @@
+# The DoH relay; its address and PROXY port are its siteServices entry in inventory/fplnet.json.
+relay:
+  name: dns.relay.lippok.dev

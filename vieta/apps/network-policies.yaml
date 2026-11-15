@@ -1,1 +1,2 @@
 namespace: kube-system
+inventory: [fplnet, vieta, minerva]

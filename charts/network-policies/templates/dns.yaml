@@ -22,10 +22,10 @@ spec:
               protocol: TCP
     # DoH with PROXY v2 only from the edges
     - fromCIDR:
-        - 2a0c:b641:f98::/46
+        - {{ .Values.inventory.fplnet.prefixes.edges }}
       toPorts:
         - ports:
-            - port: "8444"
+            - port: {{ (index .Values.inventory.fplnet.siteServices "dns.relay.lippok.dev").proxyPort | quote }}
               protocol: TCP
     {{- include "np.fromPrometheus" (list 4000 9167) | nindent 4 }}
   egress:

@@ -33,7 +33,7 @@ in {
       }
     ];
 
-    environment.etc."ssh/vault_user_ca.pub" = lib.mkIf cfg.trustVaultCA {source = ./vault_user_ca.pub;};
+    environment.etc."ssh/vault_user_ca.pub" = lib.mkIf cfg.trustVaultCA {source = ../../../inventory/trust/vault_user_ca.pub;};
 
     users.users.root.openssh.authorizedKeys.keys = cfg.adminKeys;
 

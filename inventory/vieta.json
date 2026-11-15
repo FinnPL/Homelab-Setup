@@ -1,0 +1,33 @@
+{
+  "inventory": {
+    "vieta": {
+      "prefix": "2a0c:b641:f94::/48",
+      "nodeNetwork": "2a0c:b641:f94:20::/64",
+      "podNetwork": "2a0c:b641:f94:8100::/56",
+      "publicServicePool": "2a0c:b641:f94:8000::/64",
+      "clusterAsn": 4200218255,
+      "unifiController": "10.10.0.1",
+      "lan": {
+        "vlan": 20,
+        "network": "10.10.1.0/24",
+        "gateway": "10.10.1.1",
+        "loadBalancers": "10.10.1.200/29",
+        "loadBalancerIPs": {
+          "gateway": "10.10.1.200",
+          "dns": "10.10.1.201"
+        }
+      },
+      "hosts": {
+        "nuc": { "ipv4": "10.10.1.42", "mac": "94:c6:91:18:9c:aa", "dns": "nuc.athena" },
+        "win": { "ipv4": "10.10.1.50", "mac": "52:54:00:aa:00:50", "dns": "win.athena" },
+        "cp1": { "ipv4": "10.10.1.60", "mac": "bc:24:11:00:00:60", "dns": "talos-cp.athena", "k8sNode": "talos-8vk-gus" },
+        "pi1": { "ipv4": "10.10.1.61", "mac": "dc:a6:32:af:be:2f", "dns": "talos-w1.athena", "k8sNode": "talos-m0l-ybl" },
+        "pi2": { "ipv4": "10.10.1.62", "mac": "dc:a6:32:4a:11:70", "dns": "talos-w2.athena", "k8sNode": "talos-ymz-dnc" },
+        "pi3": { "ipv4": "10.10.1.63", "mac": "dc:a6:32:1f:b3:fb", "dns": "talos-w3.athena", "k8sNode": "talos-urr-99l" },
+        "db1": { "ipv4": "10.10.1.66", "mac": "bc:24:11:00:00:66", "dns": "talos-w6.athena", "k8sNode": "talos-4ut-tyx" },
+        "nfs": { "ipv4": "10.10.1.80", "mac": "bc:24:11:00:00:80", "dns": "nfs.athena" },
+        "apollo": { "ipv4": "10.10.1.195", "mac": "00:11:32:7f:65:e3", "dns": "apollo.athena" }
+      }
+    }
+  }
+}

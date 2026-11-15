@@ -1,3 +1,4 @@
 namespace: monitoring
 syncOptions:
   - ServerSideApply=true
+inventory: [fplnet, vieta, minerva]

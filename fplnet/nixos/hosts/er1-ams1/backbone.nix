@@ -1,6 +1,12 @@
-{
-  # Backbone links to er1-dus1, er1-fra1 and gw1-aah1.
-  networking.firewall.allowedUDPPorts = [51821 51822 51824];
+# Backbone links to er1-dus1, er1-fra1 and gw1-aah1.
+{inventory, ...}: let
+  inherit (inventory) address;
+  inherit (inventory.fplnet) routers links;
+  dus1 = links."er1-dus1/er1-ams1";
+  fra1 = links."er1-ams1/er1-fra1";
+  gw1 = links."er1-ams1/gw1-aah1";
+in {
+  networking.firewall.allowedUDPPorts = [dus1.port gw1.port fra1.port];
 
   systemd.network = {
     netdevs."40-wg-er1-dus1" = {
@@ -11,13 +17,13 @@
       };
       wireguardConfig = {
         PrivateKeyFile = "/var/lib/wireguard/backbone.key";
-        ListenPort = 51821;
+        ListenPort = dus1.port;
       };
       wireguardPeers = [
         {
-          PublicKey = "iLTzJJz4odvQm1RKR4Eui/N/KfM5VwfNkWoQFsFzCSM=";
+          PublicKey = routers.er1-dus1.wireguard;
           AllowedIPs = ["::/0"];
-          Endpoint = "194.28.99.178:51821";
+          Endpoint = "${address routers.er1-dus1.uplink.v4}:${toString dus1.port}";
           PersistentKeepalive = 25;
         }
       ];
@@ -25,7 +31,7 @@
 
     networks."40-wg-er1-dus1" = {
       matchConfig.Name = "wg-er1-dus1";
-      address = ["2a0c:b641:f98:1001::1/127"];
+      address = ["${dus1.addresses.er1-ams1}/127"];
       networkConfig = {
         IPv6AcceptRA = false;
         LinkLocalAddressing = "no";
@@ -40,12 +46,12 @@
       };
       wireguardConfig = {
         PrivateKeyFile = "/var/lib/wireguard/backbone.key";
-        ListenPort = 51822;
+        ListenPort = gw1.port;
       };
       # gw1-aah1 sits behind the RWTH firewall and dials in.
       wireguardPeers = [
         {
-          PublicKey = "EZ2RLjPKIuKx138thvqVtSfMLrzW6ZycS1/bypmmK2k=";
+          PublicKey = routers.gw1-aah1.wireguard;
           AllowedIPs = ["::/0"];
         }
       ];
@@ -53,7 +59,7 @@
 
     networks."41-wg-gw1-aah1" = {
       matchConfig.Name = "wg-gw1-aah1";
-      address = ["2a0c:b641:f99:1000::/127"];
+      address = ["${gw1.addresses.er1-ams1}/127"];
       networkConfig = {
         IPv6AcceptRA = false;
         LinkLocalAddressing = "no";
@@ -68,13 +74,13 @@
       };
       wireguardConfig = {
         PrivateKeyFile = "/var/lib/wireguard/backbone.key";
-        ListenPort = 51824;
+        ListenPort = fra1.port;
       };
       wireguardPeers = [
         {
-          PublicKey = "en+tsQ4OFy1jtCVxO3EY4mq1YfXqgomo/rBjf2aKHXc=";
+          PublicKey = routers.er1-fra1.wireguard;
           AllowedIPs = ["::/0"];
-          Endpoint = "209.250.233.8:51824";
+          Endpoint = "${address routers.er1-fra1.uplink.v4}:${toString fra1.port}";
           PersistentKeepalive = 25;
         }
       ];
@@ -82,7 +88,7 @@
 
     networks."42-wg-er1-fra1" = {
       matchConfig.Name = "wg-er1-fra1";
-      address = ["2a0c:b641:f99:1001::/127"];
+      address = ["${fra1.addresses.er1-ams1}/127"];
       networkConfig = {
         IPv6AcceptRA = false;
         LinkLocalAddressing = "no";

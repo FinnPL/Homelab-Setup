@@ -28,11 +28,12 @@ spec:
             static_configs:
               - targets: [{{ "{{ (urlParse .url).host }}" }}]
           {{- end }}
-          {{- range $job, $port := dict "fplnet-node" 9100 "fplnet-bird" 9324 "fplnet-smokeping" 9374 }}
+          {{- $ports := .Values.inventory.fplnet.exporterPorts }}
+          {{- range $job, $port := dict "fplnet-node" $ports.node "fplnet-bird" $ports.bird "fplnet-smokeping" $ports.smokeping }}
           - job_name: {{ $job }}
             static_configs:
-              {{- range $router, $address := $.Values.fplnetRouters }}
-              - targets: ['[{{ $address }}]:{{ $port }}']
+              {{- range $router, $r := $.Values.inventory.fplnet.routers }}
+              - targets: ['[{{ $r.loopback }}]:{{ $port }}']
                 labels:
                   router: {{ $router }}
               {{- end }}
@@ -53,11 +54,11 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
-          {{- with .Values.minervaNas }}
+          {{- with .Values.inventory.minerva }}
           {{- range $job, $port := dict "minerva-nas-node" 9100 "minerva-nas-smartctl" 9633 }}
           - job_name: {{ $job }}
             static_configs:
-              - targets: ['{{ $.Values.minervaNas.address }}:{{ $port }}']
+              - targets: ['{{ regexReplaceAll "/.*" $.Values.inventory.minerva.nas "" }}:{{ $port }}']
                 labels:
                   site: minerva
                   host: nas
@@ -67,7 +68,7 @@ spec:
           - job_name: fplnet-routinator
             static_configs:
               {{- range . }}
-              - targets: ['[{{ index $.Values.fplnetRouters . }}]:8323']
+              - targets: ['[{{ (index $.Values.inventory.fplnet.routers .).loopback }}]:{{ $.Values.inventory.fplnet.exporterPorts.routinator }}']
                 labels:
                   router: {{ . }}
               {{- end }}

@@ -1,9 +1,11 @@
 # Import policy for every external BGP session on the edges (MANRS, NLNOG bgpfilterguide).
 {
   config,
+  inventory,
   lib,
   ...
 }: let
+  inherit (inventory.fplnet) asn prefixes;
   # Informational large communities, set on import:
   #   218255:1:<site>      1 er1-dus1, 2 er1-ams1, 3 er1-fra1
   #   218255:2:<neighbour> 1 transit, 2 IX route server, 3 bilateral peer
@@ -52,7 +54,7 @@ in {
     function import_ok(bool allow_default) -> bool {
       if net = ::/0 then return allow_default;
       # Our own space never arrives from outside; a forged origin of AS218255 would pass ROV.
-      if net ~ [ 2a0c:b641:f90::/44+ ] then return false;
+      if net ~ [ ${prefixes.aggregate}+ ] then return false;
       if !(net ~ [ 2000::/3{16,48} ]) then return false;
       if net ~ BOGONS_V6 then return false;
       if bgp_path ~ BOGON_ASNS then return false;
@@ -63,9 +65,9 @@ in {
 
     # Only our own tags carry 218255; a neighbour's are dropped first.
     function import_tag() {
-      bgp_large_community.delete([(218255, *, *)]);
-      bgp_large_community.add((218255, 1, ${toString site.id}));
-      bgp_large_community.add((218255, 3, ${toString site.country}));
+      bgp_large_community.delete([(${toString asn}, *, *)]);
+      bgp_large_community.add((${toString asn}, 1, ${toString site.id}));
+      bgp_large_community.add((${toString asn}, 3, ${toString site.country}));
       # RFC 8326 graceful shutdown
       if (65535, 0) ~ bgp_community then bgp_local_pref = 0;
     }
@@ -74,7 +76,7 @@ in {
     filter from_transit {
       if !import_ok(true) then reject;
       import_tag();
-      bgp_large_community.add((218255, 2, 1));
+      bgp_large_community.add((${toString asn}, 2, 1));
       accept;
     }
 
@@ -83,7 +85,7 @@ in {
       if !import_ok(false) then reject;
       bgp_local_pref = 150;
       import_tag();
-      bgp_large_community.add((218255, 2, 2));
+      bgp_large_community.add((${toString asn}, 2, 2));
       accept;
     }
 
@@ -91,7 +93,7 @@ in {
       if !import_ok(false) then reject;
       bgp_local_pref = 150;
       import_tag();
-      bgp_large_community.add((218255, 2, 3));
+      bgp_large_community.add((${toString asn}, 2, 3));
       accept;
     }
   '';

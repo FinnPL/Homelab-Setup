@@ -2,14 +2,16 @@
 # The proxies reach BIRD only through a restricted control socket.
 {
   config,
+  inventory,
   lib,
   pkgs,
   ...
 }: let
+  inherit (inventory.fplnet) asn prefixes routers;
   edges = {
-    er1-dus1 = "2a0c:b641:f98::1";
-    er1-ams1 = "2a0c:b641:f99::1";
-    er1-fra1 = "2a0c:b641:f9a::1";
+    er1-dus1 = routers.er1-dus1.loopback;
+    er1-ams1 = routers.er1-ams1.loopback;
+    er1-fra1 = routers.er1-fra1.loopback;
   };
   loopback = lib.removeSuffix "/128" (lib.head config.systemd.network.networks."05-lo".address);
   socket = "/run/bird/lg.ctl";
@@ -52,7 +54,7 @@ in {
       enable = true;
       listenAddresses = "[${loopback}]:${toString proxyPort}";
       birdSocket = socket;
-      allowedIPs = ["2a0c:b641:f98::/46"];
+      allowedIPs = [prefixes.edges];
       traceroute = {
         binary = "${pkgs.traceroute}/bin/traceroute";
         flags = ["-q1" "-N1" "-w1" "-m20"];
@@ -69,7 +71,7 @@ in {
       whois = "bgp.tools";
       titleBrand = "FPLNET";
       navbar = {
-        brand = "AS218255";
+        brand = "AS${toString asn}";
         brandURL = "https://fplnet.net/";
         allServers = "All edges";
       };
@@ -87,7 +89,7 @@ in {
   };
 
   networking.firewall.extraInputRules = ''
-    iifname { ${edgeTunnels} } ip6 saddr 2a0c:b641:f98::/46 tcp dport ${toString proxyPort} accept
+    iifname { ${edgeTunnels} } ip6 saddr ${prefixes.edges} tcp dport ${toString proxyPort} accept
   '';
 
   services.nginx = {
