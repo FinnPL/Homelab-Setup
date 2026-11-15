@@ -1,14 +1,4 @@
-{{- /* Rule names of this chart's own ClusterPolicies. Every other policy an entry lists is a
-kyverno-policies ValidatingPolicy and is exempted through policies.kyverno.io instead. */}}
-{{- $clusterPolicyRules := dict
-      "require-resource-limits" (list "require-limits" "autogen-require-limits")
-      "require-ro-rootfs" (list "require-ro-rootfs" "autogen-require-ro-rootfs") }}
 {{- range .Values.policyExceptions }}
-{{- $legacy := list }}
-{{- $cel := list }}
-{{- range .policies }}
-{{- if hasKey $clusterPolicyRules . }}{{ $legacy = append $legacy . }}{{ else }}{{ $cel = append $cel . }}{{ end }}
-{{- end }}
 {{- $names := list }}
 {{- range .names }}
 {{- $n := trimAll "*" . }}
@@ -24,7 +14,6 @@ kyverno-policies ValidatingPolicy and is exempted through policies.kyverno.io in
 {{- if kindIs "slice" $v }}{{ $labels = append $labels (printf "%s && %s in %s" $has $l (toJson $v)) }}
 {{- else }}{{ $labels = append $labels (printf "%s && %s == %q" $has $l $v) }}{{ end }}
 {{- end }}
-{{- if $cel }}
 ---
 apiVersion: policies.kyverno.io/v1
 kind: PolicyException
@@ -35,7 +24,7 @@ metadata:
     policies.kyverno.io/description: {{ .description | quote }}
 spec:
   policyRefs:
-    {{- range $cel }}
+    {{- range .policies }}
     - name: {{ . }}
       kind: ValidatingPolicy
     {{- end }}
@@ -52,38 +41,4 @@ spec:
     - name: labels
       expression: {{ printf "has(object.metadata.labels) && %s" (join " && " .) | quote }}
     {{- end }}
-{{- end }}
-{{- if $legacy }}
----
-apiVersion: kyverno.io/v2
-kind: PolicyException
-metadata:
-  name: {{ .name }}
-  namespace: kyverno
-  annotations:
-    policies.kyverno.io/description: {{ .description | quote }}
-spec:
-  match:
-    any:
-      - resources:
-          namespaces: [{{ .namespace }}]
-          kinds: {{ toJson .kinds }}
-          {{- with .names }}
-          names: {{ toJson . }}
-          {{- end }}
-          {{- with .labels }}
-          selector:
-            matchExpressions:
-              {{- range $k, $v := . }}
-              - key: {{ $k }}
-                operator: In
-                values: {{ ternary $v (list $v) (kindIs "slice" $v) | toJson }}
-              {{- end }}
-          {{- end }}
-  exceptions:
-    {{- range $legacy }}
-    - policyName: {{ . }}
-      ruleNames: {{ get $clusterPolicyRules . | toJson }}
-    {{- end }}
-{{- end }}
 {{- end }}
