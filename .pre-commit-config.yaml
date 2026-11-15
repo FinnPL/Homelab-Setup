@@ -56,7 +56,7 @@ repos:
         name: diagrams
         entry: python -I docs/diagrams/render.py
         language: python
-        files: ^(inventory/.*\.json|vieta/apps/.*\.yaml|docs/diagrams/.*)$
+        files: ^(inventory/.*\.json|vieta/apps/.*\.yaml|docs/diagrams/.*|fplnet/nixos/web/fplnet\.net/traffic-.*\.svg)$
         pass_filenames: false
 
   # ---- Spelling

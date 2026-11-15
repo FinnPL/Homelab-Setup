@@ -131,9 +131,10 @@ const prints: [string, string][] = [
       <div class="label"><span class="eyebrow">Deployment</span></div>
       <dl class="deflist">
         <dt>Source</dt><dd><a href="https://github.com/FinnPL/Homelab-Setup">Homelab-Setup</a>, the repo is the source of truth</dd>
-        <dt>Infrastructure</dt><dd>Terraform in four layers: state, network, machines, cluster platform</dd>
+        <dt>Infrastructure</dt><dd>Terraform in three layers: network, machines, cluster platform</dd>
         <dt>Workloads</dt><dd>ArgoCD, one Application per chart, auto-sync, prune, self-heal</dd>
         <dt>CI</dt><dd>GitHub Actions plans on every PR and applies on merge, including Talos upgrades</dd>
+        <dt>Pipeline</dt><dd><a href="https://github.com/FinnPL/Homelab-Setup#how-a-change-ships">every workflow, from pull request to deploy</a></dd>
         <dt>Secrets</dt><dd><a href="https://github.com/FinnPL/Vault-Deployment">Vault</a>: CI logs in with its GitHub OIDC token, the cluster with a ServiceAccount token, SSH hosts and clients get Vault-signed certificates</dd>
         <dt>Updates</dt><dd>Renovate, patch versions merge on their own</dd>
         <dt>Policy</dt><dd>Kyverno policies run against every rendered chart before merge, Trivy scans the repo</dd>
