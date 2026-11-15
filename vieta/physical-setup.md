@@ -1,7 +1,7 @@
 # Vieta Physical Setup
 
 The **Vieta** site lives in a single 10" mini-rack. This page documents the hardware, the rack layout, the power/cooling, and the 3D-printed mounts that hold it together.
-For the logical architecture (Talos, ArgoCD, networking, GitOps), see the [main README](./README.md).
+For the logical architecture (Talos, ArgoCD, networking, GitOps), see the [main README](../README.md).
 
 ## The rack
 
@@ -10,8 +10,8 @@ A **Tecmojo 10" 9U**, with the logo covered over with vinyl for a cleaner look (
 
 <table>
   <tr>
-    <td><img src="docs/Vieta-Front.png" alt="Vieta rack, front" height="480" /></td>
-    <td><img src="docs/Vieta-Back.png" alt="Vieta rack, back" height="480" /></td>
+    <td><img src="../docs/Vieta-Front.png" alt="Vieta rack, front" height="480" /></td>
+    <td><img src="../docs/Vieta-Back.png" alt="Vieta rack, back" height="480" /></td>
   </tr>
   <tr>
     <td align="center"><em>Front</em></td>
