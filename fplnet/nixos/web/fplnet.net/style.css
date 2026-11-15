@@ -49,6 +49,8 @@ code { font: .92em ui-monospace, SFMono-Regular, Menlo, monospace; overflow-wrap
 
 .table-wrap { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+.diagram { margin: 1.5rem 0; }
+.diagram img { display: block; width: 100%; height: auto; }
 th, td { text-align: left; padding: .4rem .75rem .4rem 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
 th { font-weight: 600; color: var(--muted); font-size: .85rem; }
 td code { white-space: nowrap; }

@@ -37,6 +37,12 @@
   </table>
   </div>
   <p>Locations: <a href="/geofeed.csv">geofeed.csv</a></p>
+  <figure class="diagram">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="/traffic-dark.svg">
+      <img src="/traffic-light.svg" width="960" height="466" alt="What the anycast prefixes carry. Edge anycast: HAProxy on the nearest edge takes TCP 443 and hands fplnet.net and lippok.dev to nginx; HTTP/3 reaches nginx directly. Site anycast: *.relay names over IPv4 pass HAProxy unopened, over IPv6 they are routed to the site prefix; both cross the WireGuard backbone to a site gateway and reach the relay services. LAN clients reach the cluster without any edge.">
+    </picture>
+  </figure>
 
   <h2 id="peering">Peering</h2>
   <p>Open peering at these exchanges, and on their route servers. IPv6 only.</p>

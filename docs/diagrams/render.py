@@ -4,7 +4,8 @@
     python3 docs/diagrams/render.py
 
 Every diagram is written twice, <name>-light.svg and <name>-dark.svg, and the README picks one
-per GitHub theme with <picture>. Routers, prefixes, links and cluster nodes come from
+per GitHub theme with <picture>. The traffic diagram is also written into fplnet.net's web root,
+in that site's colours. Routers, prefixes, links and cluster nodes come from
 inventory/, the Vieta apps from vieta/apps/. Minerva is drawn as built: its
 gateway, cluster and deploy rows do not wait for the inventory. Stdlib only, so CI needs nothing but python3.
 """
@@ -14,6 +15,7 @@ from __future__ import annotations
 import json
 import math
 import pathlib
+import re
 from xml.sax.saxutils import escape
 
 HERE = pathlib.Path(__file__).resolve().parent
@@ -41,6 +43,25 @@ THEMES = {
         "vieta": "#7cc39a", "vieta_tint": "#101f17",
         "minerva": "#c3a3ea", "minerva_tint": "#1b1526",
         "vault": "#d9ab68", "vault_tint": "#1f1a10",
+    },
+}
+# fplnet.net's own tokens (fplnet/nixos/web/fplnet.net/style.css), for the copies served there.
+FPLNET_NET = {
+    "light": {
+        "bg": "#fbfbf9", "ink": "#1d1d1b", "ink2": "#66665f", "ink3": "#8f8f87",
+        "rule": "#deded8", "surface": "#f3f3ef",
+        "fplnet": "#1f5fbf", "fplnet_tint": "#edf2fb",
+        "vieta": "#1e7a3c", "vieta_tint": "#ecf5ef",
+        "minerva": "#7b4fae", "minerva_tint": "#f5f0fa",
+        "vault": "#9a6200", "vault_tint": "#fbf4e4",
+    },
+    "dark": {
+        "bg": "#141413", "ink": "#e8e8e3", "ink2": "#9b9b93", "ink3": "#6f6f68",
+        "rule": "#3a3a36", "surface": "#1b1b1a",
+        "fplnet": "#7aa7ff", "fplnet_tint": "#161c28",
+        "vieta": "#5cc27d", "vieta_tint": "#142119",
+        "minerva": "#c3a3ea", "minerva_tint": "#1d1726",
+        "vault": "#e0a640", "vault_tint": "#221c10",
     },
 }
 ROLES = ("fplnet", "vieta", "minerva", "vault")
@@ -132,14 +153,13 @@ class Svg:
     def circle(self, x, y, r, cls):
         self.raw(f'<circle cx="{x:g}" cy="{y:g}" r="{r:g}" class="{cls}"/>')
 
-    def render(self, theme: str) -> str:
-        p = THEMES[theme]
+    def render(self, p: dict, inline: bool = False) -> str:
         marks = "".join(
             f'<marker id="ah-{k}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
             f'orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="{c}"/></marker>'
             for k, c in [("n", "mk")] + [(r, f"mk-{r}") for r in ROLES]
         )
-        return (
+        svg = (
             f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {self.w:g} {self.h:g}" '
             f'width="{self.w:g}" height="{self.h:g}" role="img">'
             f"<title>{escape(self.title)}</title>"
@@ -149,6 +169,33 @@ class Svg:
             + "".join(self.parts)
             + "</svg>\n"
         )
+        return inline_styles(svg) if inline else svg
+
+
+def inline_styles(svg: str) -> str:
+    """Turn the <style> rules into presentation attributes.
+
+    fplnet.net sends style-src 'self' on every response, which may also apply to an SVG's own
+    <style>; attributes are not styles, so the CSP cannot touch them.
+    """
+    css = re.search(r"<style>(.*?)</style>", svg, re.S).group(1)
+    rules = [(sel.strip(), dict(d.split(":", 1) for d in body.split(";") if d))
+             for sel, body in re.findall(r"([^{}]+)\{([^}]*)\}", css)]
+    base = dict(rules[0][1])                       # the `text` rule, inherited from the root
+    rules = rules[1:]
+
+    def attrs(m: re.Match) -> str:
+        names = set(m.group(1).split())
+        props: dict[str, str] = {}
+        for sel, body in rules:                    # stylesheet order decides, as in CSS
+            if sel[1:] in names:
+                props.update(body)
+        return " ".join(f'{k}="{escape(v, {chr(34): "&quot;"})}"' for k, v in props.items())
+
+    svg = svg.replace(f"<style>{css}</style>", "")
+    svg = re.sub(r'class="([^"]*)"', attrs, svg)
+    root = " ".join(f'{k}="{escape(v, {chr(34): "&quot;"})}"' for k, v in base.items())
+    return svg.replace('role="img">', f'role="img" {root}>', 1)
 
 
 def ortho(pts, r=8.0) -> str:
@@ -734,11 +781,19 @@ def repo() -> Svg:
 DIAGRAMS = {"sites": sites, "delivery": delivery, "repo": repo, "traffic": traffic, "stack": stack, "trust": trust}
 
 
+# Diagrams also served elsewhere: name -> (directory, palette).
+SERVED = {"traffic": (ROOT / "fplnet" / "nixos" / "web" / "fplnet.net", FPLNET_NET)}
+
+
 def main() -> None:
     for name, build in DIAGRAMS.items():
         svg = build()
-        for theme in THEMES:
-            (HERE / f"{name}-{theme}.svg").write_text(svg.render(theme))
+        for theme, p in THEMES.items():
+            (HERE / f"{name}-{theme}.svg").write_text(svg.render(p))
+        if name in SERVED:
+            where, palette = SERVED[name]
+            for theme, p in palette.items():
+                (where / f"{name}-{theme}.svg").write_text(svg.render(p, inline=True))
 
 
 if __name__ == "__main__":

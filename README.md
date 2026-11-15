@@ -60,6 +60,8 @@ Merging to `main` is the deploy: GitHub Actions applies Terraform and NixOS, Arg
 
 ## Vieta
 
+Photos, hardware and the live app inventory: [lippok.dev/vieta](https://lippok.dev/vieta)
+
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/stack-dark.svg">
   <img width="100%" alt="Vieta as layers: hardware, then the Terraform layers 01-network, 02-infrastructure and 03-services, then the apps ArgoCD deploys from charts/, grouped as GitOps, platform, security, network, observability and apps" src="docs/diagrams/stack-light.svg">
@@ -72,11 +74,13 @@ Merging to `main` is the deploy: GitHub Actions applies Terraform and NixOS, Arg
 - **Default deny** in both directions. Every allow lives in `charts/network-policies`.
 - **A new service** is `charts/<name>/`, `vieta/apps/<name>.yaml` and its network policy. A database, a Vault secret and a route are one template each ([`charts/gatus/templates`](charts/gatus/templates)).
 - **Rack:** a 10" mini rack, Pis powered over PoE, 3D-printed mounts; parts, layout and power in [`vieta/physical-setup.md`](vieta/physical-setup.md).
-- **Planned:** a GPSDO for a stratum 1 NTP server, and a TrueNAS box replacing the NFS LXC, with democratic-csi for ZFS-backed volumes.
+- **Planned:** a GPSDO for a stratum 1 NTP server ([lippok.dev/ntp](https://lippok.dev/ntp)), and a TrueNAS box replacing the NFS LXC, with democratic-csi for ZFS-backed volumes.
 
 <br clear="right">
 
 ## FPLNET
+
+Prefixes, peering and BGP communities on [fplnet.net](https://fplnet.net); live routes in the [looking glass](https://lg.fplnet.net).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/traffic-dark.svg">
@@ -94,8 +98,11 @@ Merging to `main` is the deploy: GitHub Actions applies Terraform and NixOS, Arg
 - **Routing:** BIRD 3, import filters after the NLNOG guide, RPKI origin validation from two Routinators, BCP 38 source filtering, receive limits on every session.
 - **Rollout:** deploy-rs, one router at a time; each waits until its BGP sessions are back up.
 - **Keys:** WireGuard and BGP secrets stay in Vault and reach a router right before its switch.
+- **DNS relay:** Blocky filters, Unbound validates and forwards over DoT through a VPN, so the upstream resolver never sees who asked. The full path is on [lippok.dev/dns](https://lippok.dev/dns).
 
 ## Minerva
+
+Hardware, machines and backup state: [lippok.dev/minerva](https://lippok.dev/minerva)
 
 - **Hardware:** one Proxmox box: Gigabyte B450 AORUS ELITE, Ryzen 5 5600GT, 32 GB, a Broadcom SAS3008 HBA in IT mode and two 8 TB SAS drives in a ZFS mirror.
 - **Cluster:** Talos VMs, its own ArgoCD, the same charts as Vieta with `values-minerva.yaml`. gw1-fbg1, a NixOS VM, joins it to the backbone.
@@ -112,6 +119,7 @@ Merging to `main` is the deploy: GitHub Actions applies Terraform and NixOS, Arg
   <img width="100%" alt="GitHub Actions jobs and External Secrets authenticate to Vault with short-lived tokens; Vault issues SSH client and host certificates, Talos and Kubernetes client certificates, AWS STS keys and kv secrets. The admin reaches the NAS with a YubiKey." src="docs/diagrams/trust-light.svg">
 </picture>
 
+- The Vault server is deployed from [Vault-Deployment](https://github.com/FinnPL/Vault-Deployment); `vault/` here holds its auth methods, roles and engines.
 - No infrastructure credential is stored in GitHub. A job trades its OIDC token for a 20-minute Vault token scoped to its workflow.
 - Deploy roles are bound to `refs/heads/main`, so a pull request, which runs its own copy of a workflow, can only plan.
 - SSH is certificates both ways: a throwaway key signed per run, and host certificates that `ssh-cert-converge` renews every week.
