@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# CI steps for the FPLNET routers in fplnet/hosts.json.
+# CI steps for the FPLNET routers in inventory/fplnet.json.
 #   converge  verify each host by its Vault host certificate, re-sign it, assert the expiry
 #   deploy    verify each host, restore its backbone key, deploy-rs it, then require its BGP sessions back
 #   homepage  copy the lippok.dev build in HOMEPAGE_DIST to every edge as release HOMEPAGE_RELEASE and switch to it
 set -euo pipefail
 
 ROOT="${GITHUB_WORKSPACE:-$(git rev-parse --show-toplevel)}"
-HOSTS_FILE="$ROOT/fplnet/hosts.json"
+INVENTORY="$ROOT/inventory/fplnet.json"
 FLAKE="$ROOT/fplnet/nixos"
 VAULT_ADDR="${VAULT_ADDR:-https://vault.cloud.lippok.dev}"
 KNOWN_HOSTS="${RUNNER_TEMP:-/tmp}/fplnet_known_hosts"
@@ -16,8 +16,8 @@ error() {
   exit 1
 }
 
-hosts() { jq -r 'keys[]' "$HOSTS_FILE"; }
-host_addr() { jq -er --arg h "$1" '.[$h].ssh' "$HOSTS_FILE"; }
+hosts() { jq -r '.inventory.fplnet.routers | keys[]' "$INVENTORY"; }
+host_addr() { jq -er --arg h "$1" '.inventory.fplnet.routers[$h].ssh' "$INVENTORY"; }
 
 SSH_OPTS=(
   -i "${SSH_KEY:?}"
@@ -38,7 +38,7 @@ ssh_host() {
 
 trust_host_ca() {
   local ca h
-  ca=$(cat "$ROOT/fplnet/vault_host_ca.pub")
+  ca=$(cat "$ROOT/inventory/trust/vault_host_ca.pub")
   for h in $(hosts); do
     printf '@cert-authority %s %s\n' "$(host_addr "$h")" "$ca"
   done > "$KNOWN_HOSTS"
@@ -52,7 +52,7 @@ verify_host() {
 sign_host_cert() {
   local host="$1" signed
   signed=$(ssh_host "$host" cat /etc/ssh/ssh_host_ed25519_key.pub \
-    | jq -Rn --arg p "$(jq -er --arg h "$host" '.[$h].principals | join(",")' "$HOSTS_FILE")" \
+    | jq -Rn --arg p "$(jq -er --arg h "$host" '.inventory.fplnet.routers[$h].principals | join(",")' "$INVENTORY")" \
       '{public_key: input, cert_type: "host", valid_principals: $p}' \
     | curl -sSf -X PUT -H "X-Vault-Token: ${VAULT_TOKEN:?}" --data-binary @- \
       "$VAULT_ADDR/v1/ssh-host-signer/sign/fplnet-host" \

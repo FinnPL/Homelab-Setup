@@ -155,7 +155,7 @@ resource "kubectl_manifest" "cilium_ip_pool" {
     spec = {
       blocks = [
         {
-          cidr = data.terraform_remote_state.network.outputs.athena_lb_cidr
+          cidr = jsondecode(file("${path.module}/../../inventory/vieta.json")).inventory.vieta.lan.loadBalancers
         }
       ]
     }

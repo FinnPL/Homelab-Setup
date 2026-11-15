@@ -1,10 +1,11 @@
-# Names served in the cluster and reached through the FPLNET edges (fplnet/nixos/site-services.json):
+# Names served in the cluster and reached through the FPLNET edges (siteServices in inventory/fplnet.json):
 # AAAA = the Service's public address, routed natively via the edges and gw1-aah1;
 # A = every edge, whose HAProxy passes the TLS stream by SNI over the backbone.
 locals {
-  site_services = jsondecode(file("${path.module}/../../fplnet/nixos/site-services.json"))
+  fplnet        = jsondecode(file("${path.module}/../../inventory/fplnet.json")).inventory.fplnet
+  site_services = local.fplnet.siteServices
 
-  edge_v4 = [for name, h in jsondecode(file("${path.module}/../../fplnet/hosts.json")) : h.ssh if startswith(name, "er1-")]
+  edge_v4 = [for name, r in local.fplnet.routers : split("/", r.uplink.v4)[0] if startswith(name, "er1-")]
 
   site_service_a = {
     for pair in setproduct(keys(local.site_services), local.edge_v4) : "${pair[0]} ${pair[1]}" => {

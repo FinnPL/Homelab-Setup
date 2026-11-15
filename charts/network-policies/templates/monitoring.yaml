@@ -75,7 +75,7 @@ spec:
               protocol: TCP
     # Minerva NAS exporters
     - toCIDR:
-        - 10.10.1.11/32
+        - {{ regexReplaceAll "/.*" .Values.inventory.minerva.nas "" }}/32
       toPorts:
         - ports:
             - port: "9100"
@@ -84,10 +84,7 @@ spec:
               protocol: TCP
     # FPLNET router exporters on their loopbacks (additional scrape configs)
     - toCIDR:
-        - 2a0c:b641:f98::1/128
-        - 2a0c:b641:f99::1/128
-        - 2a0c:b641:f9a::1/128
-        - 2a0c:b641:f94::1/128
+        {{- include "np.routerLoopbacks" . | trim | nindent 8 }}
       toPorts:
         - ports:
             - port: "9100"
@@ -283,7 +280,7 @@ spec:
     {{- include "np.fromPrometheus" (list 9221) | nindent 4 }}
   egress:
     - toCIDR:
-        - 10.10.1.42/32
+        - {{ .Values.inventory.vieta.hosts.nuc.ipv4 }}/32
       toPorts:
         - ports:
             - port: "8006"

@@ -26,11 +26,14 @@ spec:
           expr: |
             (
               (
-                {{- range $i, $prefix := .Values.bgpTools.prefixes }}
+                {{- $fplnet := .Values.inventory.fplnet }}
+                {{- $edges := list }}
+                {{- range $fplnet.routers }}{{ with .prefix }}{{ $edges = append $edges . }}{{ end }}{{ end }}
+                {{- range $i, $prefix := concat (sortAlpha $edges) (list .Values.inventory.vieta.prefix $fplnet.prefixes.edgeAnycast $fplnet.prefixes.siteAnycast) }}
                 {{ if $i }}or {{ end }}label_replace(vector(0), "prefix", "{{ $prefix }}", "", "")
                 {{- end }}
               )
-              unless on (prefix) bgptools_asn_prefix_visible{asn="{{ .Values.bgpTools.asn }}"} > 0
+              unless on (prefix) bgptools_asn_prefix_visible{asn="{{ .Values.inventory.fplnet.asn | int64 }}"} > 0
             )
             and on () up{job="bgp-tools"} == 1
           for: 15m
@@ -39,14 +42,14 @@ spec:
 
         - alert: FplnetUpstreamLost
           annotations:
-            summary: "AS{{ .Values.bgpTools.asn }} has {{`{{ $value }}`}} upstreams, expected {{ .Values.bgpTools.expectedUpstreams }}."
+            summary: "AS{{ .Values.inventory.fplnet.asn | int64 }} has {{`{{ $value }}`}} upstreams, expected {{ .Values.bgpTools.expectedUpstreams }}."
             description: bgp.tools counts fewer upstreams than configured. Its upstream data updates every 4 hours.
-          expr: bgptools_asn_upstreams{asn="{{ .Values.bgpTools.asn }}"} < {{ .Values.bgpTools.expectedUpstreams }}
+          expr: bgptools_asn_upstreams{asn="{{ .Values.inventory.fplnet.asn | int64 }}"} < {{ .Values.bgpTools.expectedUpstreams }}
           for: 5h
           labels:
             severity: warning
 {{- end }}
-{{- if .Values.fplnetRouters }}
+{{- if .Values.inventory.fplnet.routers }}
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule

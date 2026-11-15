@@ -116,7 +116,7 @@ variable "cluster_name" {
 }
 
 variable "talos_controlplane_config" {
-  description = "Talos control plane VM configuration (IP comes from 01-network outputs)"
+  description = "Talos control plane VM configuration (IP comes from inventory/vieta.json)"
   type = object({
     vmid      = number
     name      = string
@@ -194,7 +194,6 @@ variable "gw1_aah1_config" {
     cores     = number
     memory    = number
     disk_size = number
-    mac       = string
     template  = string
   })
   default = {
@@ -202,7 +201,6 @@ variable "gw1_aah1_config" {
     cores     = 1
     memory    = 512
     disk_size = 8
-    mac       = "bc:24:11:00:00:95"
     template  = "gw1-aah1-nixos-26.05.tar.xz"
   }
 }

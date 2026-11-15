@@ -4,24 +4,26 @@
 #   f92 site anycast: served at the sites, announced while a site gateway hands this edge an f92 address over iBGP.
 {
   config,
+  inventory,
   lib,
   pkgs,
   ...
 }: let
-  edgeAddress = "2a0c:b641:f91::80";
+  inherit (inventory.fplnet.prefixes) edgeAnycast siteAnycast;
+  edgeAddress = inventory.fplnet.edgeAnycastAddress;
   dir = "/run/fplnet-anycast";
 
   prefixes = {
     f91 = {
-      prefix = "2a0c:b641:f91::/48";
+      prefix = edgeAnycast;
       healthy = "fplnet.net answers on ${edgeAddress}";
       check = "curl -fs -o /dev/null --max-time 3 --resolve 'fplnet.net:443:[${edgeAddress}]' https://fplnet.net/healthz";
       after = ["haproxy.service" "nginx.service"];
     };
     f92 = {
-      prefix = "2a0c:b641:f92::/48";
+      prefix = siteAnycast;
       healthy = "a site gateway announces an f92 address";
-      check = ''[[ "$(birdc -r 'show route where net ~ [ 2a0c:b641:f92::/48{128,128} ] && proto ~ "ibgp_gw1_*"')" == *2a0c:b641:f92:* ]]'';
+      check = ''[[ "$(birdc -r 'show route where net ~ [ ${siteAnycast}{128,128} ] && proto ~ "ibgp_gw1_*"')" == *${lib.removeSuffix "::/48" siteAnycast}:* ]]'';
       after = [];
     };
   };

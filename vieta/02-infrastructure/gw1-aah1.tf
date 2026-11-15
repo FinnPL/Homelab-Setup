@@ -1,6 +1,8 @@
 # FPLNET gateway gw1-aah1
 
 locals {
+  gw1_aah1 = jsondecode(file("${path.module}/../../inventory/fplnet.json")).inventory.fplnet.routers["gw1-aah1"]
+
   # Built from the gw1-aah1 flake output (system.build.tarball) and uploaded by hand once.
   gw1_aah1_template = "${var.proxmox_iso_storage}:vztmpl/${var.gw1_aah1_config.template}"
 }
@@ -52,7 +54,7 @@ resource "proxmox_virtual_environment_container" "gw1_aah1" {
     name        = "eth0"
     bridge      = var.proxmox_bridge
     firewall    = false
-    mac_address = var.gw1_aah1_config.mac
+    mac_address = local.gw1_aah1.uplink.mac
   }
 
   operating_system {

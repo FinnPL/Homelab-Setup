@@ -1,0 +1,165 @@
+{
+  "inventory": {
+    "fplnet": {
+      "asn": 218255,
+      "prefixes": {
+        "aggregate": "2a0c:b641:f90::/44",
+        "edgeAnycast": "2a0c:b641:f91::/48",
+        "siteAnycast": "2a0c:b641:f92::/48",
+        "edges": "2a0c:b641:f98::/46"
+      },
+      "edgeAnycastAddress": "2a0c:b641:f91::80",
+      "routers": {
+        "er1-dus1": {
+          "prefix": "2a0c:b641:f98::/48",
+          "loopback": "2a0c:b641:f98::1",
+          "city": "Düsseldorf",
+          "provider": "Servperso",
+          "uplink": {
+            "interface": "ens18",
+            "v4": "194.28.99.178/27",
+            "v6": "2a0c:b640:11:178::1/48"
+          },
+          "interfaces": {
+            "ens19": {
+              "v4": "185.1.155.233/24",
+              "v6": "2a0c:b641:701::a5:21:8255:1/64"
+            },
+            "wg-r64-fra4": {
+              "v6": "2a11:6c7:f00:2b4::2/64"
+            }
+          },
+          "wireguard": "iLTzJJz4odvQm1RKR4Eui/N/KfM5VwfNkWoQFsFzCSM=",
+          "ssh": "194.28.99.178",
+          "principals": [
+            "194.28.99.178",
+            "2a0c:b640:11:178::1",
+            "2a0c:b641:f98::1",
+            "er1-dus1",
+            "er1.dus1.fplnet.net"
+          ]
+        },
+        "er1-ams1": {
+          "prefix": "2a0c:b641:f99::/48",
+          "loopback": "2a0c:b641:f99::1",
+          "city": "Amsterdam",
+          "provider": "getvps.net",
+          "uplink": {
+            "interface": "ens18",
+            "v4": "188.65.164.27/24",
+            "v6": "2602:fa7e:17::3f/48"
+          },
+          "interfaces": {
+            "interix": {
+              "v4": "185.1.185.17/23",
+              "v6": "2001:7f8:134::10e/48"
+            }
+          },
+          "wireguard": "YLDF1BARenJHs6sMK9RYwmnxd/ICcnurOWpTy/iWJ1g=",
+          "ssh": "188.65.164.27",
+          "principals": [
+            "188.65.164.27",
+            "2602:fa7e:17::3f",
+            "2a0c:b641:f99::1",
+            "er1-ams1",
+            "er1.ams1.fplnet.net"
+          ]
+        },
+        "er1-fra1": {
+          "prefix": "2a0c:b641:f9a::/48",
+          "loopback": "2a0c:b641:f9a::1",
+          "city": "Frankfurt",
+          "provider": "Vultr",
+          "uplink": {
+            "interface": "enp1s0",
+            "v4": "209.250.233.8/23",
+            "v6": "2a05:f480:1800:28:5400:7ff:fe06:3983/64"
+          },
+          "interfaces": {},
+          "wireguard": "en+tsQ4OFy1jtCVxO3EY4mq1YfXqgomo/rBjf2aKHXc=",
+          "ssh": "209.250.233.8",
+          "principals": [
+            "209.250.233.8",
+            "2a05:f480:1800:28:5400:7ff:fe06:3983",
+            "2a0c:b641:f9a::1",
+            "er1-fra1",
+            "er1.fra1.fplnet.net"
+          ]
+        },
+        "gw1-aah1": {
+          "loopback": "2a0c:b641:f94::1",
+          "uplink": {
+            "interface": "eth0",
+            "mac": "bc:24:11:00:00:95",
+            "v4": "10.10.1.95/24",
+            "v6": "2a0c:b641:f94:20::1/64"
+          },
+          "interfaces": {},
+          "wireguard": "EZ2RLjPKIuKx138thvqVtSfMLrzW6ZycS1/bypmmK2k=",
+          "ssh": "10.10.1.95",
+          "principals": [
+            "10.10.1.95",
+            "2a0c:b641:f94::1",
+            "gw1-aah1",
+            "gw1.aah1.fplnet.net"
+          ]
+        }
+      },
+      "links": {
+        "er1-dus1/er1-ams1": {
+          "port": 51821,
+          "addresses": {
+            "er1-dus1": "2a0c:b641:f98:1001::",
+            "er1-ams1": "2a0c:b641:f98:1001::1"
+          }
+        },
+        "er1-dus1/er1-fra1": {
+          "port": 51823,
+          "addresses": {
+            "er1-dus1": "2a0c:b641:f98:1002::",
+            "er1-fra1": "2a0c:b641:f98:1002::1"
+          }
+        },
+        "er1-dus1/gw1-aah1": {
+          "port": 51822,
+          "addresses": {
+            "er1-dus1": "2a0c:b641:f98:1000::",
+            "gw1-aah1": "2a0c:b641:f98:1000::1"
+          }
+        },
+        "er1-ams1/er1-fra1": {
+          "port": 51824,
+          "addresses": {
+            "er1-ams1": "2a0c:b641:f99:1001::",
+            "er1-fra1": "2a0c:b641:f99:1001::1"
+          }
+        },
+        "er1-ams1/gw1-aah1": {
+          "port": 51822,
+          "addresses": {
+            "er1-ams1": "2a0c:b641:f99:1000::",
+            "gw1-aah1": "2a0c:b641:f99:1000::1"
+          }
+        },
+        "er1-fra1/gw1-aah1": {
+          "port": 51822,
+          "addresses": {
+            "er1-fra1": "2a0c:b641:f9a:1000::",
+            "gw1-aah1": "2a0c:b641:f9a:1000::1"
+          }
+        }
+      },
+      "siteServices": {
+        "dns.relay.lippok.dev": {
+          "address": "2a0c:b641:f92::53",
+          "tcp": [443],
+          "proxyPort": 8444
+        },
+        "site-data.relay.lippok.dev": {
+          "address": "2a0c:b641:f92::80",
+          "tcp": [443]
+        }
+      }
+    }
+  }
+}

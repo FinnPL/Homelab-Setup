@@ -147,7 +147,7 @@ Inter-VLAN traffic is blocked by default. Only SSH, HTTPS, and SMB are permitted
 
 #### DNS
 
-Cloudflare manages the `lippok.dev` zone. `03-services` points the wildcard at the Kubernetes Gateway LoadBalancer IP and writes the names served through the FPLNET edges (`fplnet/nixos/site-services.json`). `vieta/03-services/cloudflare-zone.tf` holds the apex record and the zone settings.
+Cloudflare manages the `lippok.dev` zone. `03-services` points the wildcard at the Kubernetes Gateway LoadBalancer IP and writes the names served through the FPLNET edges (`siteServices` in `inventory/fplnet.json`). `vieta/03-services/cloudflare-zone.tf` holds the apex record and the zone settings.
 
 | Name | DNS | TLS terminated at | Use case |
 |:-----|:----|:------------------|:---------|
@@ -165,7 +165,7 @@ Cloudflare manages the `lippok.dev` zone. `03-services` points the wildcard at t
 
 ### 02 Infrastructure
 
-Provisions VMs and containers on a Proxmox host (Intel NUC) and bootstraps a Talos-based Kubernetes cluster. All IPs and MACs are sourced from `01-network` via remote state.
+Provisions VMs and containers on a Proxmox host (Intel NUC) and bootstraps a Talos-based Kubernetes cluster. Host IPs and MACs come from `inventory/vieta.json`; `01-network` keeps its own copy for the UniFi reservations.
 
 #### Talos Kubernetes Cluster
 
@@ -190,11 +190,11 @@ Exports `kubeconfig`, `talosconfig`, cluster info, and NFS server details for th
 
 ### 03 Services (Cluster Platform)
 
-Bootstraps all platform-level services that make the cluster operational. Reads state from both `01-network` (LB CIDR) and `02-infrastructure` (kubeconfig, NFS server). Everything here is a prerequisite for the applications managed by ArgoCD.
+Bootstraps all platform-level services that make the cluster operational. Reads the LB range from `inventory/vieta.json` and state from `02-infrastructure` (kubeconfig, NFS server). Everything here is a prerequisite for the applications managed by ArgoCD.
 
 #### Cilium
 
-Cilium replaces kube-proxy and serves as the cluster CNI. It handles LoadBalancer IP advertisement via L2 announcements on all nodes (the IP pool is sourced from the `01-network` output), provides ingress through the Kubernetes Gateway API (`cilium` gatewayClassName), and exposes flow-level observability through Hubble with its UI and relay.
+Cilium replaces kube-proxy and serves as the cluster CNI. It handles LoadBalancer IP advertisement via L2 announcements on all nodes (the IP pool is `lan.loadBalancers` in `inventory/vieta.json`), provides ingress through the Kubernetes Gateway API (`cilium` gatewayClassName), and exposes flow-level observability through Hubble with its UI and relay.
 
 #### Kubernetes Gateway API
 

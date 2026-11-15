@@ -10,7 +10,7 @@ terraform {
 }
 
 provider "proxmox" {
-  endpoint  = "https://${var.pve_host}:8006"
+  endpoint  = "https://${local.minerva.pve}:8006"
   api_token = var.proxmox_api_token
   insecure  = true
 }

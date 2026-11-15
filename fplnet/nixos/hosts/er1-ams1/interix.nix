@@ -1,4 +1,6 @@
-{
+{inventory, ...}: let
+  inherit (inventory.fplnet.routers.er1-ams1.interfaces) interix;
+in {
   # InterIX Amsterdam peering LAN vNIC
   systemd.network.links."10-interix" = {
     matchConfig.MACAddress = "02:00:00:1a:3a:c1";
@@ -8,8 +10,8 @@
   systemd.network.networks."30-interix" = {
     matchConfig.Name = "interix";
     address = [
-      "185.1.185.17/23"
-      "2001:7f8:134::10e/48"
+      interix.v4
+      interix.v6
     ];
     networkConfig = {
       IPv6AcceptRA = false;

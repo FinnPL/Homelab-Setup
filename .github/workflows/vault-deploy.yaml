@@ -6,7 +6,8 @@ on:
       - main
     paths:
       - "vault/**"
-      - "fplnet/hosts.json"
+      - "inventory/fplnet.json"
+      - "inventory/vieta.json"
       - ".github/workflows/vault-deploy.yaml"
   workflow_dispatch:
     inputs:

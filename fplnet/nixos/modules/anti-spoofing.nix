@@ -1,12 +1,15 @@
 # edge forwards nothing that does not belong to us.
 {
   config,
+  inventory,
   lib,
   ...
 }: let
+  inherit (inventory.fplnet.prefixes) aggregate siteAnycast;
+
   sitePrefixes = {
     # Vieta and the site anycast it serves
-    wg-gw1-aah1 = ["2a0c:b641:f94::/48" "2a0c:b641:f92::/48"];
+    wg-gw1-aah1 = [inventory.vieta.prefix siteAnycast];
   };
 
   networks = lib.attrValues config.systemd.network.networks;
@@ -23,7 +26,7 @@
   # The router's own addresses, provider and IX ones included.
   hostAddresses = map (a: lib.head (lib.splitString "/" a)) (lib.concatMap (n: n.address or []) networks);
   # Addresses inside f90::/44 stay out, nft rejects overlapping set elements.
-  v6 = ["::" "fe80::/10" "2a0c:b641:f90::/44"] ++ lib.filter (a: lib.hasInfix ":" a && !(lib.hasPrefix "2a0c:b641:f9" a)) hostAddresses;
+  v6 = ["::" "fe80::/10" aggregate] ++ lib.filter (a: lib.hasInfix ":" a && !(lib.hasPrefix "2a0c:b641:f9" a)) hostAddresses;
   v4 = lib.filter (a: !(lib.hasInfix ":" a)) hostAddresses;
   set = lib.concatStringsSep ", ";
 in {
@@ -41,7 +44,7 @@ in {
         iifname "lo" accept
         iifname "wg-er1-*" accept
         iifname "wg-gw1-*" accept
-        ip6 saddr { 2a0c:b641:f90::/44, fc00::/7 } counter name own_source drop
+        ip6 saddr { ${aggregate}, fc00::/7 } counter name own_source drop
       }
 
       chain forward {
@@ -49,7 +52,7 @@ in {
         ${lib.concatMapStrings gatewayRule gatewayLinks}
         oifname "wg-er1-*" accept
         oifname "wg-gw1-*" accept
-        ip6 saddr != 2a0c:b641:f90::/44 counter name foreign_source drop
+        ip6 saddr != ${aggregate} counter name foreign_source drop
       }
 
       # The router itself only sends from its own addresses.

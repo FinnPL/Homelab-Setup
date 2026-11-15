@@ -2,6 +2,7 @@
 # Only the cluster's pod range may connect, and only through backbone tunnels.
 {
   config,
+  inventory,
   lib,
   pkgs,
   ...
@@ -83,7 +84,7 @@ in {
     };
 
     networking.firewall.extraInputRules = ''
-      iifname { ${interfaces} } ip6 saddr 2a0c:b641:f94:8100::/56 tcp dport { ${lib.concatMapStringsSep ", " toString ([9100 9324 9374] ++ cfg.extraPorts)} } accept
+      iifname { ${interfaces} } ip6 saddr ${inventory.vieta.podNetwork} tcp dport { ${lib.concatMapStringsSep ", " toString ([9100 9324 9374] ++ cfg.extraPorts)} } accept
     '';
   };
 }

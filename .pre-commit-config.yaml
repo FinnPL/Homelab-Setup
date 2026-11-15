@@ -39,6 +39,16 @@ repos:
     hooks:
       - id: shellcheck
 
+  # ---- Inventory (numbering plan, keys, principals)
+  - repo: local
+    hooks:
+      - id: inventory
+        name: inventory
+        entry: python -I inventory/check.py
+        language: python
+        files: ^inventory/
+        pass_filenames: false
+
   # ---- Spelling
   - repo: https://github.com/codespell-project/codespell
     rev: v2.4.3

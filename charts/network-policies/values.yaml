@@ -1,6 +1,3 @@
-# Gateway LoadBalancer IP; *.lippok.dev resolves here.
-gatewayIP: 10.10.1.200
-
 # Route backends. Envoy checks a calling pod's egress against the backend behind the route, not the Gateway IP.
 gatewayBackends:
   authentik:

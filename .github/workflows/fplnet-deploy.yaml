@@ -6,12 +6,18 @@ on:
   pull_request:
     paths:
       - "fplnet/**"
+      - "inventory/fplnet.json"
+      - "inventory/vieta.json"
+      - "inventory/trust/**"
       - "homepage/**"
       - ".github/workflows/fplnet-deploy.yaml"
   push:
     branches: [main]
     paths:
       - "fplnet/**"
+      - "inventory/fplnet.json"
+      - "inventory/vieta.json"
+      - "inventory/trust/**"
       - "homepage/**"
       - ".github/workflows/fplnet-deploy.yaml"
   # Rebuilds lippok.dev for new GitHub repo metadata, charts and Terraform.
@@ -53,8 +59,10 @@ jobs:
           filters: |
             nixos:
               - 'fplnet/nixos/**'
-              - 'fplnet/hosts.json'
               - 'fplnet/scripts/**'
+              - 'inventory/fplnet.json'
+              - 'inventory/vieta.json'
+              - 'inventory/trust/**'
             homepage:
               - 'homepage/**'
 
@@ -96,7 +104,7 @@ jobs:
             echo "::endgroup::"
           done
           # Host can be configured before it is deployed.
-          for host in $(jq -r 'keys[]' ../hosts.json); do
+          for host in $(jq -r '.inventory.fplnet.routers | keys[]' ../../inventory/fplnet.json); do
             echo "::group::deploy ${host}"
             nix eval ".#deploy.nodes.${host}.profiles.system.path.drvPath" --raw --no-write-lock-file
             echo

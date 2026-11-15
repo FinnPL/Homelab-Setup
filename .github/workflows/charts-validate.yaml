@@ -8,12 +8,14 @@ on:
       - "charts/**"
       - "*/apps/**"
       - "*/root/**"
+      - "inventory/**"
       - ".github/workflows/charts-validate.yaml"
   pull_request:
     paths:
       - "charts/**"
       - "*/apps/**"
       - "*/root/**"
+      - "inventory/**"
       - ".github/workflows/charts-validate.yaml"
 
 permissions:
@@ -41,13 +43,13 @@ jobs:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           # On a PR, render only the apps whose chart or app file changed. On push to main, or when
-          # this workflow, an ApplicationSet or the kyverno policies change, render all.
+          # this workflow, an ApplicationSet, the inventory or the kyverno policies change, render all.
           render_all=0
           declare -A WANT
           if [ "$EVENT" = "pull_request" ]; then
             while IFS= read -r f; do
               case "$f" in
-                .github/workflows/charts-validate.yaml|*/root/*|charts/kyverno/*) render_all=1 ;;
+                .github/workflows/charts-validate.yaml|*/root/*|inventory/*|charts/kyverno/*) render_all=1 ;;
                 charts/*/*) WANT["$(echo "$f" | cut -d/ -f2)"]=1 ;;
                 */apps/*.yaml) WANT["$(basename "$f" .yaml)"]=1 ;;
               esac
@@ -73,10 +75,15 @@ jobs:
             elif [ ! -f "charts/$c/Chart.yaml" ] && [ "$plain" != "true" ]; then
               echo "::error file=$f::charts/$c has no Chart.yaml, set directory: true (or directoryRecurse: true)"; exit 1
             fi
+            # The ApplicationSet adds inventory/<name>.json for each name, after values-<site>.yaml
+            inventory=$(yq e -o json -I0 '.inventory // []' "$f")
+            for x in $(jq -r '.[]' <<< "$inventory"); do
+              [ -f "inventory/$x.json" ] || { echo "::error file=$f::no inventory/$x.json"; exit 1; }
+            done
             if [ "$render_all" = "0" ] && [ -z "${WANT[$c]:-}" ]; then continue; fi
             ns=$(yq e '.namespace // ""' "$f"); [ -z "$ns" ] && ns="$c"
             release=$(yq e ".name // \"$c\"" "$f")
-            entries+=("$(jq -nc --arg n "$c" --arg site "$site" --arg s "$ns" --arg r "$release" '{name:$n, site:$site, ns:$s, release:$r}')")
+            entries+=("$(jq -nc --arg n "$c" --arg site "$site" --arg s "$ns" --arg r "$release" --argjson inv "$inventory" '{name:$n, site:$site, ns:$s, release:$r, inventory:$inv}')")
           done
           if [ ${#entries[@]} -eq 0 ]; then
             charts='[]'
@@ -114,20 +121,26 @@ jobs:
           helm dependency build "$d" || helm dependency update "$d"
 
       - name: Helm lint
+        env:
+          INVENTORY: ${{ toJSON(matrix.chart.inventory) }}
         run: |
           d="charts/${{ matrix.chart.name }}"
           [ -f "$d/Chart.yaml" ] || { echo "plain manifest dir — skipping lint"; exit 0; }
-          helm lint "$d"
+          mapfile -t inventory < <(jq -r '.[] | "-f\ninventory/\(.).json"' <<< "$INVENTORY")
+          helm lint "$d" "${inventory[@]}"
 
-      # Render into the real destination namespace, with the site's values file as the ApplicationSet adds it.
+      # Render into the real destination namespace, with the site's values file and inventory files as the ApplicationSet adds them.
       # Nulls are dropped as the apiserver does before admission.
       - name: Render
+        env:
+          INVENTORY: ${{ toJSON(matrix.chart.inventory) }}
         run: |
           d="charts/${{ matrix.chart.name }}"
           site_values=()
           [ -f "$d/values-${{ matrix.chart.site }}.yaml" ] && site_values=(-f "$d/values-${{ matrix.chart.site }}.yaml")
+          mapfile -t inventory < <(jq -r '.[] | "-f\ninventory/\(.).json"' <<< "$INVENTORY")
           if [ -f "$d/Chart.yaml" ]; then
-            helm template "${{ matrix.chart.release }}" "$d" --namespace "${{ matrix.chart.ns }}" "${site_values[@]}"
+            helm template "${{ matrix.chart.release }}" "$d" --namespace "${{ matrix.chart.ns }}" "${site_values[@]}" "${inventory[@]}"
           else
             find "$d" -type f \( -name '*.yaml' -o -name '*.yml' \) \
               -exec sh -c 'for f; do cat "$f"; echo; echo "---"; done' _ {} +

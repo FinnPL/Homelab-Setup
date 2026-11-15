@@ -1,13 +1,15 @@
 # RPKI route origin validation on the edges.
 {
   config,
+  inventory,
   lib,
   ...
 }: let
+  inherit (inventory.fplnet) routers;
   cfg = config.fplnet.rpki;
   caches = {
-    dus1 = "2a0c:b641:f98::1";
-    ams1 = "2a0c:b641:f99::1";
+    dus1 = routers.er1-dus1.loopback;
+    ams1 = routers.er1-ams1.loopback;
   };
   edgeTunnels = lib.concatMapStringsSep ", " (name: ''"${name}"'') (
     lib.filter (lib.hasPrefix "wg-er1-")

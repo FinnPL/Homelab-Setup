@@ -1,0 +1,45 @@
+{{- /* The subchart mounts this as its externalConfigMap. Generated checks go before the first hand-written check
+     of their group, or at the end: FPLNET routers in edge prefix order, then the gateways; Vieta hosts by
+     inventory name. A hand-written url containing a template is rendered with tpl. */}}
+{{- $edges := dict }}
+{{- $gateways := list }}
+{{- range $name, $r := .Values.inventory.fplnet.routers }}
+{{- if $r.prefix }}{{ $_ := set $edges $r.prefix $name }}{{ else }}{{ $gateways = append $gateways $name }}{{ end }}
+{{- end }}
+{{- $order := list }}
+{{- range sortAlpha (keys $edges) }}{{ $order = append $order (get $edges .) }}{{ end }}
+{{- $generated := dict }}
+{{- range concat $order $gateways }}
+{{- $check := merge (dict "name" . "url" (printf "icmp://%s.fplnet.net" (replace "-" "." .))) (deepCopy $.Values.fplnetRouterCheck) }}
+{{- $_ := set $generated $check.group (append (default (list) (get $generated $check.group)) $check) }}
+{{- end }}
+{{- $v := .Values.vietaHosts }}
+{{- range $name, $h := .Values.inventory.vieta.hosts }}
+{{- if not (has $name $v.skip) }}
+{{- $c := default (dict "group" $v.defaultGroup "name" $name) (get $v.checks $name) }}
+{{- $check := merge (dict "name" $c.name "group" $c.group "url" (printf "icmp://%s" (default $h.ipv4 $h.dns))) (deepCopy $.Values.vietaHostCheck) }}
+{{- $_ := set $generated $c.group (append (default (list) (get $generated $c.group)) $check) }}
+{{- end }}
+{{- end }}
+{{- $endpoints := list }}
+{{- range .Values.gatus.config.endpoints }}
+{{- $group := .group | default "" }}
+{{- if hasKey $generated $group }}
+{{- $endpoints = concat $endpoints (get $generated $group) }}
+{{- $_ := unset $generated $group }}
+{{- end }}
+{{- $e := . }}
+{{- if contains "{{" (.url | default "") }}{{ $e = set (deepCopy .) "url" (tpl .url $) }}{{ end }}
+{{- $endpoints = append $endpoints $e }}
+{{- end }}
+{{- range sortAlpha (keys $generated) }}{{ $endpoints = concat $endpoints (get $generated .) }}{{ end }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.gatus.externalConfigMap }}
+  namespace: {{ include "names.namespace" .Subcharts.gatus }}
+  labels:
+    {{- include "labels.baseLabels" .Subcharts.gatus | nindent 4 }}
+data:
+  config.yaml: |
+    {{- toYaml (set (omit .Values.gatus.config "endpoints") "endpoints" $endpoints) | nindent 4 }}

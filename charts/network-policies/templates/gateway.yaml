@@ -1,4 +1,5 @@
-{{- range $name, $target := dict "apollo" (list "10.10.1.195" 5000) "fritzbox" (list "192.168.178.1" 80) "proxmox" (list "10.10.1.42" 8006) "zeus" (list "10.0.1.63" 80) }}
+{{- $hosts := .Values.inventory.vieta.hosts }}
+{{- range $name, $target := dict "apollo" (list $hosts.apollo.ipv4 5000) "fritzbox" (list "192.168.178.1" 80) "proxmox" (list $hosts.nuc.ipv4 8006) "zeus" (list "10.0.1.63" 80) }}
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy

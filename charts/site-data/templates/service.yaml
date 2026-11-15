@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: site-data
     lippok.dev/public: site-anycast
   annotations:
-    lbipam.cilium.io/ips: {{ .Values.relay.address | quote }}
+    lbipam.cilium.io/ips: {{ (index .Values.inventory.fplnet.siteServices .Values.relay.name).address | quote }}
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local

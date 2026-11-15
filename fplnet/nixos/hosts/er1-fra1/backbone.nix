@@ -1,5 +1,8 @@
 # Backbone links to er1-dus1, er1-ams1 and gw1-aah1.
-let
+{inventory, ...}: let
+  inherit (inventory) address;
+  inherit (inventory.fplnet) routers links;
+
   tunnel = {
     name,
     port,
@@ -43,31 +46,35 @@ let
     };
   };
 
+  dus1Link = links."er1-dus1/er1-fra1";
+  ams1Link = links."er1-ams1/er1-fra1";
+  gw1Link = links."er1-fra1/gw1-aah1";
+
   dus1 = tunnel {
     name = "wg-er1-dus1";
-    port = 51823;
-    publicKey = "iLTzJJz4odvQm1RKR4Eui/N/KfM5VwfNkWoQFsFzCSM=";
-    endpoint = "194.28.99.178:51823";
-    address = "2a0c:b641:f98:1002::1/127";
+    inherit (dus1Link) port;
+    publicKey = routers.er1-dus1.wireguard;
+    endpoint = "${address routers.er1-dus1.uplink.v4}:${toString dus1Link.port}";
+    address = "${dus1Link.addresses.er1-fra1}/127";
   };
 
   ams1 = tunnel {
     name = "wg-er1-ams1";
-    port = 51824;
-    publicKey = "YLDF1BARenJHs6sMK9RYwmnxd/ICcnurOWpTy/iWJ1g=";
-    endpoint = "188.65.164.27:51824";
-    address = "2a0c:b641:f99:1001::1/127";
+    inherit (ams1Link) port;
+    publicKey = routers.er1-ams1.wireguard;
+    endpoint = "${address routers.er1-ams1.uplink.v4}:${toString ams1Link.port}";
+    address = "${ams1Link.addresses.er1-fra1}/127";
   };
 
   # gw1-aah1 sits behind the RWTH firewall and dials in.
   gw1 = tunnel {
     name = "wg-gw1-aah1";
-    port = 51822;
-    publicKey = "EZ2RLjPKIuKx138thvqVtSfMLrzW6ZycS1/bypmmK2k=";
-    address = "2a0c:b641:f9a:1000::/127";
+    inherit (gw1Link) port;
+    publicKey = routers.gw1-aah1.wireguard;
+    address = "${gw1Link.addresses.er1-fra1}/127";
   };
 in {
-  networking.firewall.allowedUDPPorts = [51822 51823 51824];
+  networking.firewall.allowedUDPPorts = [gw1Link.port dus1Link.port ams1Link.port];
 
   systemd.network = {
     netdevs = dus1.netdevs // ams1.netdevs // gw1.netdevs;

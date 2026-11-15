@@ -1,10 +1,13 @@
 # Vieta's FPLNET gateway: unprivileged LXC on the NUC
 {
+  inventory,
   lib,
   modulesPath,
   ...
 }: let
-  services = lib.importJSON ../../site-services.json;
+  inherit (inventory) fplnet vieta;
+  host = fplnet.routers.gw1-aah1;
+  services = fplnet.siteServices;
   siteServices = lib.concatLists (lib.mapAttrsToList (_: s: map (port: "${s.address} . ${toString port}") s.tcp) services);
   proxyPorts = lib.mapAttrsToList (_: s: "${s.address} . ${toString s.proxyPort}") (lib.filterAttrs (_: s: s ? proxyPort) services);
 in {
@@ -27,17 +30,17 @@ in {
     # Inbound to Athena: replies, ICMPv6 and the site services. SSH from the LAN only.
     firewall = {
       allowedTCPPorts = lib.mkForce [];
-      interfaces.eth0.allowedTCPPorts = [22];
+      interfaces.${host.uplink.interface}.allowedTCPPorts = [22];
       filterForward = true;
       extraForwardRules =
         ''
-          iifname "eth0" oifname "wg-er1-*" ip6 saddr { 2a0c:b641:f94:20::/64, 2a0c:b641:f94:8100::/56 } accept
+          iifname "${host.uplink.interface}" oifname "wg-er1-*" ip6 saddr { ${vieta.nodeNetwork}, ${vieta.podNetwork} } accept
         ''
         + lib.optionalString (siteServices != []) ''
-          iifname "wg-er1-*" oifname "eth0" ip6 daddr . tcp dport { ${lib.concatStringsSep ", " siteServices} } accept
+          iifname "wg-er1-*" oifname "${host.uplink.interface}" ip6 daddr . tcp dport { ${lib.concatStringsSep ", " siteServices} } accept
         ''
         + lib.optionalString (proxyPorts != []) ''
-          iifname "wg-er1-*" oifname "eth0" ip6 saddr 2a0c:b641:f98::/46 ip6 daddr . tcp dport { ${lib.concatStringsSep ", " proxyPorts} } accept
+          iifname "wg-er1-*" oifname "${host.uplink.interface}" ip6 saddr ${fplnet.prefixes.edges} ip6 daddr . tcp dport { ${lib.concatStringsSep ", " proxyPorts} } accept
         '';
     };
 
@@ -57,17 +60,17 @@ in {
   services.openssh.startWhenNeeded = false;
 
   # The cluster sits on the LAN side.
-  fplnet.monitoring.extraInterfaces = ["eth0"];
+  fplnet.monitoring.extraInterfaces = [host.uplink.interface];
 
   zramSwap.enable = lib.mkForce false;
 
   systemd.network.networks."10-lan" = {
-    matchConfig.MACAddress = "bc:24:11:00:00:95";
+    matchConfig.MACAddress = host.uplink.mac;
     address = [
-      "10.10.1.95/24"
-      "2a0c:b641:f94:20::1/64"
+      host.uplink.v4
+      host.uplink.v6
     ];
-    routes = [{Gateway = "10.10.1.1";}];
+    routes = [{Gateway = vieta.lan.gateway;}];
     networkConfig = {
       IPv6AcceptRA = false;
       LinkLocalAddressing = "ipv6";

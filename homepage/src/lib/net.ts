@@ -1,16 +1,18 @@
 // Facts about the network that live.json and site.json do not carry. Read at build time and by
 // the browser scripts.
 
-export const ASN = "AS218255";
-export const AGGREGATE = "2a0c:b641:f90::/44";
+type Edge = { name: string; city: string; provider: string; prefix: string; loopback: string };
 
-export type EdgeId = "ams1" | "dus1" | "fra1";
+// From inventory/fplnet.json, put in by astro.config.mjs.
+declare const __FPLNET__: { asn: number; aggregate: string; edges: Record<string, Edge> };
+const FPLNET = __FPLNET__;
 
-export const EDGES: Record<EdgeId, { name: string; city: string; provider: string; prefix: string; loopback: string }> = {
-  ams1: { name: "er1.ams1", city: "Amsterdam", provider: "getvps.net", prefix: "2a0c:b641:f99::/48", loopback: "2a0c:b641:f99::1" },
-  dus1: { name: "er1.dus1", city: "Düsseldorf", provider: "Servperso", prefix: "2a0c:b641:f98::/48", loopback: "2a0c:b641:f98::1" },
-  fra1: { name: "er1.fra1", city: "Frankfurt", provider: "Vultr", prefix: "2a0c:b641:f9a::/48", loopback: "2a0c:b641:f9a::1" },
-};
+export const ASN = `AS${FPLNET.asn}`;
+export const AGGREGATE = FPLNET.aggregate;
+
+export type EdgeId = string;
+
+export const EDGES: Record<EdgeId, Edge> = FPLNET.edges;
 export const EDGE_IDS = Object.keys(EDGES) as EdgeId[];
 
 export const liveUrl = (e: EdgeId) => `https://${EDGES[e].name}.fplnet.net/live.json`;

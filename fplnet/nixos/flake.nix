@@ -22,6 +22,8 @@
     deploy-rs,
     ...
   } @ inputs: let
+    inventory = import ../../inventory;
+
     deployPkgs = import nixpkgs {
       system = "x86_64-linux";
       overlays = [
@@ -39,7 +41,7 @@
       # Servperso Düsseldorf BGP edge
       er1-dus1 = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs = {inherit inputs;};
+        specialArgs = {inherit inputs inventory;};
         modules = [
           disko.nixosModules.disko
           ./hosts/er1-dus1
@@ -49,7 +51,7 @@
       # getvps.net Amsterdam BGP edge
       er1-ams1 = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs = {inherit inputs;};
+        specialArgs = {inherit inputs inventory;};
         modules = [
           disko.nixosModules.disko
           ./hosts/er1-ams1
@@ -59,7 +61,7 @@
       # Vultr Frankfurt BGP edge
       er1-fra1 = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs = {inherit inputs;};
+        specialArgs = {inherit inputs inventory;};
         modules = [
           disko.nixosModules.disko
           ./hosts/er1-fra1
@@ -69,18 +71,18 @@
       # Vieta gateway, LXC on the NUC
       gw1-aah1 = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
-        specialArgs = {inherit inputs;};
+        specialArgs = {inherit inputs inventory;};
         modules = [./hosts/gw1-aah1];
       };
     };
 
-    # CI deploys every router in ../hosts.json
+    # CI deploys every router in the inventory
     deploy.nodes =
       builtins.mapAttrs (name: host: {
         hostname = host.ssh;
         sshUser = "root";
         profiles.system.path = deployPkgs.deploy-rs.lib.activate.nixos self.nixosConfigurations.${name};
       })
-      (builtins.fromJSON (builtins.readFile ../hosts.json));
+      inventory.fplnet.routers;
   };
 }

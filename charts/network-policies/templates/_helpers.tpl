@@ -26,7 +26,7 @@
      Call as (dict "root" $ "via" (list "authentik" ...)), names from .Values.gatewayBackends. */}}
 {{- define "np.toGateway" -}}
 - toCIDR:
-    - {{ .root.Values.gatewayIP }}/32
+    - {{ .root.Values.inventory.vieta.lan.loadBalancerIPs.gateway }}/32
   toPorts:
     - ports:
         - port: "443"
@@ -104,4 +104,16 @@ spec:
     - ports:
         - port: "5432"
           protocol: TCP
+{{- end }}
+
+{{/* Every FPLNET router's loopback as a /128. */}}
+{{- define "np.routerLoopbacks" -}}
+{{- $edges := list }}
+{{- $gateways := list }}
+{{- range $name, $r := .Values.inventory.fplnet.routers }}
+{{- if $r.prefix }}{{ $edges = append $edges $r.loopback }}{{ else }}{{ $gateways = append $gateways $r.loopback }}{{ end }}
+{{- end }}
+{{- range concat (sortAlpha $edges) (sortAlpha $gateways) }}
+- {{ . }}/128
+{{- end }}
 {{- end }}

@@ -8,6 +8,7 @@
 #   directoryRecurse   the same, including subdirectories
 #   syncOptions        appended to CreateNamespace=true
 #   ignoreDifferences  passed through verbatim
+#   inventory          inventory/<name>.json files added as values after values-vieta.yaml (read as .Values.inventory.<name>)
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -67,7 +68,11 @@ spec:
       {{- else if not (dig "directory" false .) }}
       source:
         helm:
-          valueFiles: [values-vieta.yaml]
+          valueFiles:
+            - values-vieta.yaml
+            {{- range dig "inventory" (list) . }}
+            - ../../inventory/{{ . }}.json
+            {{- end }}
           ignoreMissingValueFiles: true
       {{- end }}
       syncPolicy:
