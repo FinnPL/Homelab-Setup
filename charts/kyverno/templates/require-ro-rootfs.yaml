@@ -1,5 +1,5 @@
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
   name: require-ro-rootfs
   annotations:
@@ -9,25 +9,20 @@ metadata:
       A read-only root filesystem prevents runtime writes to the container
       image layer, limiting the blast radius of a compromised container.
 spec:
-  validationFailureAction: Enforce
-  background: false
-  rules:
-    - name: require-ro-rootfs
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      validate:
-        message: "Containers must set securityContext.readOnlyRootFilesystem=true"
-        pattern:
-          spec:
-            =(ephemeralContainers):
-              - securityContext:
-                  readOnlyRootFilesystem: true
-            =(initContainers):
-              - securityContext:
-                  readOnlyRootFilesystem: true
-            containers:
-              - securityContext:
-                  readOnlyRootFilesystem: true
+  validationActions: [Deny]
+  failurePolicy: Fail
+  evaluation:
+    background:
+      enabled: false
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+  variables:
+    - name: ctnrs
+      expression: object.spec.containers + object.spec.?initContainers.orValue([]) + object.spec.?ephemeralContainers.orValue([])
+  validations:
+    - expression: variables.ctnrs.all(c, c.?securityContext.?readOnlyRootFilesystem.orValue(false) == true)
+      message: "Containers must set securityContext.readOnlyRootFilesystem=true"

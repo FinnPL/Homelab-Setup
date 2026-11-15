@@ -195,8 +195,17 @@ jobs:
             site_values=()
             [ -f "charts/kyverno/values-$site.yaml" ] && site_values=(-f "charts/kyverno/values-$site.yaml")
             helm template kyverno charts/kyverno --namespace kyverno "${site_values[@]}" > "kyverno-$site.yaml"
-            yq eval 'select(.kind == "ClusterPolicy" or .kind == "Policy" or .kind == "ValidatingPolicy")' "kyverno-$site.yaml" > "policies-$site.yaml"
-            yq eval 'select(.kind == "PolicyException")' "kyverno-$site.yaml" > "exceptions-$site.yaml"
+            yq eval 'select(.kind == "ValidatingPolicy")' "kyverno-$site.yaml" > "policies-$site.yaml"
+            yq eval 'select(.kind == "PolicyException" and .apiVersion == "policies.kyverno.io/*")' "kyverno-$site.yaml" > "exceptions-$site.yaml"
+
+            # Kyverno 1.20 no longer executes kyverno.io policy types
+            files=("kyverno-$site.yaml")
+            for f in rendered/rendered-"$site"-*.yaml; do [ -e "$f" ] && files+=("$f"); done
+            legacy=$(yq eval -N 'select(.apiVersion == "kyverno.io/*" and (.kind == "ClusterPolicy" or .kind == "Policy" or .kind == "PolicyException" or .kind == "CleanupPolicy" or .kind == "ClusterCleanupPolicy")) | .kind + "/" + .metadata.name' "${files[@]}")
+            if [ -n "$legacy" ]; then
+              echo "::error::$site renders kyverno.io policy types that Kyverno no longer executes, migrate them to policies.kyverno.io: $(echo $legacy)"
+              status=1
+            fi
             echo "Policies:";   grep -c '^kind:' "policies-$site.yaml" || true
             echo "Exceptions:"; grep -c '^kind:' "exceptions-$site.yaml" || true
 

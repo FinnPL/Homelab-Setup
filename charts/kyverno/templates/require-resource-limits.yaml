@@ -1,5 +1,5 @@
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
   name: require-resource-limits
   annotations:
@@ -9,37 +9,24 @@ metadata:
       Every container must declare CPU and memory requests and a memory limit.
       CPU limits are intentionally NOT required.
 spec:
-  validationFailureAction: Enforce
-  background: false
-  rules:
-    - name: require-limits
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      validate:
-        message: "CPU+memory requests and a memory limit are required on all containers."
-        pattern:
-          spec:
-            =(ephemeralContainers):
-              - resources:
-                  requests:
-                    memory: "?*"
-                    cpu: "?*"
-                  limits:
-                    memory: "?*"
-            =(initContainers):
-              - resources:
-                  requests:
-                    memory: "?*"
-                    cpu: "?*"
-                  limits:
-                    memory: "?*"
-            containers:
-              - resources:
-                  requests:
-                    memory: "?*"
-                    cpu: "?*"
-                  limits:
-                    memory: "?*"
+  validationActions: [Deny]
+  failurePolicy: Fail
+  evaluation:
+    background:
+      enabled: false
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+  variables:
+    - name: ctnrs
+      expression: object.spec.containers + object.spec.?initContainers.orValue([]) + object.spec.?ephemeralContainers.orValue([])
+  validations:
+    - expression: >-
+        variables.ctnrs.all(c,
+          c.?resources.?requests.?memory.hasValue() &&
+          c.?resources.?requests.?cpu.hasValue() &&
+          c.?resources.?limits.?memory.hasValue())
+      message: "CPU+memory requests and a memory limit are required on all containers."

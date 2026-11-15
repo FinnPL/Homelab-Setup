@@ -1,5 +1,5 @@
-apiVersion: kyverno.io/v1
-kind: ClusterPolicy
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
 metadata:
   name: disallow-latest-tag
   annotations:
@@ -8,45 +8,20 @@ metadata:
     policies.kyverno.io/description: >-
       Using the :latest tag prevents reproducible rollbacks.
 spec:
-  validationFailureAction: Enforce
-  background: false
-  rules:
-    - name: require-image-tag
-      match:
-        any:
-          - resources:
-              kinds:
-                - Pod
-      validate:
-        message: "Image tag ':latest' or missing tag is not allowed."
-        foreach:
-          - list: "request.object.spec.containers"
-            deny:
-              conditions:
-                any:
-                  - key: "{{ `{{ element.image }}` }}"
-                    operator: AnyIn
-                    value: ["*:latest"]
-                  - key: "{{ `{{ element.image }}` }}"
-                    operator: AnyNotIn
-                    value: ["*:*"]
-          - list: "request.object.spec.initContainers || `[]`"
-            deny:
-              conditions:
-                any:
-                  - key: "{{ `{{ element.image }}` }}"
-                    operator: AnyIn
-                    value: ["*:latest"]
-                  - key: "{{ `{{ element.image }}` }}"
-                    operator: AnyNotIn
-                    value: ["*:*"]
-          - list: "request.object.spec.ephemeralContainers || `[]`"
-            deny:
-              conditions:
-                any:
-                  - key: "{{ `{{ element.image }}` }}"
-                    operator: AnyIn
-                    value: ["*:latest"]
-                  - key: "{{ `{{ element.image }}` }}"
-                    operator: AnyNotIn
-                    value: ["*:*"]
+  validationActions: [Deny]
+  failurePolicy: Fail
+  evaluation:
+    background:
+      enabled: false
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [pods]
+  variables:
+    - name: ctnrs
+      expression: object.spec.containers + object.spec.?initContainers.orValue([]) + object.spec.?ephemeralContainers.orValue([])
+  validations:
+    - expression: variables.ctnrs.all(c, c.image.contains(':') && !c.image.endsWith(':latest'))
+      message: "Image tag ':latest' or missing tag is not allowed."
