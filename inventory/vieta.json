@@ -6,6 +6,7 @@
       "podNetwork": "2a0c:b641:f94:8100::/56",
       "publicServicePool": "2a0c:b641:f94:8000::/64",
       "clusterAsn": 4200218255,
+      "unifiController": "10.10.0.1",
       "lan": {
         "vlan": 20,
         "network": "10.10.1.0/24",

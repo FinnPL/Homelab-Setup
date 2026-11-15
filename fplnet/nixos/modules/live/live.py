@@ -11,11 +11,10 @@ import re
 import time
 import urllib.request
 
-LOOPBACK = os.environ["LIVE_LOOPBACK"]
+SMOKEPING = os.environ["LIVE_SMOKEPING"]
+BIRD = os.environ["LIVE_BIRD"]
 OUT = os.environ["LIVE_OUT"]
 EDGE = os.environ["LIVE_EDGE"]
-SMOKEPING = f"http://[{LOOPBACK}]:9374/metrics"
-BIRD = f"http://[{LOOPBACK}]:9324/metrics"
 
 SESSION_EVERY = 10
 WINDOW = 60

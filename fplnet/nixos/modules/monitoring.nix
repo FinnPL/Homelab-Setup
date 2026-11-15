@@ -8,6 +8,8 @@
   ...
 }: let
   cfg = config.fplnet.monitoring;
+  exporters = config.services.prometheus.exporters;
+  ports = inventory.fplnet.exporterPorts;
   loopback = lib.removeSuffix "/128" (lib.head config.systemd.network.networks."05-lo".address);
   backbone =
     lib.filter (name: lib.hasPrefix "wg-er1-" name || lib.hasPrefix "wg-gw1-" name)
@@ -40,15 +42,18 @@ in {
     services.prometheus.exporters = {
       node = {
         enable = true;
+        port = ports.node;
         listenAddress = "[${loopback}]";
         enabledCollectors = ["systemd"];
       };
       bird = {
         enable = true;
+        port = ports.bird;
         listenAddress = "[${loopback}]";
       };
       smokeping = {
         enable = true;
+        port = ports.smokeping;
         listenAddress = "[${loopback}]";
         hosts = map linkPeer backbone ++ cfg.extraProbeTargets ++ ["2606:4700:4700::1111"];
       };
@@ -61,7 +66,7 @@ in {
       serviceConfig.Type = "oneshot";
       script = ''
         state=/run/smokeping-watchdog
-        now=$(curl -sf "http://[${loopback}]:9374/metrics" | awk '/^smokeping_requests_total/ {print $1, $2}' | sort) || exit 0
+        now=$(curl -sf "http://[${loopback}]:${toString exporters.smokeping.port}/metrics" | awk '/^smokeping_requests_total/ {print $1, $2}' | sort) || exit 0
         [ -n "$now" ] || exit 0
         if [ -f "$state" ]; then
           stuck=$(join "$state" <(echo "$now") | awk '$2 == $3 {print $1}')
@@ -84,7 +89,7 @@ in {
     };
 
     networking.firewall.extraInputRules = ''
-      iifname { ${interfaces} } ip6 saddr ${inventory.vieta.podNetwork} tcp dport { ${lib.concatMapStringsSep ", " toString ([9100 9324 9374] ++ cfg.extraPorts)} } accept
+      iifname { ${interfaces} } ip6 saddr ${inventory.vieta.podNetwork} tcp dport { ${lib.concatMapStringsSep ", " toString ([exporters.node.port exporters.bird.port exporters.smokeping.port] ++ cfg.extraPorts)} } accept
     '';
   };
 }

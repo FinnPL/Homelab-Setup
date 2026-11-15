@@ -9,6 +9,7 @@
         "edges": "2a0c:b641:f98::/46"
       },
       "edgeAnycastAddress": "2a0c:b641:f91::80",
+      "exporterPorts": { "node": 9100, "bird": 9324, "smokeping": 9374, "routinator": 8323 },
       "routers": {
         "er1-dus1": {
           "prefix": "2a0c:b641:f98::/48",

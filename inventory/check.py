@@ -75,6 +75,9 @@ def check_fplnet(fp, vieta):
     a = addr("edgeAnycastAddress", fp["edgeAnycastAddress"], 6)
     if a and a not in edge_anycast:
         fail("edgeAnycastAddress", f"{a} is outside {edge_anycast}")
+    ports = fp["exporterPorts"]
+    if not all(isinstance(v, int) and 1024 <= v <= 65535 for v in ports.values()) or len(set(ports.values())) != len(ports):
+        fail("exporterPorts", f"{ports} are not distinct unprivileged ports")
 
     routers = fp["routers"]
     seen = {}
@@ -230,6 +233,8 @@ def check_vieta(vieta):
     if not 4200000000 <= asn <= 4294967294:
         fail("vieta.clusterAsn", f"{asn} is not a private 32-bit ASN")
 
+    addr("vieta.unifiController", vieta["unifiController"], 4)
+
     lan = vieta["lan"]
     network = net("vieta.lan.network", lan["network"], 4)
     vlan = lan["vlan"]
@@ -324,6 +329,45 @@ def check_minerva(m):
     if pve and nas and pve == nas.ip:
         fail("minerva.nas", "same address as the host")
 
+    # network and hosts: the site LAN in Freiburg; lan, pve and nas: where the box is, Vieta's LAN until the move.
+    site = net("minerva.network", m["network"], 4)
+    addr("minerva.unifiController", m["unifiController"], 4)
+    addr("minerva.fritzbox", m["fritzbox"], 4)
+    seen = {}
+    for name, h in m["hosts"].items():
+        w = f"minerva.hosts.{name}"
+        if not re.fullmatch(r"[a-z][a-z0-9-]*", name):
+            fail(w, "not a lower-case name")
+        a = addr(f"{w}.ipv4", h["ipv4"], 4)
+        if a and site and a not in site:
+            fail(f"{w}.ipv4", f"{a} is outside {site}")
+        if a in seen:
+            fail(f"{w}.ipv4", f"{a} is also {seen[a]}")
+        seen[a] = w
+        if not re.fullmatch(r"[a-z0-9-]+\.athena", h["dns"]):
+            fail(f"{w}.dns", f"{h['dns']!r} is not a <name>.athena name")
+
+
+def check_prefixes(fp, vieta, m):
+    """No two of our blocks overlap; the rest of each block's shape is checked with its site."""
+    def quiet(v):
+        try:
+            return ipaddress.ip_network(v)
+        except ValueError:
+            return None
+    p = fp["prefixes"]
+    aggregate = quiet(p["aggregate"])
+    minerva = net("minerva.prefix", m["prefix"], 6, 48)
+    if minerva and aggregate and not minerva.subnet_of(aggregate):
+        fail("minerva.prefix", f"{minerva} is outside {aggregate}")
+    blocks = [(f"prefixes.{k}", quiet(p[k])) for k in ("edges", "edgeAnycast", "siteAnycast")]
+    blocks += [("vieta.prefix", quiet(vieta["prefix"])), ("minerva.prefix", minerva)]
+    blocks = [(k, b) for k, b in blocks if b]
+    for i, (k, b) in enumerate(blocks):
+        for k2, b2 in blocks[i + 1:]:
+            if b.overlaps(b2):
+                fail(k, f"{b} overlaps {k2} {b2}")
+
 
 def main():
     try:
@@ -331,6 +375,7 @@ def main():
         network, used = check_vieta(vieta)
         check_fplnet(fp, vieta)
         check_minerva(minerva)
+        check_prefixes(fp, vieta, minerva)
         check_lan(network, used, fp, minerva)
     except (KeyError, TypeError, AttributeError, json.JSONDecodeError) as e:
         fail("inventory", f"malformed: {type(e).__name__} {e}")

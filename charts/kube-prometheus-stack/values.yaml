@@ -514,7 +514,7 @@ bgpTools:
   # Servperso AS34872, Route64 AS212895, Paradox AS52025, Vultr AS20473.
   expectedUpstreams: 4
 
-# FPLNET routers running Routinator (fplnet.rpki.validator), on :8323
+# FPLNET routers running Routinator (fplnet.rpki.validator), metrics on exporterPorts.routinator
 fplnetRpkiValidators:
   - er1-dus1
   - er1-ams1
@@ -583,11 +583,11 @@ unifiExporter:
 
   controllers:
     - role: vieta
-      url: https://10.10.0.1
+      url: 'https://{{ .Values.inventory.vieta.unifiController }}'
       sites:
         - all
     - role: minerva
-      url: https://10.0.0.1
+      url: 'https://{{ .Values.inventory.minerva.unifiController }}'
       sites:
         - all
 

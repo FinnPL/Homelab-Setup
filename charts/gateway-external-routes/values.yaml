@@ -21,25 +21,25 @@ backends:
   - name: apollo
     hostname: apollo.lippok.dev
     servicePort: 5000
-    upstreamHost: apollo.athena
+    upstreamHost: '{{ .Values.inventory.vieta.hosts.apollo.dns }}'
     upstreamPort: 5000
 
   - name: zeus
     hostname: zeus.lippok.dev
     servicePort: 80
-    upstreamHost: zeus.athena
+    upstreamHost: '{{ .Values.inventory.minerva.hosts.zeus.dns }}'
     upstreamPort: 80
 
   - name: fritzbox
     hostname: fb.lippok.dev
     servicePort: 80
     endpoints:
-      - 192.168.178.1
+      - '{{ .Values.inventory.minerva.fritzbox }}'
 
   - name: proxmox
     hostname: pve.lippok.dev
     servicePort: 80
-    upstreamHost: nuc.athena
+    upstreamHost: '{{ .Values.inventory.vieta.hosts.nuc.dns }}'
     upstreamPort: 8006
     upstreamProtocol: https
     enableWebsockets: true

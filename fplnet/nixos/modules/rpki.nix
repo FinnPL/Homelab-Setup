@@ -41,11 +41,11 @@ in {
         enable = true;
         settings = {
           rtr-listen = ["[::]:3323"];
-          http-listen = ["[::]:8323"];
+          http-listen = ["[::]:${toString inventory.fplnet.exporterPorts.routinator}"];
         };
       };
 
-      fplnet.monitoring.extraPorts = [8323];
+      fplnet.monitoring.extraPorts = [inventory.fplnet.exporterPorts.routinator];
 
       networking.firewall.extraInputRules = ''
         iifname { ${edgeTunnels} } tcp dport 3323 accept

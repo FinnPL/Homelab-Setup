@@ -216,7 +216,7 @@ jobs:
             for f in rendered/rendered-"$site"-*.yaml; do [ -e "$f" ] && files+=("$f"); done
             legacy=$(yq eval -N 'select(.apiVersion == "kyverno.io/*" and (.kind == "ClusterPolicy" or .kind == "Policy" or .kind == "PolicyException" or .kind == "CleanupPolicy" or .kind == "ClusterCleanupPolicy")) | .kind + "/" + .metadata.name' "${files[@]}")
             if [ -n "$legacy" ]; then
-              echo "::error::$site renders kyverno.io policy types that Kyverno no longer executes, migrate them to policies.kyverno.io: $(echo $legacy)"
+              echo "::error::$site renders kyverno.io policy types that Kyverno no longer executes, migrate them to policies.kyverno.io: ${legacy//$'\n'/ }"
               status=1
             fi
             echo "Policies:";   grep -c '^kind:' "policies-$site.yaml" || true

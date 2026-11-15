@@ -3,13 +3,13 @@ locals {
   # Dual-stack.
   # The controller-manager gives each node a /24 and a /64.
   # ClusterIPs come from the site's ULA.
-  k8s_pod_subnets     = ["10.244.0.0/16", "2a0c:b641:f94:8100::/56"]
+  k8s_pod_subnets     = ["10.244.0.0/16", local.vieta.podNetwork]
   k8s_service_subnets = ["10.96.0.0/12", "fd84:d57e:6e57:4100::/112"]
 
   k8s_cluster_dns = [cidrhost(local.k8s_service_subnets[0], 10)]
 
-  vieta_v6_lan     = "2a0c:b641:f94:20::/64"
-  vieta_v6_gateway = "2a0c:b641:f94:20::1" # gw1-aah1
+  vieta_v6_lan     = local.vieta.nodeNetwork
+  vieta_v6_gateway = split("/", local.gw1_aah1.uplink.v6)[0]
 
   talos_base_patches = [
     # Accept Vault-issued client certificates.
@@ -61,7 +61,7 @@ locals {
   ]
 
   # Athena has no router advertisements, so each node gets a static IPv6 address,
-  # f94:20::<last IPv4 octet> (list in fplnet/nixos/hosts/gw1-aah1/bgp.nix)
+  # f94:20::<last IPv4 octet> (gw1-aah1's BGP sessions in fplnet/nixos/hosts/gw1-aah1/bgp.nix use the same)
   # gw1-aah1 as its default route.
   talos_v6_nodes = {
     for ip, nic in merge(
@@ -69,7 +69,7 @@ locals {
       { for ip in local.talos_worker_ips : ip => "end0" },
       ) : ip => {
       nic     = nic
-      address = "2a0c:b641:f94:20::${split(".", ip)[3]}"
+      address = "${trimsuffix(local.vieta.nodeNetwork, "/64")}${split(".", ip)[3]}"
     }
   }
 

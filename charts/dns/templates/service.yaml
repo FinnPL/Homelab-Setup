@@ -38,7 +38,7 @@ metadata:
     app: dns
     lippok.dev/public: site-anycast
   annotations:
-    lbipam.cilium.io/ips: {{ (index .Values.inventory.fplnet.siteServices "dns.relay.lippok.dev").address | quote }}
+    lbipam.cilium.io/ips: {{ (index .Values.inventory.fplnet.siteServices .Values.relay.name).address | quote }}
 spec:
   type: LoadBalancer
   externalTrafficPolicy: Local
@@ -55,7 +55,7 @@ spec:
     # The edges' HAProxy with PROXY v2
     - name: doh-pp
       protocol: TCP
-      port: 8444
+      port: {{ (index .Values.inventory.fplnet.siteServices .Values.relay.name).proxyPort }}
       targetPort: doh-pp
 
 ---

@@ -1,3 +1,11 @@
+{{- /* upstreamHost and endpoints may reference values (the inventory); they are rendered with tpl. */}}
 {{- range .Values.backends }}
-{{ include "gateway-external-routes.renderBackendProxy" (dict "root" $ "backend" .) }}
+{{- $backend := deepCopy . }}
+{{- if $backend.upstreamHost }}{{ $_ := set $backend "upstreamHost" (tpl $backend.upstreamHost $) }}{{ end }}
+{{- if $backend.endpoints }}
+{{- $endpoints := list }}
+{{- range $backend.endpoints }}{{ $endpoints = append $endpoints (tpl . $) }}{{ end }}
+{{- $_ := set $backend "endpoints" $endpoints }}
+{{- end }}
+{{ include "gateway-external-routes.renderBackendProxy" (dict "root" $ "backend" $backend) }}
 {{- end }}

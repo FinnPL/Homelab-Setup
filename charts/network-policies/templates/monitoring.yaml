@@ -87,14 +87,12 @@ spec:
         {{- include "np.routerLoopbacks" . | trim | nindent 8 }}
       toPorts:
         - ports:
-            - port: "9100"
+            {{- with .Values.inventory.fplnet.exporterPorts }}
+            {{- range list .node .bird .smokeping .routinator }}
+            - port: {{ . | quote }}
               protocol: TCP
-            - port: "9324"
-              protocol: TCP
-            - port: "9374"
-              protocol: TCP
-            - port: "8323"
-              protocol: TCP
+            {{- end }}
+            {{- end }}
     {{- include "np.dnsProxy" . | nindent 4 }}
     - toFQDNs:
         - matchName: prometheus.bgp.tools
@@ -300,8 +298,8 @@ spec:
   egress:
     # Vieta and Minerva UniFi controllers
     - toCIDR:
-        - 10.10.0.1/32
-        - 10.0.0.1/32
+        - {{ .Values.inventory.vieta.unifiController }}/32
+        - {{ .Values.inventory.minerva.unifiController }}/32
       toPorts:
         - ports:
             - port: "443"
