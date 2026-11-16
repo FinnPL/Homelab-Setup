@@ -1,0 +1,218 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: platform-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: platform.gitops
+      rules:
+        - alert: ArgoCDAppNotSynced
+          annotations:
+            summary: "{{`{{ $labels.name }}`}} is {{`{{ $labels.sync_status }}`}} for 30 minutes."
+            description: The cluster does not run what main says. Unknown usually means a ComparisonError (rendering failed), which leaves the app Healthy on stale config.
+          expr: argocd_app_info{sync_status!="Synced"} == 1
+          for: 30m
+          labels:
+            severity: warning
+
+        - alert: ArgoCDAppUnhealthy
+          annotations:
+            summary: "{{`{{ $labels.name }}`}} is {{`{{ $labels.health_status }}`}}."
+          expr: argocd_app_info{health_status=~"Degraded|Missing|Unknown"} == 1
+          for: 15m
+          labels:
+            severity: warning
+
+    - name: platform.secrets
+      rules:
+        - alert: SecretStoreNotReady
+          annotations:
+            summary: "{{`{{ $labels.name }}`}} cannot reach or log in to Vault."
+            description: No ExternalSecret refreshes while the store is not Ready; secrets keep their last value.
+          expr: clustersecretstore_status_condition{condition="Ready", status="False"} == 1
+          for: 10m
+          labels:
+            severity: critical
+
+        - alert: ExternalSecretNotReady
+          annotations:
+            summary: "{{`{{ $labels.namespace }}`}}/{{`{{ $labels.name }}`}} does not sync from Vault."
+            description: The Kubernetes Secret keeps its last value; a pod that starts without it fails.
+          expr: externalsecret_status_condition{condition="Ready", status="False"} == 1
+          for: 15m
+          labels:
+            severity: warning
+
+        - alert: CertificateNotReady
+          annotations:
+            summary: "Certificate {{`{{ $labels.namespace }}`}}/{{`{{ $labels.name }}`}} is not Ready."
+            description: cert-manager failed to issue or renew it; kubectl describe certificate shows the order.
+          expr: certmanager_certificate_ready_status{condition="False"} == 1
+          for: 30m
+          labels:
+            severity: warning
+
+        - alert: CertificateExpiringSoon
+          annotations:
+            summary: "Certificate {{`{{ $labels.namespace }}`}}/{{`{{ $labels.name }}`}} expires in {{`{{ $value | humanizeDuration }}`}}."
+            description: cert-manager renews a third of the lifetime before expiry, so a renewal has been failing for weeks.
+          expr: certmanager_certificate_expiration_timestamp_seconds - time() < 14 * 86400
+          for: 1h
+          labels:
+            severity: warning
+
+        - alert: CertificateExpiringSoon
+          annotations:
+            summary: "Certificate {{`{{ $labels.namespace }}`}}/{{`{{ $labels.name }}`}} expires in {{`{{ $value | humanizeDuration }}`}}."
+            description: cert-manager renews a third of the lifetime before expiry, so a renewal has been failing for weeks.
+          expr: certmanager_certificate_expiration_timestamp_seconds - time() < 3 * 86400
+          for: 1h
+          labels:
+            severity: critical
+
+    - name: platform.postgres
+      rules:
+        - alert: PostgresDown
+          annotations:
+            summary: The Postgres instance of cnpg-cluster is not ready.
+            description: Authentik, Grafana, Gatus and every other PostgresDatabase claim lose their database. A CNPG operator upgrade restarts it for a few minutes.
+          expr: |
+            absent(kube_pod_status_ready{namespace="cnpg-system", pod=~"cnpg-cluster-[0-9]+", condition="true"} == 1)
+            or cnpg_collector_up{namespace="cnpg-system"} == 0
+          for: 5m
+          labels:
+            severity: critical
+
+        - alert: PostgresConnectionsHigh
+          annotations:
+            summary: "{{`{{ $labels.pod }}`}} uses {{`{{ $value | humanizePercentage }}`}} of max_connections."
+          expr: |
+            sum by (pod) (cnpg_backends_total{namespace="cnpg-system"})
+            / max by (pod) (cnpg_pg_settings_setting{namespace="cnpg-system", name="max_connections"})
+            > 0.8
+          for: 10m
+          labels:
+            severity: warning
+
+        - alert: PostgresXidAgeHigh
+          annotations:
+            summary: "Database {{`{{ $labels.datname }}`}} is {{`{{ $value | humanize }}`}} transactions from its oldest unfrozen one."
+            description: Autovacuum is not freezing; at 2 billion Postgres stops accepting writes.
+          expr: cnpg_pg_database_xid_age{namespace="cnpg-system"} > 1e9
+          for: 1h
+          labels:
+            severity: warning
+
+        - alert: PgbouncerClientsWaiting
+          annotations:
+            summary: "{{`{{ $labels.pod }}`}}: a client waited {{`{{ $value | humanizeDuration }}`}} for a server connection."
+            description: The pooler has no free server connection for database {{`{{ $labels.database }}`}}.
+          expr: cnpg_pgbouncer_pools_maxwait{namespace="cnpg-system"} > 5
+          for: 5m
+          labels:
+            severity: warning
+
+    - name: platform.cluster
+      rules:
+        # The kubelet evicts at 15 % free on /var (imagefs.available). On the Pis /var is mostly images,
+        # which the image GC cycles between 80 and 85 % used; on the x86 nodes it also holds etcd and
+        # the local-path volumes (Postgres, Prometheus, Loki), which no GC frees.
+        - alert: NodeDataDiskFilling
+          annotations:
+            summary: "{{`{{ $labels.nodename }}`}}: /var has {{`{{ $value | humanizePercentage }}`}} free."
+            description: The kubelet starts evicting pods at 15 % free.
+          expr: |
+            (
+              node_filesystem_avail_bytes{job="node-exporter", mountpoint="/var"}
+              / node_filesystem_size_bytes{job="node-exporter", mountpoint="/var"}
+            )
+            * on (instance) group_left (nodename) node_uname_info{job="node-exporter", machine="x86_64"}
+            < 0.25
+          for: 15m
+          labels:
+            severity: warning
+
+        - alert: NodeDataDiskFilling
+          annotations:
+            summary: "{{`{{ $labels.nodename }}`}}: /var has {{`{{ $value | humanizePercentage }}`}} free."
+            description: The kubelet starts evicting pods at 15 % free.
+          expr: |
+            (
+              node_filesystem_avail_bytes{job="node-exporter", mountpoint="/var"}
+              / node_filesystem_size_bytes{job="node-exporter", mountpoint="/var"}
+            )
+            * on (instance) group_left (nodename) node_uname_info{job="node-exporter", machine="x86_64"}
+            < 0.18
+          for: 5m
+          labels:
+            severity: critical
+
+        - alert: ContainerRestartBurst
+          annotations:
+            summary: "{{`{{ $value }}`}} containers restarted within 10 minutes."
+            description: Many controllers restarting together usually means they lost their leases (API server or etcd unreachable). sum by (namespace, container) (increase(kube_pod_container_status_restarts_total[10m])) > 0 lists them.
+          expr: count(increase(kube_pod_container_status_restarts_total[10m]) > 0) >= 5
+          labels:
+            severity: warning
+
+        - alert: CiliumBgpSessionDown
+          annotations:
+            summary: "{{`{{ $labels.node }}`}}: BGP session to {{`{{ $labels.neighbor }}`}} down."
+            description: The node no longer announces its pod /64 or the public Services it has ready pods for (f92::53 included) to gw1-aah1.
+          expr: cilium_bgp_control_plane_session_state == 0
+          for: 5m
+          labels:
+            severity: warning
+
+        - alert: KyvernoAdmissionDown
+          annotations:
+            summary: The Kyverno admission controller has no available replica.
+            description: Its webhooks fail open (forceFailurePolicyIgnore), so the API server admits everything unchecked.
+          expr: kube_deployment_status_replicas_available{namespace="kyverno", deployment="kyverno-admission-controller"} < 1
+          for: 10m
+          labels:
+            severity: warning
+
+    - name: platform.dns
+      rules:
+        - alert: BlockyListsStale
+          annotations:
+            summary: "{{`{{ $labels.pod }}`}}: blocklists last refreshed {{`{{ $value | humanizeDuration }}`}} ago."
+            description: Blocky refreshes every 24 hours; two missed refreshes mean the downloads keep failing.
+          expr: time() - blocky_last_list_group_refresh_timestamp_seconds{namespace="dns"} > 50 * 3600
+          for: 1h
+          labels:
+            severity: warning
+
+        - alert: BlockyBlockingDisabled
+          annotations:
+            summary: "{{`{{ $labels.pod }}`}}: ad and malware blocking is off."
+            description: Someone paused blocking through the API and it has not been switched back on.
+          expr: blocky_blocking_enabled{namespace="dns"} == 0
+          for: 1h
+          labels:
+            severity: warning
+
+        - alert: DnsServfailHigh
+          annotations:
+            summary: "{{`{{ $value | humanizePercentage }}`}} of Unbound's answers are SERVFAIL."
+            description: Unbound cannot resolve or validate; check its upstream (DoT) and the DNSSEC failures.
+          expr: |
+            sum(rate(unbound_answer_rcodes_total{namespace="dns", rcode="SERVFAIL"}[10m]))
+            / sum(rate(unbound_answer_rcodes_total{namespace="dns"}[10m]))
+            > 0.05
+          for: 15m
+          labels:
+            severity: warning
+
+        - alert: DnssecBogusAnswers
+          annotations:
+            summary: "Unbound returned {{`{{ $value | humanize }}`}} DNSSEC-bogus answers per minute."
+            description: Validation failed for those names (broken zones, or something rewriting answers on the path).
+          expr: sum(rate(unbound_answers_bogus{namespace="dns"}[10m])) * 60 > 5
+          for: 15m
+          labels:
+            severity: warning

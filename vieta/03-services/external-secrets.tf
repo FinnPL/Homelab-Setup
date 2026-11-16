@@ -15,6 +15,13 @@ resource "helm_release" "external_secrets" {
   values = [
     yamlencode({
       installCRDs = true
+      metrics = {
+        service = { enabled = true }
+      }
+      serviceMonitor = {
+        enabled          = true
+        additionalLabels = { release = "kube-prometheus-stack" }
+      }
       resources = {
         requests = { cpu = "10m", memory = "64Mi" }
         limits   = { memory = "128Mi" }

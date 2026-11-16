@@ -10,7 +10,7 @@
   cfg = config.fplnet.monitoring;
   exporters = config.services.prometheus.exporters;
   ports = inventory.fplnet.exporterPorts;
-  loopback = lib.removeSuffix "/128" (lib.head config.systemd.network.networks."05-lo".address);
+  loopback = cfg.listenAddress;
   backbone =
     lib.filter (name: lib.hasPrefix "wg-er1-" name || lib.hasPrefix "wg-gw1-" name)
     (lib.mapAttrsToList (_: netdev: netdev.netdevConfig.Name) config.systemd.network.netdevs);
@@ -21,6 +21,12 @@
   linkPeer = tunnel: "wg-${config.networking.hostName}.${lib.replaceStrings ["-"] ["."] (lib.removePrefix "wg-" tunnel)}.fplnet.net";
 in {
   options.fplnet.monitoring = {
+    listenAddress = lib.mkOption {
+      type = lib.types.str;
+      readOnly = true;
+      default = lib.removeSuffix "/128" (lib.head config.systemd.network.networks."05-lo".address);
+      description = "The loopback address every metrics endpoint listens on, without brackets.";
+    };
     extraInterfaces = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [];
@@ -57,6 +63,12 @@ in {
         listenAddress = "[${loopback}]";
         hosts = map linkPeer backbone ++ cfg.extraProbeTargets ++ ["2606:4700:4700::1111"];
       };
+      wireguard = {
+        enable = true;
+        port = ports.wireguard;
+        listenAddress = loopback;
+        latestHandshakeDelay = true;
+      };
     };
 
     systemd.services.smokeping-watchdog = {
@@ -89,7 +101,7 @@ in {
     };
 
     networking.firewall.extraInputRules = ''
-      iifname { ${interfaces} } ip6 saddr ${inventory.vieta.podNetwork} tcp dport { ${lib.concatMapStringsSep ", " toString ([exporters.node.port exporters.bird.port exporters.smokeping.port] ++ cfg.extraPorts)} } accept
+      iifname { ${interfaces} } ip6 saddr ${inventory.vieta.podNetwork} tcp dport { ${lib.concatMapStringsSep ", " toString ([exporters.node.port exporters.bird.port exporters.smokeping.port exporters.wireguard.port] ++ cfg.extraPorts)} } accept
     '';
   };
 }

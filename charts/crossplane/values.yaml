@@ -19,3 +19,5 @@ crossplane:
       drop: [ALL]
     seccompProfile:
       type: RuntimeDefault
+  metrics:
+    enabled: true

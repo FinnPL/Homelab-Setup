@@ -40,18 +40,18 @@ spec:
               operator: Exists
       toPorts:
         - ports:
-          {{- range list 2113 3000 4000 8000 8080 8082 9090 9093 9130 9153 9167 9221 9300 9966 10250 }}
+          {{- range list 2113 3000 4000 8000 8080 8082 9090 9093 9127 9130 9153 9167 9187 9221 9300 9402 9966 10250 }}
             - port: {{ . | quote }}
               protocol: TCP
           {{- end }}
-    # Node targets: kubelet, node-exporter, cilium, tetragon, control plane
+    # Node targets: kubelet, node-exporter, cilium, cilium-envoy, tetragon, control plane, etcd
     - toEntities:
         - host
         - remote-node
         - kube-apiserver
       toPorts:
         - ports:
-          {{- range list 2112 6443 9100 9962 9963 9965 10250 10257 10259 }}
+          {{- range list 2112 2381 6443 9100 9962 9963 9964 9965 10250 10257 10259 }}
             - port: {{ . | quote }}
               protocol: TCP
           {{- end }}
@@ -88,7 +88,7 @@ spec:
       toPorts:
         - ports:
             {{- with .Values.inventory.fplnet.exporterPorts }}
-            {{- range list .node .bird .smokeping .routinator }}
+            {{- range list .node .bird .smokeping .routinator .wireguard .haproxy .nginx }}
             - port: {{ . | quote }}
               protocol: TCP
             {{- end }}

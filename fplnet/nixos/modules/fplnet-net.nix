@@ -2,12 +2,35 @@
 # CI writes the Cloudflare token
 {
   config,
+  inventory,
   lib,
   ...
 }: let
   names = ["v4.fplnet.net" "v6.fplnet.net" "dns-check.fplnet.net" "${lib.replaceStrings ["-"] ["."] config.networking.hostName}.fplnet.net"];
+  statusPort = 8081;
 in {
   fplnet.haproxy.names = ["fplnet.net"] ++ names;
+
+  # Connection and request counters for every vhost, read by the exporter on the loopback
+  services.nginx.virtualHosts.nginx-status = {
+    listen = [
+      {
+        addr = "127.0.0.1";
+        port = statusPort;
+      }
+    ];
+    locations."= /stub_status".extraConfig = ''
+      stub_status;
+      access_log off;
+    '';
+  };
+  services.prometheus.exporters.nginx = {
+    enable = true;
+    port = inventory.fplnet.exporterPorts.nginx;
+    listenAddress = "[${config.fplnet.monitoring.listenAddress}]";
+    scrapeUri = "http://127.0.0.1:${toString statusPort}/stub_status";
+  };
+  fplnet.monitoring.extraPorts = [inventory.fplnet.exporterPorts.nginx];
 
   networking.firewall = {
     allowedTCPPorts = [80];

@@ -11,6 +11,7 @@ spec:
       app: crossplane
   ingress:
     {{- include "np.fromApiserver" (list 9443) | nindent 4 }}
+    {{- include "np.fromPrometheus" (list 8080) | nindent 4 }}
   egress:
     - toEndpoints:
         - matchExpressions:
@@ -75,6 +76,7 @@ spec:
       pkg.crossplane.io/provider: provider-sql-postgres
   ingress:
     {{- include "np.fromApiserver" (list 9443) | nindent 4 }}
+    {{- include "np.fromPrometheus" (list 8080) | nindent 4 }}
   egress:
     - toEndpoints:
         - matchLabels:

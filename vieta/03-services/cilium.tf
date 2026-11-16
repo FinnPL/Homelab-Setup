@@ -102,7 +102,7 @@ resource "helm_release" "cilium" {
           enableOpenMetrics = true
           enabled = [
             "dns:query;ignoreAAAA",
-            "drop",
+            "drop:sourceContext=namespace|reserved-identity;destinationContext=namespace|reserved-identity",
             "tcp",
             "icmp"
           ]
@@ -123,6 +123,39 @@ resource "helm_release" "cilium" {
           interval = "30s"
           labels = {
             release = "kube-prometheus-stack"
+          }
+        }
+      }
+
+      # Envoy serves the Gateway. Of ~5700 series per node only requests, status classes, latency
+      # and backend health are kept; backend_namespace/backend come from the route's cluster name.
+      envoy = {
+        prometheus = {
+          serviceMonitor = {
+            enabled  = true
+            interval = "30s"
+            labels = {
+              release = "kube-prometheus-stack"
+            }
+            metricRelabelings = [
+              {
+                sourceLabels = ["__name__"]
+                regex        = "envoy_(cluster_upstream_rq_(xx|total|timeout|time_bucket|time_sum|time_count)|cluster_upstream_cx_(active|connect_fail)|cluster_membership_(healthy|total)|http_downstream_rq_(xx|total)|http_downstream_cx_active|server_(live|uptime|memory_allocated))"
+                action       = "keep"
+              },
+              {
+                sourceLabels = ["envoy_cluster_name"]
+                regex        = "gateway/[^/]+/([^_]+)_(.+)_[0-9]+"
+                targetLabel  = "backend_namespace"
+                replacement  = "$1"
+              },
+              {
+                sourceLabels = ["envoy_cluster_name"]
+                regex        = "gateway/[^/]+/([^_]+)_(.+)_[0-9]+"
+                targetLabel  = "backend"
+                replacement  = "$2"
+              },
+            ]
           }
         }
       }

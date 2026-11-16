@@ -51,6 +51,7 @@ spec:
         - ports:
             - port: "8000"
               protocol: TCP
+    {{- include "np.fromPrometheus" (list 9187) | nindent 4 }}
   egress:
     - {}
 ---
@@ -85,6 +86,7 @@ spec:
         - ports:
             - port: "8000"
               protocol: TCP
+    {{- include "np.fromPrometheus" (list 9127) | nindent 4 }}
   egress:
     - toEndpoints:
         - matchLabels:

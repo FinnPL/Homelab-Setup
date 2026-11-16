@@ -17,6 +17,7 @@ spec:
         - ports:
             - port: "8080"
               protocol: TCP
+    {{- include "np.fromPrometheus" (list 8080) | nindent 4 }}
   egress:
     {{- include "np.toPooler" . | nindent 4 }}
     # Monitored services behind the Gateway
@@ -45,6 +46,12 @@ spec:
         - matchName: fplnet.net
         - matchName: mail.lippok.eu
         - matchName: discord.com
+        - matchName: vault.cloud.lippok.dev
+        {{- range $name, $r := .Values.inventory.fplnet.routers }}
+        {{- if $r.prefix }}
+        - matchName: {{ replace "-" "." $name }}.fplnet.net
+        {{- end }}
+        {{- end }}
       toPorts:
         - ports:
             - port: "443"

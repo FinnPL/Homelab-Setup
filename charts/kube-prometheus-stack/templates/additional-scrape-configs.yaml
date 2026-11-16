@@ -29,7 +29,7 @@ spec:
               - targets: [{{ "{{ (urlParse .url).host }}" }}]
           {{- end }}
           {{- $ports := .Values.inventory.fplnet.exporterPorts }}
-          {{- range $job, $port := dict "fplnet-node" $ports.node "fplnet-bird" $ports.bird "fplnet-smokeping" $ports.smokeping }}
+          {{- range $job, $port := dict "fplnet-node" $ports.node "fplnet-bird" $ports.bird "fplnet-smokeping" $ports.smokeping "fplnet-wireguard" $ports.wireguard }}
           - job_name: {{ $job }}
             static_configs:
               {{- range $router, $r := $.Values.inventory.fplnet.routers }}
@@ -54,6 +54,23 @@ spec:
               {{- end }}
             {{- end }}
           {{- end }}
+          # HAProxy (its built-in exporter) and nginx run on the edges only
+          {{- range $job, $port := dict "fplnet-haproxy" $ports.haproxy "fplnet-nginx" $ports.nginx }}
+          - job_name: {{ $job }}
+            static_configs:
+              {{- range $router, $r := $.Values.inventory.fplnet.routers }}
+              {{- if $r.prefix }}
+              - targets: ['[{{ $r.loopback }}]:{{ $port }}']
+                labels:
+                  router: {{ $router }}
+              {{- end }}
+              {{- end }}
+          {{- end }}
+          # Talos runs etcd outside Kubernetes, and ArgoCD never applies the chart's Endpoints for it
+          # (Endpoints are excluded resources), so the control plane is a static target.
+          - job_name: kube-etcd
+            static_configs:
+              - targets: ['{{ .Values.inventory.vieta.hosts.cp1.ipv4 }}:2381']
           {{- with .Values.inventory.minerva }}
           {{- range $job, $port := dict "minerva-nas-node" 9100 "minerva-nas-smartctl" 9633 }}
           - job_name: {{ $job }}
