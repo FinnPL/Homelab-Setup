@@ -71,6 +71,34 @@ spec:
           labels:
             severity: critical
 
+        - alert: FplnetExporterDown
+          annotations:
+            summary: "{{`{{ $labels.router }}`}}: {{`{{ $labels.job }}`}} unreachable."
+            description: The router's node_exporter answers, so only this service's metrics endpoint is down.
+          expr: up{job=~"fplnet-(wireguard|haproxy|nginx)"} == 0 and on (router) up{job="fplnet-node"} == 1
+          for: 30m
+          labels:
+            severity: warning
+
+        - alert: FplnetHaproxyBackendDown
+          annotations:
+            summary: "{{`{{ $labels.router }}`}}: HAProxy backend {{`{{ $labels.proxy }}`}} has no server up."
+            description: The edge closes connections for that name. site_* backends reach Vieta over the backbone and fail when the Service has no ready pod listening on IPv6; nginx is the edge's own.
+          expr: haproxy_backend_active_servers{job="fplnet-haproxy"} == 0
+          for: 5m
+          labels:
+            severity: warning
+
+        - alert: FplnetHaproxyBackendDownEverywhere
+          annotations:
+            summary: "HAProxy backend {{`{{ $labels.proxy }}`}} is down on every edge."
+          expr: |
+            count by (proxy) (haproxy_backend_active_servers{job="fplnet-haproxy"} == 0)
+            == count by (proxy) (haproxy_backend_active_servers{job="fplnet-haproxy"})
+          for: 5m
+          labels:
+            severity: critical
+
         - alert: FplnetBgpSessionDown
           annotations:
             summary: "{{`{{ $labels.router }}`}}: BGP session {{`{{ $labels.name }}`}} down."

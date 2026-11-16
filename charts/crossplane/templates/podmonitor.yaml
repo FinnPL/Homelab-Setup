@@ -1,0 +1,18 @@
+{{- range $name, $selector := dict "crossplane" (dict "matchLabels" (dict "app" "crossplane")) "crossplane-providers" (dict "matchExpressions" (list (dict "key" "pkg.crossplane.io/provider" "operator" "Exists"))) }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: {{ $name }}
+  labels:
+    release: kube-prometheus-stack
+spec:
+  selector:
+    {{- toYaml $selector | nindent 4 }}
+  podMetricsEndpoints:
+    - port: metrics
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: "crossplane_.*|function_run_function_(request|response)_total|controller_runtime_reconcile_(total|errors_total)"
+          action: keep
+{{- end }}

@@ -1,4 +1,13 @@
 namespace: monitoring
 syncOptions:
   - ServerSideApply=true
+  - RespectIgnoreDifferences=true
+ignoreDifferences:
+  - kind: Secret
+    name: kube-prometheus-stack-grafana
+    jsonPointers: [/data]
+  - group: apps
+    kind: Deployment
+    name: kube-prometheus-stack-grafana
+    jsonPointers: [/spec/template/metadata/annotations/checksum~1secret]
 inventory: [fplnet, vieta, minerva]

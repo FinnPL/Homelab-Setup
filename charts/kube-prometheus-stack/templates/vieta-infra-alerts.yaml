@@ -1,0 +1,55 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: vieta-infra-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: vieta.proxmox
+      rules:
+        - alert: ProxmoxGuestDown
+          annotations:
+            summary: "{{`{{ $labels.id }}`}} on the NUC is not running."
+            description: The guest is set to start on boot but Proxmox reports it stopped.
+          expr: pve_up{id=~"(qemu|lxc)/.*"} == 0 and on (id) pve_onboot_status == 1
+          for: 5m
+          labels:
+            severity: critical
+
+        - alert: ProxmoxStorageFilling
+          annotations:
+            summary: "NUC storage {{`{{ $labels.id }}`}} is {{`{{ $value | humanizePercentage }}`}} full."
+            description: A full local-lvm thin pool stops every VM disk on it.
+          expr: pve_disk_usage_bytes{id=~"storage/.*"} / pve_disk_size_bytes{id=~"storage/.*"} > 0.85
+          for: 1h
+          labels:
+            severity: warning
+
+    - name: vieta.unifi
+      rules:
+        - alert: UnifiWanDown
+          annotations:
+            summary: "{{`{{ $labels.name }}`}}: primary WAN is {{`{{ $labels.status }}`}}."
+          expr: unpoller_device_wan_status{wan_networkgroup="WAN"} < 1
+          for: 5m
+          labels:
+            severity: critical
+
+        - alert: UnifiWanLatencyHigh
+          annotations:
+            summary: "{{`{{ $labels.name }}`}}: WAN latency {{`{{ $value | humanizeDuration }}`}}."
+            description: The gateway's own WAN monitor; normally 5 ms at Vieta and 13 ms at Minerva.
+          expr: unpoller_device_wan_latency_seconds > 0.08
+          for: 15m
+          labels:
+            severity: warning
+
+        - alert: UnifiDevicesDisconnected
+          annotations:
+            summary: "{{`{{ $value }}`}} UniFi {{`{{ $labels.subsystem }}`}} devices disconnected at {{`{{ $labels.source }}`}}."
+          expr: unpoller_site_disconnected{subsystem=~"lan|wlan"} > 0
+          for: 10m
+          labels:
+            severity: warning

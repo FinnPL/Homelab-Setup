@@ -15,8 +15,10 @@ kube-prometheus-stack:
     enabled: false
 
   kubeEtcd:
-    endpoints:
-      - 10.10.1.60
+    service:
+      enabled: false
+    serviceMonitor:
+      enabled: false
 
   # This reads /proc/sys/kernel/hung_task_detect_count that Talos current kernel doesn't expose.
   prometheus-node-exporter:
@@ -114,10 +116,10 @@ kube-prometheus-stack:
 
       resources:
         requests:
-          memory: 512Mi
+          memory: 1Gi
           cpu: 250m
         limits:
-          memory: 1024Mi
+          memory: 2Gi
           cpu: 1000m
       nodeSelector:
         dedicated: database
@@ -338,6 +340,8 @@ kube-prometheus-stack:
         domain: grafana.lippok.dev
         root_url: https://grafana.lippok.dev/
         router_logging: false
+      dashboards:
+        default_home_dashboard_path: /tmp/dashboards/homelab-overview.json
       database:
         type: postgres
         host: $__env{DB_HOST}:$__env{DB_PORT}

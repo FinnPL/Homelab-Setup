@@ -28,6 +28,7 @@ in {
 
   config = {
     networking.firewall.allowedTCPPorts = [443];
+    fplnet.monitoring.extraPorts = [inventory.fplnet.exporterPorts.haproxy];
 
     systemd.services.haproxy.reloadTriggers = [config.environment.etc."haproxy.cfg".source];
 
@@ -62,6 +63,13 @@ in {
           # No default_backend: any other name is closed.
           use_backend nginx if { req.ssl_sni -i ${lib.concatStringsSep " " config.fplnet.haproxy.names} }
           ${siteRoutes}
+
+        # Built-in exporter on the loopback (monitoring.nix opens the port to the cluster)
+        frontend prometheus
+          mode http
+          bind [${config.fplnet.monitoring.listenAddress}]:${toString inventory.fplnet.exporterPorts.haproxy}
+          http-request use-service prometheus-exporter if { path /metrics }
+          http-request deny
 
         # TLV 0xe0: the kernel's RTT to the client in microseconds, for the connection page.
         backend nginx

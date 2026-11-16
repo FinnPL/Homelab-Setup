@@ -1,6 +1,6 @@
 {{- /* The subchart mounts this as its externalConfigMap. Generated checks go before the first hand-written check
-     of their group, or at the end: FPLNET routers in edge prefix order, then the gateways; Vieta hosts by
-     inventory name. A hand-written url containing a template is rendered with tpl. */}}
+     of their group, or at the end: FPLNET router pings in edge prefix order, then the gateways, then
+     fplnet.net per edge; Vieta hosts by inventory name. A hand-written url containing a template is rendered with tpl. */}}
 {{- $edges := dict }}
 {{- $gateways := list }}
 {{- range $name, $r := .Values.inventory.fplnet.routers }}
@@ -11,6 +11,10 @@
 {{- $generated := dict }}
 {{- range concat $order $gateways }}
 {{- $check := merge (dict "name" . "url" (printf "icmp://%s.fplnet.net" (replace "-" "." .))) (deepCopy $.Values.fplnetRouterCheck) }}
+{{- $_ := set $generated $check.group (append (default (list) (get $generated $check.group)) $check) }}
+{{- end }}
+{{- range $order }}
+{{- $check := merge (dict "name" (printf "fplnet.net via %s" .) "url" (printf "https://%s.fplnet.net/healthz" (replace "-" "." .))) (deepCopy $.Values.fplnetEdgeCheck) }}
 {{- $_ := set $generated $check.group (append (default (list) (get $generated $check.group)) $check) }}
 {{- end }}
 {{- $v := .Values.vietaHosts }}
