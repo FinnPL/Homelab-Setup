@@ -29,21 +29,21 @@ data:
         ads:
           - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
           - https://adaway.org/hosts.txt
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/pro-onlydomains.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/pro.txt
         malware:
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/tif-onlydomains.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/tif.txt
         native:
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.apple-onlydomains.txt
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.amazon-onlydomains.txt
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.samsung-onlydomains.txt
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.winoffice-onlydomains.txt
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.tiktok-onlydomains.txt
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.huawei-onlydomains.txt
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.xiaomi-onlydomains.txt
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.vivo-onlydomains.txt
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.oppo-realme-onlydomains.txt
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.lgwebos-onlydomains.txt
-          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.roku-onlydomains.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.apple.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.amazon.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.samsung.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.winoffice.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.tiktok.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.huawei.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.xiaomi.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.vivo.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.oppo-realme.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.lgwebos.txt
+          - https://raw.githubusercontent.com/hagezi/dns-blocklists/main/wildcard/native.roku.txt
 
       allowlists:
         ads: &connectivity-checks
