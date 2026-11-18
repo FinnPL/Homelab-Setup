@@ -48,15 +48,19 @@ resource "unifi_setting" "site" {
     fingerprinting_enabled = true
   }
 
-  # Network app activity logs to Alloy's syslog VIP.
+  # Network app activity logs to Alloy's syslog VIP
   syslog = {
     enabled          = true
     ip               = local.lan.loadBalancerIPs.syslog
     port             = 5142
-    log_all_contents = true
+    log_all_contents = false
+    contents         = ["admin_activity", "client", "critical", "device", "security_detections", "triggers", "updates", "vpn"]
     debug            = false
+    netconsole = {
+      enabled = false
+    }
     this_controller = {
-      enabled        = true
+      enabled        = false
       encrypted_only = false
     }
   }
