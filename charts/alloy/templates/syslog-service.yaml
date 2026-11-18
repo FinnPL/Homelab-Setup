@@ -1,0 +1,21 @@
+# UniFi's activity logging (SIEM) LAN VIP
+apiVersion: v1
+kind: Service
+metadata:
+  name: alloy-syslog
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    io.cilium/lb-ipam-ips: {{ .Values.inventory.vieta.lan.loadBalancerIPs.syslog | quote }}
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+  ipFamilyPolicy: SingleStack
+  ipFamilies: [IPv4]
+  selector:
+    app.kubernetes.io/name: alloy-agent
+    app.kubernetes.io/instance: alloy
+  ports:
+    - name: syslog-unifi
+      port: 5142
+      targetPort: 5142
+      protocol: UDP

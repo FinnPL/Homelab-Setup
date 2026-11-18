@@ -21,17 +21,9 @@ variable "unifi_insecure" {
   default     = true
 }
 
-# Static VM MAC addresses for DHCP reservations
-variable "host_vm_macs" {
-  description = "Map of VM MAC addresses for DHCP reservations"
-  type        = map(string)
-  default = {
-    talos_controlplane = "bc:24:11:00:00:60"
-    talos_worker_6     = "bc:24:11:00:00:66"
-    windows_server     = "52:54:00:aa:00:50"
-    github_runner      = "bc:24:11:00:00:70"
-    nfs_server         = "bc:24:11:00:00:80"
-    postgres_server    = "bc:24:11:00:00:85"
-    mesh_router        = "bc:24:11:00:00:90"
-  }
+variable "protonvpn_private_key" {
+  description = "WireGuard private key of the Proton DNS tunnel (kv/vieta/protonvpn private-key)"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
 }

@@ -37,6 +37,15 @@ spec:
         - ports:
             - port: "853"
               protocol: TCP
+    # Blocky forwards .athena and LAN reverse lookups to the UniFi gateway
+    - toCIDR:
+        - {{ .Values.inventory.vieta.lan.gateway }}/32
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+            - port: "53"
+              protocol: TCP
     # Blocky's list downloads resolve through Unbound, which Cilium's DNS proxy never sees.
     - toEntities:
         - world
