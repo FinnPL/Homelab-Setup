@@ -543,7 +543,7 @@ proxmoxExporter:
   enabled: true
   image:
     repository: prompve/prometheus-pve-exporter
-    tag: 3.11.0
+    tag: 3.12.0
     pullPolicy: IfNotPresent
 
   # Proxmox VE host to scrape via /pve?target=<host>
