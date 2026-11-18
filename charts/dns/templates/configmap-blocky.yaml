@@ -10,6 +10,11 @@ data:
         default:
           - 127.0.0.1:5335
 
+    conditional:
+      mapping:
+        athena: {{ .Values.inventory.vieta.lan.gateway }}
+        10.10.in-addr.arpa: {{ .Values.inventory.vieta.lan.gateway }}
+
     customDNS:
       customTTL: 1h
       # Resolves only via Blocky: public DNS has no address for dns-check.fplnet.net.

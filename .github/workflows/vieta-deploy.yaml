@@ -72,6 +72,7 @@ jobs:
           filters: |
             network:
               - 'vieta/01-network/**'
+              - 'inventory/vieta.json'
             infra:
               - 'vieta/02-infrastructure/**'
               - 'inventory/fplnet.json'

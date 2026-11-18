@@ -77,6 +77,7 @@ jobs:
           secrets: |
             kv/data/cloudflare api-token | TF_VAR_cloudflare_api_token ;
             kv/data/vieta/unifi api-key | TF_VAR_unifi_api_key ;
+            kv/data/vieta/protonvpn private-key | TF_VAR_protonvpn_private_key ;
             kv/data/vieta/proxmox ssh-password | TF_VAR_proxmox_ssh_password ;
             kv/data/vieta/nfs root-password | TF_VAR_nfs_root_password
 
