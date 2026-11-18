@@ -41,3 +41,7 @@ resource "unifi_network" "default" {
   network_isolation = true
   multicast_dns     = true
 }
+
+data "unifi_network" "management" {
+  name = "Default"
+}
