@@ -142,7 +142,10 @@ in {
             expires 1d;
           '';
           "= /favicon.ico".proxyPass = "http://127.0.0.1:${toString frontendPort}";
-          "= /robots.txt".proxyPass = "http://127.0.0.1:${toString frontendPort}";
+          "= /robots.txt".extraConfig = ''
+            default_type "text/plain; charset=utf-8";
+            return 200 "User-agent: *\nDisallow: /route\nDisallow: /traceroute/\nDisallow: /whois/\n";
+          '';
         }
         // lib.listToAttrs (map (re: lib.nameValuePair "~ ${re}" {extraConfig = proxyToFrontend;}) allowed);
     };

@@ -12,6 +12,12 @@
           echo "render.go menu patch no longer matches upstream" >&2
           exit 1
         fi
+
+        sed -i 's|^<meta name="robots" content="noindex, nofollow">$|{{ if eq .URLOption "summary" }}<meta name="description" content="Looking glass of FPLNET, AS218255: BGP sessions, routes and traceroutes from the edges in Düsseldorf, Amsterdam and Frankfurt.">{{ else }}<meta name="robots" content="noindex">{{ end }}|' frontend/assets/templates/page.tpl
+        if ! grep -q 'eq .URLOption "summary"' frontend/assets/templates/page.tpl; then
+          echo "page.tpl robots patch no longer matches upstream" >&2
+          exit 1
+        fi
       '';
   });
 in
