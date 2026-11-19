@@ -135,6 +135,26 @@ resource "vault_jwt_auth_backend_role" "vieta_ssh_converge" {
   token_max_ttl  = 1200
 }
 
+# Configures the CM4 time server ntp1-aah1 with Ansible (ntp1-deploy.yaml)
+resource "vault_jwt_auth_backend_role" "ntp1_deploy" {
+  backend         = vault_jwt_auth_backend.github_actions.path
+  role_name       = "ntp1-deploy"
+  role_type       = "jwt"
+  user_claim      = "job_workflow_ref"
+  bound_audiences = [var.vault_address]
+
+  bound_claims = {
+    repository       = var.github_repository
+    job_workflow_ref = "${var.github_repository}/.github/workflows/ntp1-deploy.yaml@refs/heads/main"
+    environment      = "vieta"
+  }
+
+  token_policies = [vault_policy.vieta_ssh.name]
+  token_type     = "service"
+  token_ttl      = 1200
+  token_max_ttl  = 1200
+}
+
 # Weekly host-certificate renewal for the OCI VM (ssh-cert-converge.yaml, job edge).
 resource "vault_jwt_auth_backend_role" "edge_ssh_converge" {
   backend         = vault_jwt_auth_backend.github_actions.path

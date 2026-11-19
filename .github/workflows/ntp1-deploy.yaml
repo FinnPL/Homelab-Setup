@@ -1,0 +1,105 @@
+name: "ntp1: deploy"
+
+# Configures the CM4 time server ntp1-aah1 with Ansible
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "vieta/ntp1/**"
+      - "vieta/02-infrastructure/ansible/tasks/**"
+      - "inventory/vieta.json"
+      - "inventory/trust/**"
+      - ".github/workflows/ntp1-deploy.yaml"
+      - ".github/actions/vault-ssh-client-cert/**"
+  pull_request:
+    paths:
+      - "vieta/ntp1/**"
+      - "vieta/02-infrastructure/ansible/tasks/**"
+      - "inventory/vieta.json"
+      - ".github/workflows/ntp1-deploy.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ntp1-deploy
+  cancel-in-progress: false
+
+env:
+  # renovate: datasource=pypi depName=ansible
+  ANSIBLE_VERSION: "14.6.0"
+
+jobs:
+  check:
+    name: "Check"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install Ansible
+        run: pip install "ansible==${ANSIBLE_VERSION}"
+
+      - name: Syntax check
+        run: ansible-playbook -i localhost, --syntax-check vieta/ntp1/ansible/ntp1.yml
+
+      - name: Compile the programs
+        run: python3 -m py_compile vieta/ntp1/ansible/files/*.py
+
+  deploy:
+    name: "Deploy"
+    needs: check
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: vieta
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Read secrets from Vault
+        uses: hashicorp/vault-action@892a26828f195e65540a40b4768ae4571f51ebfc # v4.0.0
+        with:
+          url: https://vault.cloud.lippok.dev
+          method: jwt
+          path: github-actions
+          role: ntp1-deploy
+          jwtGithubAudience: https://vault.cloud.lippok.dev
+          exportToken: true # the playbook signs the host key with it
+
+      - name: Tailscale
+        uses: tailscale/github-action@064b10558093f38325e838ddea35486bdc6b1d5c # v4.4.0
+        with:
+          oauth-client-id: ${{ vars.TAILSCALE_CI_CLIENT_ID }}
+          audience: api.tailscale.com/${{ vars.TAILSCALE_CI_CLIENT_ID }}
+          tags: tag:ci
+
+      - name: Install Ansible
+        run: pip install "ansible==${ANSIBLE_VERSION}"
+
+      - name: Mint Ansible SSH certificate
+        id: ssh_cert
+        uses: ./.github/actions/vault-ssh-client-cert
+        with:
+          role: homelab
+          host-ca-file: inventory/trust/vault_host_ca.pub
+          host-patterns: "10.10.1.*,*.athena"
+
+      - name: Deploy
+        env:
+          SSH_KEY: ${{ steps.ssh_cert.outputs.key-path }}
+        run: |
+          set -euo pipefail
+          ip=$(jq -er '.inventory.vieta.hosts["ntp1-mgmt"].ipv4' inventory/vieta.json)
+          ANSIBLE_HOST_KEY_CHECKING=True \
+          ansible-playbook \
+            -i "$ip," \
+            --private-key "$SSH_KEY" \
+            --user root \
+            vieta/ntp1/ansible/ntp1.yml

@@ -95,9 +95,9 @@ locals {
   # 90 days, in seconds. ssh-cert-converge.yaml renews both sites weekly
   ssh_host_cert_ttl = "7776000"
 
-  # The Vieta LXCs whose Ansible tasks/vault-ssh-ca.yml requests a host certificate
+  # The Vieta hosts whose Ansible tasks/vault-ssh-ca.yml requests a host certificate
   homelab_host_principals = flatten([
-    for h in ["nfs"] : [local.vieta_hosts[h].ipv4, local.vieta_hosts[h].dns]
+    for h in ["nfs", "ntp1-mgmt"] : [local.vieta_hosts[h].ipv4, local.vieta_hosts[h].dns]
   ])
   vieta_hosts = jsondecode(file("${path.module}/../inventory/vieta.json")).inventory.vieta.hosts
 

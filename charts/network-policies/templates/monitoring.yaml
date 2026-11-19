@@ -73,6 +73,13 @@ spec:
               protocol: TCP
             - port: "9374"
               protocol: TCP
+    # ntp1-aah1 node_exporter
+    - toCIDR:
+        - {{ index .Values.inventory.vieta.hosts "ntp1-mgmt" "ipv4" }}/32
+      toPorts:
+        - ports:
+            - port: "9100"
+              protocol: TCP
     # Minerva NAS exporters
     - toCIDR:
         - {{ regexReplaceAll "/.*" .Values.inventory.minerva.nas "" }}/32

@@ -1,0 +1,19 @@
+[connection]
+id={{ item.name }}
+type=ethernet
+interface-name={{ item.name }}
+autoconnect=true
+
+[ethernet]
+
+[ipv4]
+method=manual
+address1={{ item.ipv4 }}/{{ lan_prefix }},{{ lan.gateway }}
+dns={{ lan.gateway }};
+{% if item.table is defined %}
+route-table={{ item.table }}
+routing-rule1=priority 100 from {{ item.ipv4 }} table {{ item.table }}
+{% endif %}
+
+[ipv6]
+method=disabled

@@ -1,0 +1,2 @@
+# i210's PTP clock
+SUBSYSTEM=="ptp", KERNELS=="0000:01:00.0", SYMLINK+="ptp-ntp0"

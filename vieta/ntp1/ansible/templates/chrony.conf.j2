@@ -1,0 +1,10 @@
+refclock SOCK /run/chrony.gpsdo.sock refid GPSS poll 2 noselect
+refclock PHC /dev/ptp-ntp0:extpps:pin=0 refid PPS poll 0 lock GPSS maxlockage 8 width 0.00005 prefer
+
+hwtimestamp ntp0
+bindaddress {{ vieta_hosts.ntp1.ipv4 }}
+allow 10.10.0.0/16
+
+leapseclist /usr/share/zoneinfo/leap-seconds.list
+rtcsync
+makestep 1 3
