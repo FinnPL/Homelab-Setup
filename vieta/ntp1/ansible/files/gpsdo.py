@@ -183,6 +183,8 @@ def write_metrics():
     tracked = [x for x in s.get("sats", []) if x["tracked"]]
     gauges = {
         "gpsdo_pps_valid": 1 if s.get("pps") == "Valid" else 0 if "pps" in s else None,
+        "gpsdo_gps_available": int(s["gps_available"]) if "gps_available" in s else None,
+        "gpsdo_holdover_seconds": s.get("holdover_s", 0) if "status" in s else None,
         "gpsdo_tfom": s.get("tfom"), "gpsdo_ffom": s.get("ffom"),
         "gpsdo_satellites_tracked": s.get("tracked"), "gpsdo_satellites_untracked": s.get("untracked"),
         "gpsdo_cno_mean_dbhz": round(sum(x["cno"] for x in tracked) / len(tracked), 2) if tracked else None,
@@ -211,6 +213,7 @@ def write_metrics():
         lines.append("# TYPE gpsdo_satellite_elevation_degrees gauge")
         lines += [f'gpsdo_satellite_elevation_degrees{{prn="{x["prn"]}"}} {x["el"]}' for x in tracked]
     for name, label, value in (("gpsdo_status_info", "status", s.get("status")),
+                               ("gpsdo_position_mode_info", "mode", s.get("mode")),
                                ("gpsdo_output_info", "state", outp), ("gpsdo_lock_info", "state", led)):
         if value:
             lines += [f"# TYPE {name} gauge", f'{name}{{{label}="{value}"}} 1']
@@ -253,9 +256,21 @@ def short_status(s, c, age):
     return status[:6]
 
 
+def fmt_duration(seconds):
+    """At most 7 characters: 59m59s, 23h59m, 100d23h."""
+    m, sec = divmod(int(seconds), 60)
+    h, m = divmod(m, 60)
+    days, h = divmod(h, 24)
+    if days:
+        return f"{days}d{h:02d}h"
+    return f"{h}h{m:02d}m" if h else f"{m}m{sec:02d}s"
+
+
 def page_gpsdo(d, x, y, f, data):
     s = data["s"]
     status = "Holdover" if "Holdover" in s.get("status", "") else s.get("status", "?")[:8]
+    if "holdover_s" in s:
+        status = f"H{fmt_duration(s['holdover_s']):>7}"
     pps = "ok" if s.get("pps") == "Valid" else s.get("pps", "?").lower()[:7]
     tr, un = s.get("tracked"), s.get("untracked")
     seen = None if tr is None or un is None else tr + un
