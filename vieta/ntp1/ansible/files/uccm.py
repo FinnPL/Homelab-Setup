@@ -32,6 +32,9 @@ PATTERNS = {
     "phase": re.compile(r"phase : ([+-]?[\d.]+E[+-]?\d+)"),
     "temp": re.compile(r"Temp = ([\d.]+)"),
     "antenna": re.compile(r"ANT V=([\d.]+)V, I=([\d.]+)mA"),
+    "gps": re.compile(r">>GPS :\s+\[\s*([^\]]*?)\s*\]"),
+    "mode": re.compile(r"\bMODE\s+(\w+)"),
+    "holdover": re.compile(r"Holdover Duration\s*:\s*(\d+)\s*sec"),
 }
 
 
@@ -127,6 +130,15 @@ def parse_status(text):
     m = PATTERNS["antenna"].search(text)
     if m:
         s["ant_v"], s["ant_ma"] = float(m.group(1)), float(m.group(2))
+    m = PATTERNS["gps"].search(text)
+    if m:
+        s["gps_available"] = not m.group(1).startswith("GPS unavailable")
+    m = PATTERNS["holdover"].search(text)
+    if m:
+        s["holdover_s"] = int(m.group(1))
+    m = PATTERNS["mode"].search(text)
+    if m:
+        s["mode"] = m.group(1)
     s["sats"] = parse_satellites(text)
     return s
 

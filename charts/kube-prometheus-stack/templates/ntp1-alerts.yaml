@@ -1,0 +1,113 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: ntp1-alerts
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: ntp1
+      rules:
+        - alert: Ntp1Unreachable
+          annotations:
+            summary: Prometheus cannot scrape ntp1-aah1.
+            description: node_exporter on ntp1-mgmt is down or the CM4 is off (PoE on Flex 2.5G port 5). Every other ntp1 alert is blind until it answers.
+          expr: up{job="ntp1-node"} == 0
+          for: 5m
+          labels:
+            severity: warning
+
+        - alert: Ntp1MetricsStale
+          annotations:
+            summary: "GPSDO metrics on ntp1 are {{`{{ $value | humanizeDuration }}`}} old."
+            description: gpsdo.service writes them every 4 s; it has stopped or cannot read the UCCM. See journalctl -u gpsdo.
+          expr: time() - gpsdo_last_poll_timestamp_seconds{job="ntp1-node"} > 120
+          for: 2m
+          labels:
+            severity: warning
+
+        - alert: Ntp1NotOnPps
+          annotations:
+            summary: "chrony on ntp1 is not synchronised to PPS (reference {{`{{ $labels.refid }}`}})."
+            description: The PPS refclock is not selected. If the UCCM still has valid 1PPS, ntp1-pps-watchdog re-runs the clock bootstrap after 5 minutes.
+          expr: chrony_tracking_info{job="ntp1-node", refid!="PPS"} == 1 or chrony_pps_selected{job="ntp1-node"} == 0
+          for: 10m
+          labels:
+            severity: warning
+
+        - alert: Ntp1NotStratum1
+          annotations:
+            summary: "ntp1 serves stratum {{`{{ $value }}`}}."
+          expr: chrony_tracking_stratum{job="ntp1-node"} != 1
+          for: 10m
+          labels:
+            severity: warning
+
+        - alert: Ntp1ClockOffset
+          annotations:
+            summary: "ntp1 system clock {{`{{ $value | humanize }}`}}s off PPS."
+            description: The offset stays above 1 us. Normal is tens of ns; CPU load on the CM4 shifts its crystal and raises it briefly.
+          expr: abs(chrony_tracking_system_offset_seconds{job="ntp1-node"}) > 1e-6
+          for: 10m
+          labels:
+            severity: warning
+
+        - alert: GpsdoNotMaster
+          annotations:
+            summary: "UCCM status is {{`{{ $labels.status }}`}}."
+            description: The UCCM is not in Master, e.g. holdover (lost GPS) or warm-up after power-on.
+          expr: gpsdo_status_info{job="ntp1-node", status!="Master"} == 1
+          for: 5m
+          labels:
+            severity: warning
+
+        - alert: GpsdoPpsInvalid
+          annotations:
+            summary: The UCCM reports its 1PPS as not valid.
+          expr: gpsdo_pps_valid{job="ntp1-node"} == 0
+          for: 2m
+          labels:
+            severity: warning
+
+        - alert: GpsdoNotLocked
+          annotations:
+            summary: "UCCM GPS lock is {{`{{ $labels.state }}`}}."
+          expr: gpsdo_lock_info{job="ntp1-node", state!="Locked"} == 1
+          for: 10m
+          labels:
+            severity: warning
+
+        - alert: GpsdoTimeErrorHigh
+          annotations:
+            summary: "UCCM TFOM has not been below {{`{{ $value }}`}} for 15 minutes."
+            description: TFOM is the decade of the UCCM's phase error (0 below 1 ns, 1 for 1-10 ns, 2 for 10-100 ns, 3 for 100 ns-1 us). It normally moves between 0 and 2.
+          expr: min_over_time(gpsdo_tfom{job="ntp1-node"}[15m]) >= 3
+          labels:
+            severity: warning
+
+        - alert: GpsdoAntennaCurrent
+          annotations:
+            summary: "GPS antenna draws {{`{{ $value }}`}} mA."
+            description: The puck draws about 10.8 mA. Below 5 mA the cable or antenna is open, above 40 mA it is shorted.
+          expr: gpsdo_antenna_milliamps{job="ntp1-node"} < 5 or gpsdo_antenna_milliamps{job="ntp1-node"} > 40
+          for: 5m
+          labels:
+            severity: warning
+
+        - alert: GpsdoPositionNotFixed
+          annotations:
+            summary: "UCCM position mode is {{`{{ $labels.mode }}`}}."
+            description: The UCCM left its stored surveyed position; neither a reset nor a power cycle does that, only a factory reset or a survey.
+          expr: gpsdo_position_mode_info{job="ntp1-node", mode!="fixed"} == 1
+          for: 10m
+          labels:
+            severity: warning
+
+        - alert: GpsdoHoldoverLong
+          annotations:
+            summary: "UCCM in holdover for {{`{{ $value | humanizeDuration }}`}}."
+            description: The OCXO has run without GPS for over an hour. Check the antenna (current, cable) and the sky view.
+          expr: gpsdo_holdover_seconds{job="ntp1-node"} > 3600 and on() gpsdo_status_info{job="ntp1-node", status=~".*Holdover.*"} == 1
+          labels:
+            severity: warning
