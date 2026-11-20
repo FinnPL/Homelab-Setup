@@ -1,4 +1,4 @@
-refclock SOCK /run/chrony.gpsdo.sock refid GPSS poll 2 noselect
+refclock SOCK /run/chrony.gpsdo.sock refid GPSS poll 2 filter 1 noselect
 refclock PHC /dev/ptp-ntp0:extpps:pin=0 refid PPS poll 0 lock GPSS maxlockage 8 width 0.00005 prefer
 
 hwtimestamp ntp0
