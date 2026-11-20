@@ -29,6 +29,8 @@
         "db1": { "ipv4": "10.10.1.66", "mac": "bc:24:11:00:00:66", "dns": "talos-w6.athena", "k8sNode": "talos-4ut-tyx" },
         "dietpi": { "ipv4": "10.10.1.75", "mac": "b8:27:eb:3f:14:f4", "dns": "dietpi.athena" },
         "nfs": { "ipv4": "10.10.1.80", "mac": "bc:24:11:00:00:80", "dns": "nfs.athena" },
+        "ntp1-mgmt": { "ipv4": "10.10.1.122", "mac": "98:fe:54:7f:e0:41", "dns": "ntp1-mgmt.athena" },
+        "ntp1": { "ipv4": "10.10.1.123", "mac": "a0:36:9f:62:bf:96", "dns": "ntp1.athena" },
         "apollo": { "ipv4": "10.10.1.195", "mac": "00:11:32:7f:65:e3", "dns": "apollo.athena" }
       }
     }

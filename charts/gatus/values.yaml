@@ -418,6 +418,8 @@ vietaHosts:
     nfs: { group: "Servers", name: "NFS Server" }
     kvm: { group: "Servers", name: "JetKVM" }
     dietpi: { group: "Servers", name: "DietPi Subnet Router" }
+    ntp1: { group: "Servers", name: "NTP Server" }
+    ntp1-mgmt: { group: "Servers", name: "NTP Server Management" }
     apollo: { group: "NAS", name: "Apollo NAS Ping" }
     cp1: { group: "K8s Nodes", name: "Talos Control Plane" }
     pi1: { group: "K8s Nodes", name: "Talos Worker 1" }

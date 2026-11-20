@@ -1,0 +1,7 @@
+[Unit]
+Description=Re-run the clock bootstrap when chrony has lost PPS
+After=chrony.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/ntp1/ntp1-pps-watchdog.sh

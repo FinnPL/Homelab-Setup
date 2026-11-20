@@ -71,6 +71,12 @@ spec:
           - job_name: kube-etcd
             static_configs:
               - targets: ['{{ .Values.inventory.vieta.hosts.cp1.ipv4 }}:2381']
+          # The CM4 time server: node_exporter with the GPSDO and chrony textfile metrics
+          - job_name: ntp1-node
+            static_configs:
+              - targets: ['{{ index .Values.inventory.vieta.hosts "ntp1-mgmt" "ipv4" }}:9100']
+                labels:
+                  host: ntp1-aah1
           {{- with .Values.inventory.minerva }}
           {{- range $job, $port := dict "minerva-nas-node" 9100 "minerva-nas-smartctl" 9633 }}
           - job_name: {{ $job }}

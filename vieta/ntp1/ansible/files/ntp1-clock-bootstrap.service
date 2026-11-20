@@ -1,0 +1,12 @@
+[Unit]
+Description=Set the clock from the GPSDO PPS before chrony starts
+Before=chrony.service gpsdo.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/python3 /usr/local/lib/ntp1/clock-bootstrap.py
+TimeoutStartSec=infinity
+
+[Install]
+WantedBy=multi-user.target

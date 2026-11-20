@@ -86,6 +86,19 @@ resource "unifi_device" "flex_25g" {
     name            = "tf-Port4"
     port_profile_id = unifi_port_profile.athena_poe.id
   }
+
+  # ntp1 (CM4): onboard Ethernet on 5 (PoE), i210 on 6
+  port_override {
+    index           = 5
+    name            = "tf-Port5"
+    port_profile_id = unifi_port_profile.athena_poe.id
+  }
+
+  port_override {
+    index           = 6
+    name            = "tf-Port6"
+    port_profile_id = unifi_port_profile.athena.id
+  }
 }
 
 resource "unifi_device" "flex_mini" {

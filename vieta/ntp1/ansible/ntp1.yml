@@ -1,0 +1,243 @@
+# ntp1-aah1: CM4 on IO board, stratum 1 from the UCCM GPSDO on Raspberry Pi OS Lite
+- hosts: all
+  become: true
+  vars:
+    inventory_vieta: "{{ (lookup('file', playbook_dir ~ '/../../../inventory/vieta.json') | from_json).inventory.vieta }}"
+    vieta_hosts: "{{ inventory_vieta.hosts }}"
+    lan: "{{ inventory_vieta.lan }}"
+    lan_prefix: "{{ lan.network | split('/') | last }}"
+    hostname: ntp1-aah1
+    vault_ssh_host_dns_name: "{{ vieta_hosts['ntp1-mgmt'].dns }}"
+    ntp1_reboot: true
+    nics:
+      - { name: mgmt0, mac: "{{ vieta_hosts['ntp1-mgmt'].mac }}", ipv4: "{{ vieta_hosts['ntp1-mgmt'].ipv4 }}" }
+      - { name: ntp0, mac: "{{ vieta_hosts.ntp1.mac }}", ipv4: "{{ vieta_hosts.ntp1.ipv4 }}", table: 123 }
+  pre_tasks:
+    - name: Wait for SSH to become available
+      wait_for_connection:
+        delay: 5
+        timeout: 300
+      tags: [always]
+  tasks:
+    - name: Configure Vault SSH CA trust
+      import_tasks: ../../02-infrastructure/ansible/tasks/vault-ssh-ca.yml
+      tags: [ssh-ca]
+
+    - name: Keep cloud-init from resetting hostname and hosts on later boots
+      copy:
+        content: ""
+        dest: /etc/cloud/cloud-init.disabled
+        mode: "0644"
+        force: false
+
+    - name: Set the hostname
+      hostname:
+        name: "{{ hostname }}"
+
+    - name: Resolve the hostname locally
+      lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1\s'
+        line: "127.0.1.1\t{{ hostname }}"
+
+    - name: Create the gpsdo service user
+      user:
+        name: gpsdo
+        system: true
+        shell: /usr/sbin/nologin
+        create_home: false
+        groups: [dialout, spi, gpio]
+        append: true
+
+    - name: Enable SPI (OLED) and the IO board RTC
+      blockinfile:
+        path: /boot/firmware/config.txt
+        marker: "# {mark} ntp1 (Ansible)"
+        insertafter: EOF
+        block: |
+          dtparam=spi=on
+          dtoverlay=i2c-rtc,pcf85063a,i2c_csi_dsi
+      notify: reboot
+
+    - name: Create config directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop: [/etc/systemd/network, /etc/systemd/journald.conf.d]
+
+    - name: Name the NICs by MAC
+      template:
+        src: nic.link.j2
+        dest: "/etc/systemd/network/10-{{ item.name }}.link"
+        mode: "0644"
+      loop: "{{ nics }}"
+      notify: [update initramfs, reboot]
+
+    - name: Configure ARP, reverse path filter and non-local binds
+      copy:
+        src: 60-ntp1.conf
+        dest: /etc/sysctl.d/60-ntp1.conf
+        mode: "0644"
+      notify: apply sysctl
+
+    - name: Keep NetworkManager from creating its default profiles
+      copy:
+        src: networkmanager.conf
+        dest: /etc/NetworkManager/conf.d/90-ntp1.conf
+        mode: "0644"
+      notify: reboot
+
+    - name: Configure the NICs
+      template:
+        src: nic.nmconnection.j2
+        dest: "/etc/NetworkManager/system-connections/{{ item.name }}.nmconnection"
+        mode: "0600"
+      loop: "{{ nics }}"
+      notify: reboot
+
+    - name: Name the i210's PTP clock
+      copy:
+        src: 70-ntp1-ptp.rules
+        dest: /etc/udev/rules.d/70-ntp1-ptp.rules
+        mode: "0644"
+      register: ptp_rule
+
+    - name: Create the PTP clock link
+      shell: udevadm control --reload && udevadm trigger --subsystem-match=ptp --action=add && udevadm settle
+      when: ptp_rule.changed
+
+    - name: Limit the journal
+      copy:
+        src: journald.conf
+        dest: /etc/systemd/journald.conf.d/ntp1.conf
+        mode: "0644"
+      notify: restart journald
+
+    - name: Create the program directory
+      file:
+        path: /usr/local/lib/ntp1
+        state: directory
+        mode: "0755"
+
+    - name: Install the GPSDO programs
+      copy:
+        src: "{{ item }}"
+        dest: "/usr/local/lib/ntp1/{{ item }}"
+        mode: "0755"
+      loop: [uccm.py, clock-bootstrap.py, gpsdo.py, ntp1-pps-watchdog.sh]
+      notify: restart gpsdo
+
+    - name: Install the units
+      copy:
+        src: "{{ item }}"
+        dest: "/etc/systemd/system/{{ item }}"
+        mode: "0644"
+      loop: [ntp1-clock-bootstrap.service, gpsdo.service, ntp1-pps-watchdog.service, ntp1-pps-watchdog.timer]
+      notify: restart gpsdo
+
+    - name: Create the chrony drop-in directory
+      file:
+        path: /etc/systemd/system/chrony.service.d
+        state: directory
+        mode: "0755"
+
+    - name: Start chrony after the clock bootstrap and open its SOCK socket to gpsdo
+      copy:
+        src: chrony-override.conf
+        dest: /etc/systemd/system/chrony.service.d/ntp1.conf
+        mode: "0644"
+      notify: restart chrony
+
+    - name: Create the chrony config directory
+      file:
+        path: /etc/chrony
+        state: directory
+        mode: "0755"
+
+    - name: Configure chrony
+      template:
+        src: chrony.conf.j2
+        dest: /etc/chrony/chrony.conf
+        mode: "0644"
+      notify: restart chrony
+
+    - name: Remove chrony's drift file
+      file:
+        path: /var/lib/chrony/chrony.drift
+        state: absent
+
+    - name: Configure node_exporter
+      template:
+        src: node-exporter.default.j2
+        dest: /etc/default/prometheus-node-exporter
+        mode: "0644"
+      notify: restart node_exporter
+
+    - name: Reload systemd units
+      systemd:
+        daemon_reload: true
+
+    - name: Install packages
+      apt:
+        name:
+          - chrony
+          - prometheus-node-exporter
+          - unattended-upgrades
+          - python3-luma.oled
+          - fonts-dejavu-core
+        install_recommends: false
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Enable automatic security updates
+      copy:
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Unattended-Upgrade "1";
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        mode: "0644"
+
+    - name: Enable the services
+      systemd:
+        name: "{{ item }}"
+        enabled: true
+        state: "{{ 'started' if item != 'chrony' or 'ntp0' in ansible_facts.interfaces else omit }}"
+      loop: [ntp1-clock-bootstrap, chrony, gpsdo, prometheus-node-exporter, ntp1-pps-watchdog.timer]
+
+  handlers:
+    - name: apply sysctl
+      command: sysctl --system
+      changed_when: true
+
+    - name: restart journald
+      systemd:
+        name: systemd-journald
+        state: restarted
+
+    - name: update initramfs
+      command: update-initramfs -u -k all
+      changed_when: true
+
+    - name: restart chrony
+      systemd:
+        name: chrony
+        state: restarted
+        daemon_reload: true
+      when: "'ntp0' in ansible_facts.interfaces"
+
+    - name: restart gpsdo
+      systemd:
+        name: gpsdo
+        state: restarted
+        daemon_reload: true
+
+    - name: restart node_exporter
+      systemd:
+        name: prometheus-node-exporter
+        state: restarted
+
+    - name: reboot
+      reboot:
+        reboot_timeout: 900
+      when: ntp1_reboot | bool

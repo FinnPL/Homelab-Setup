@@ -20,6 +20,7 @@ on:
       - main
     paths:
       - "vieta/02-infrastructure/ansible/**"
+      - "vieta/ntp1/ansible/**"
       - ".github/scripts/oci-edge-converge.sh"
       - "inventory/fplnet.json"
       - "inventory/vieta.json"
@@ -34,7 +35,7 @@ permissions:
 
 jobs:
   vieta:
-    name: "Vieta LXCs"
+    name: "Vieta hosts"
     runs-on: ubuntu-latest
     environment: vieta
     timeout-minutes: 20
@@ -80,7 +81,8 @@ jobs:
         id: targets
         env:
           PLAYBOOKS: |
-            nfs-server.yml nfs
+            vieta/02-infrastructure/ansible/nfs-server.yml nfs
+            vieta/ntp1/ansible/ntp1.yml ntp1-mgmt
         run: |
           set -euo pipefail
           targets=""
@@ -142,7 +144,7 @@ jobs:
               --user root \
               --tags ssh-ca \
               "${extra_vars[@]}" \
-              "vieta/02-infrastructure/ansible/$playbook"
+              "$playbook"
           done
 
   # The OCI VM oracle-edge (SSH + Tailscale only, no longer managed in this repo).

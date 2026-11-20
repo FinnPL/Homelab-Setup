@@ -1,0 +1,19 @@
+[Unit]
+Description=UCCM GPSDO: GPSS samples for chrony, OLED, metrics
+After=ntp1-clock-bootstrap.service chrony.service
+Wants=chrony.service
+
+[Service]
+User=gpsdo
+Group=gpsdo
+SupplementaryGroups=dialout spi gpio
+RuntimeDirectory=gpsdo
+RuntimeDirectoryMode=0755
+RuntimeDirectoryPreserve=yes
+WorkingDirectory=/run/gpsdo
+ExecStart=/usr/bin/python3 /usr/local/lib/ntp1/gpsdo.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
