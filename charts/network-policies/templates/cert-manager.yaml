@@ -40,6 +40,7 @@ spec:
       app.kubernetes.io/name: webhook
   ingress:
     {{- include "np.fromApiserver" (list 10250) | nindent 4 }}
+    {{- include "np.fromPrometheus" (list 9402) | nindent 4 }}
   egress:
     - {}
 ---
@@ -53,4 +54,4 @@ spec:
     matchLabels:
       app.kubernetes.io/name: cainjector
   ingress:
-    - {}
+    {{- include "np.fromPrometheus" (list 9402) | nindent 4 }}
