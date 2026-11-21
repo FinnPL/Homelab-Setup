@@ -235,8 +235,11 @@ def check_vieta(vieta):
 
     addr("vieta.unifiController", vieta["unifiController"], 4)
 
+    site = net("vieta.network", vieta["network"], 4)
     lan = vieta["lan"]
     network = net("vieta.lan.network", lan["network"], 4)
+    if site and network and not network.subnet_of(site):
+        fail("vieta.lan.network", f"{network} is outside {site}")
     vlan = lan["vlan"]
     if not (isinstance(vlan, int) and 1 <= vlan <= 4094):
         fail("vieta.lan.vlan", f"{vlan!r} is not a VLAN id")

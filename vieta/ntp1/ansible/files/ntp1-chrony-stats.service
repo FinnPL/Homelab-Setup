@@ -1,0 +1,20 @@
+[Unit]
+Description=chrony NTP server statistics for node_exporter
+After=chrony.service
+
+[Service]
+User=_chrony
+Group=_chrony
+RuntimeDirectory=ntp1-chrony-stats
+RuntimeDirectoryMode=0755
+ExecStart=/usr/bin/python3 /usr/local/lib/ntp1/chrony-stats.py
+Restart=always
+RestartSec=15
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadWritePaths=/run/chrony
+
+[Install]
+WantedBy=multi-user.target
