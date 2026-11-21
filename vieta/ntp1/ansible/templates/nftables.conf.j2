@@ -1,0 +1,41 @@
+#!/usr/sbin/nft -f
+flush ruleset
+
+table inet filter {
+	set k8s_nodes {
+		type ipv4_addr
+		elements = { {{ k8s_node_ips | join(', ') }} }
+	}
+
+	counter dropped {}
+
+	chain input {
+		type filter hook input priority filter; policy drop;
+		iifname "lo" accept
+		ct state established,related accept
+		ct state invalid drop
+		meta l4proto { icmp, ipv6-icmp } accept
+		iifname "ntp0" ip daddr {{ vieta_hosts.ntp1.ipv4 }} ip saddr {{ site_network }} udp dport 123 accept
+		iifname "mgmt0" ip daddr {{ vieta_hosts['ntp1-mgmt'].ipv4 }} ip saddr {{ site_network }} tcp dport 22 accept
+		iifname "mgmt0" ip daddr {{ vieta_hosts['ntp1-mgmt'].ipv4 }} ip saddr @k8s_nodes tcp dport 9100 accept
+		meta pkttype { broadcast, multicast } counter name dropped drop
+		limit rate 5/minute log prefix "nft input drop: "
+		counter name dropped drop
+	}
+
+	chain forward {
+		type filter hook forward priority filter; policy drop;
+	}
+}
+
+table inet raw {
+	chain prerouting {
+		type filter hook prerouting priority raw;
+		iifname "ntp0" udp dport 123 notrack
+	}
+
+	chain output {
+		type filter hook output priority raw;
+		oifname "ntp0" udp sport 123 notrack
+	}
+}

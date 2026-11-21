@@ -111,3 +111,52 @@ spec:
           expr: gpsdo_holdover_seconds{job="ntp1-node"} > 3600 and on() gpsdo_status_info{job="ntp1-node", status=~".*Holdover.*"} == 1
           labels:
             severity: warning
+
+        - alert: Ntp1ServerStatsStale
+          annotations:
+            summary: chrony server statistics on ntp1 are missing or stale.
+            description: ntp1-chrony-stats.service writes them every 15 s as _chrony; it has stopped or chronyc fails. See journalctl -u ntp1-chrony-stats.
+          expr: time() - chrony_stats_last_run_timestamp_seconds{job="ntp1-node"} > 120 or chrony_stats_up{job="ntp1-node"} == 0
+          for: 5m
+          labels:
+            severity: warning
+
+        - alert: Ntp1NoHardwareTimestamps
+          annotations:
+            summary: "Only {{`{{ $value | humanizePercentage }}`}} of NTP requests on ntp1 got an i210 hardware RX timestamp."
+            description: Normally every request after chrony's first few gets one. Kernel timestamps mean chrony lost the i210 PHC on ntp0 (hwtimestamp) and serves with microsecond rather than nanosecond accuracy.
+          expr: |
+            increase(chrony_server_rx_timestamps_total{job="ntp1-node", source="hardware"}[30m])
+              / increase(chrony_server_ntp_packets_received_total{job="ntp1-node"}[30m]) < 0.9
+            and increase(chrony_server_ntp_packets_received_total{job="ntp1-node"}[30m]) > 20
+          for: 15m
+          labels:
+            severity: warning
+
+        - alert: Ntp1RequestsDropped
+          annotations:
+            summary: "chrony on ntp1 dropped {{`{{ $value }}`}} NTP requests in 15 minutes."
+            description: chrony drops requests it rate limits or cannot log. See chronyc serverstats and chronyc clients on ntp1.
+          expr: increase(chrony_server_ntp_packets_dropped_total{job="ntp1-node"}[15m]) > 0
+          labels:
+            severity: warning
+
+        - alert: Ntp1ClientFlooding
+          annotations:
+            summary: "{{`{{ $labels.client }}`}} ({{`{{ $labels.scope }}`}}) sends ntp1 {{`{{ $value }}`}} requests per minute."
+            description: A normal client asks every 64 to 1024 s and sends a short burst only at start (iburst); 12 a minute for 10 minutes is a broken or abusive client. Block it in nftables on ntp1 if it does not stop.
+          expr: chrony_top_client_requests_per_minute{job="ntp1-node"} > 12
+          for: 10m
+          labels:
+            severity: warning
+
+        - alert: Ntp1ClientSilent
+          annotations:
+            summary: "{{`{{ $labels.name }}`}} ({{`{{ $labels.client }}`}}) has not asked ntp1 for the time in {{`{{ $value | humanizeDuration }}`}}."
+            description: An inventory host that polled ntp1 before has missed four of its own polling intervals and at least an hour. It is down, or it no longer uses ntp1.
+          expr: |
+            (time() - chrony_client_last_request_timestamp_seconds{job="ntp1-node", name!=""})
+              > 4 * clamp_min(chrony_client_request_interval_seconds{job="ntp1-node", name!=""}, 64)
+            and (time() - chrony_client_last_request_timestamp_seconds{job="ntp1-node", name!=""}) > 3600
+          labels:
+            severity: warning

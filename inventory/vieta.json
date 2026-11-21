@@ -1,6 +1,7 @@
 {
   "inventory": {
     "vieta": {
+      "network": "10.10.0.0/16",
       "prefix": "2a0c:b641:f94::/48",
       "nodeNetwork": "2a0c:b641:f94:20::/64",
       "podNetwork": "2a0c:b641:f94:8100::/56",

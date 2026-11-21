@@ -6,6 +6,9 @@
     vieta_hosts: "{{ inventory_vieta.hosts }}"
     lan: "{{ inventory_vieta.lan }}"
     lan_prefix: "{{ lan.network | split('/') | last }}"
+    site_network: "{{ inventory_vieta.network }}"
+    client_names: "{{ dict(vieta_hosts.values() | map(attribute='ipv4') | zip(vieta_hosts.keys())) }}"
+    k8s_node_ips: "{{ vieta_hosts.values() | selectattr('k8sNode', 'defined') | map(attribute='ipv4') | list }}"
     hostname: ntp1-aah1
     vault_ssh_host_dns_name: "{{ vieta_hosts['ntp1-mgmt'].dns }}"
     ntp1_reboot: true
@@ -64,7 +67,7 @@
         path: "{{ item }}"
         state: directory
         mode: "0755"
-      loop: [/etc/systemd/network, /etc/systemd/journald.conf.d]
+      loop: [/etc/systemd/network, /etc/systemd/journald.conf.d, /etc/ntp1]
 
     - name: Name the NICs by MAC
       template:
@@ -167,6 +170,23 @@
         path: /var/lib/chrony/chrony.drift
         state: absent
 
+    - name: Install the chrony statistics exporter
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: "{{ item.mode }}"
+      loop:
+        - { src: chrony-stats.py, dest: /usr/local/lib/ntp1/chrony-stats.py, mode: "0755" }
+        - { src: ntp1-chrony-stats.service, dest: /etc/systemd/system/ntp1-chrony-stats.service, mode: "0644" }
+      notify: restart chrony-stats
+
+    - name: Name the site's clients for the chrony statistics
+      copy:
+        content: "{{ {'site_network': site_network, 'names': client_names} | to_nice_json }}\n"
+        dest: /etc/ntp1/chrony-stats.json
+        mode: "0644"
+      notify: restart chrony-stats
+
     - name: Configure node_exporter
       template:
         src: node-exporter.default.j2
@@ -184,11 +204,40 @@
           - chrony
           - prometheus-node-exporter
           - unattended-upgrades
+          - nftables
           - python3-luma.oled
           - fonts-dejavu-core
         install_recommends: false
         update_cache: true
         cache_valid_time: 3600
+
+    - name: Remove services nothing here uses
+      apt:
+        name: [rpi-connect-lite]
+        state: absent
+        purge: true
+
+    - name: Stop mDNS
+      systemd:
+        name: "{{ item }}"
+        enabled: false
+        masked: true
+        state: stopped
+      loop: [avahi-daemon.socket, avahi-daemon.service]
+
+    - name: Configure the firewall
+      template:
+        src: nftables.conf.j2
+        dest: /etc/nftables.conf
+        mode: "0755"
+        validate: nft -c -f %s
+      notify: reload nftables
+
+    - name: Enable the firewall
+      systemd:
+        name: nftables
+        enabled: true
+        state: started
 
     - name: Enable automatic security updates
       copy:
@@ -198,12 +247,29 @@
         dest: /etc/apt/apt.conf.d/20auto-upgrades
         mode: "0644"
 
+    - name: Update from every configured repo except the bootloader, and reboot for a new kernel
+      copy:
+        content: |
+          Unattended-Upgrade::Origins-Pattern {
+                  "origin=Debian,codename=${distro_codename}-updates,label=Debian";
+                  "origin=Raspberry Pi Foundation,codename=${distro_codename},label=Raspberry Pi Foundation";
+          };
+          Unattended-Upgrade::Package-Blacklist {
+                  "rpi-eeprom";
+          };
+          // A new kernel only runs after a reboot; the clock bootstrap relocks to PPS within minutes.
+          Unattended-Upgrade::Automatic-Reboot "true";
+          Unattended-Upgrade::Automatic-Reboot-WithUsers "true";
+          Unattended-Upgrade::Automatic-Reboot-Time "03:30";
+        dest: /etc/apt/apt.conf.d/52ntp1-unattended-upgrades
+        mode: "0644"
+
     - name: Enable the services
       systemd:
         name: "{{ item }}"
         enabled: true
         state: "{{ 'started' if item != 'chrony' or 'ntp0' in ansible_facts.interfaces else omit }}"
-      loop: [ntp1-clock-bootstrap, chrony, gpsdo, prometheus-node-exporter, ntp1-pps-watchdog.timer]
+      loop: [ntp1-clock-bootstrap, chrony, gpsdo, ntp1-chrony-stats, prometheus-node-exporter, ntp1-pps-watchdog.timer]
 
   handlers:
     - name: apply sysctl
@@ -229,6 +295,17 @@
     - name: restart gpsdo
       systemd:
         name: gpsdo
+        state: restarted
+        daemon_reload: true
+
+    - name: reload nftables
+      systemd:
+        name: nftables
+        state: reloaded
+
+    - name: restart chrony-stats
+      systemd:
+        name: ntp1-chrony-stats
         state: restarted
         daemon_reload: true
 
