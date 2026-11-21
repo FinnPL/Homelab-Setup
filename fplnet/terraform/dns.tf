@@ -47,12 +47,21 @@ locals {
     "enp1s0.er1.fra1"  = split("/", local.routers["er1-fra1"].uplink.v4)[0]
   }
 
+  # Site services keep their lippok.dev names and 03-services writes the matching AAAA.
+  site_services = { for name, s in local.inventory.siteServices : name => s.address }
+
+  ptr_targets = merge(
+    { for name in keys(local.names) : name => "${name}.fplnet.net" },
+    { "@" = "fplnet.net" },
+    { for name in keys(local.site_services) : name => name },
+  )
+
   reverse_zone = "9.f.0.1.4.6.b.c.0.a.2.ip6.arpa"
 
   # Expand "::" to the full 32 nibbles, reversed and dotted as in ip6.arpa.
   # "@" is the apex, fplnet.net itself.
   ptr_names = {
-    for name, addr in merge(local.names, { "@" = local.web_v6 }) : name => "${join(".", reverse(split("", join("", [
+    for name, addr in merge(local.names, { "@" = local.web_v6 }, local.site_services) : name => "${join(".", reverse(split("", join("", [
       for g in concat(
         compact(split(":", split("::", addr)[0])),
         [for _ in range(8 - length(compact(split(":", addr)))) : "0"],
@@ -106,7 +115,7 @@ resource "cloudflare_dns_record" "ptr" {
   name    = each.value
   type    = "PTR"
   ttl     = 3600
-  content = each.key == "@" ? "fplnet.net" : "${each.key}.fplnet.net"
+  content = local.ptr_targets[each.key]
 }
 
 # fplnet.net: the edge anycast address over IPv6, every edge's provider address over IPv4 (no own v4).
