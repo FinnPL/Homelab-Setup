@@ -1,5 +1,8 @@
 # Common to every FPLNET router.
 {
+  config,
+  inventory,
+  lib,
   pkgs,
   inputs,
   ...
@@ -9,7 +12,16 @@
     ./monitoring.nix
   ];
 
+  services.chrony = {
+    enable = !config.boot.isContainer;
+    servers = [];
+    extraConfig =
+      lib.concatMapStrings (address: "server ${address} iburst prefer\n") config.networking.timeServers
+      + "pool 0.nixos.pool.ntp.org iburst maxsources 3\n";
+  };
+
   networking = {
+    timeServers = map (s: s.address) (lib.filter (s: (s.host or "") == "ntp1") (lib.attrValues inventory.fplnet.siteServices));
     useDHCP = false;
     useNetworkd = true;
     dhcpcd.enable = false;

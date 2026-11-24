@@ -18,6 +18,9 @@ export const EDGE_IDS = Object.keys(EDGES) as EdgeId[];
 export const liveUrl = (e: EdgeId) => `https://${EDGES[e].name}.fplnet.net/live.json`;
 export const SITE_DATA = "https://site-data.relay.lippok.dev/site.json";
 export const STATUS_DATA = "https://site-data.relay.lippok.dev/status.json";
+export const NTP_DATA = "https://site-data.relay.lippok.dev/ntp.json";
+export const timeUrl = (e: EdgeId) => `https://${EDGES[e].name}.fplnet.net/time`;
+export const NTP_HOST = "ntp1.aah1.fplnet.net";
 export const DNS_CHECK = "https://dns-check.fplnet.net/api/ping";
 export const CONNECTION = "https://fplnet.net/connection";
 

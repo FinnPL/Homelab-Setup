@@ -16,4 +16,11 @@ routing-rule1=priority 100 from {{ item.ipv4 }} table {{ item.table }}
 {% endif %}
 
 [ipv6]
+{% if item.ipv6 is defined %}
+method=manual
+address1={{ item.ipv6 }}/64,{{ item.gateway6 }}
+route-table={{ item.table }}
+routing-rule1=priority 100 from {{ item.ipv6 }} table {{ item.table }}
+{% else %}
 method=disabled
+{% endif %}

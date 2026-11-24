@@ -58,6 +58,13 @@ locals {
       kind       = "KubeletConfig"
       clusterDNS = local.k8s_cluster_dns
     }),
+    yamlencode({
+      apiVersion = "v1alpha1"
+      kind       = "TimeSyncConfig"
+      ntp = {
+        servers = [local.vieta.hosts.ntp1.ipv4, "time.cloudflare.com"]
+      }
+    }),
   ]
 
   # Athena has no router advertisements, so each node gets a static IPv6 address,

@@ -5,7 +5,7 @@
   lib,
   ...
 }: let
-  siteServices = lib.filterAttrs (_: s: lib.elem 443 s.tcp) inventory.fplnet.siteServices;
+  siteServices = lib.filterAttrs (_: s: lib.elem 443 (s.tcp or [])) inventory.fplnet.siteServices;
 
   siteRoutes = lib.concatStrings (lib.mapAttrsToList (name: _: ''
       use_backend site_${name} if { req.ssl_sni -i ${name} }

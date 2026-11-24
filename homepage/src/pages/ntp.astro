@@ -1,6 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import { IDENTITY } from "../lib/identity";
+import { NTP_HOST } from "../lib/net";
 
 const NB = "not built yet";
 ---
@@ -11,13 +12,110 @@ const NB = "not built yet";
   heading="NTP"
   tagline="Stratum 1 time from a GPS-disciplined oscillator."
 >
-  <div class="wrap" style="margin-bottom:44px">
-    <dl class="livestrip">
-      <div><dt>server</dt><dd><span class="nb">not public yet</span></dd></div>
-      <div><dt>live data</dt><dd><span class="nb">{NB}</span></dd></div>
-      <div><dt>host</dt><dd><span class="nb">{NB}</span></dd></div>
-    </dl>
+  <span slot="head-aside" class="mono small dim">{NTP_HOST}</span>
+
+  <div class="wrap" id="ntp" style="margin-bottom:44px">
+    <div class="ntp">
+      <div class="ntp-top">
+        <div>
+          <div class="clock"><span data-k="clock">--:--:--.---</span><small>UTC</small></div>
+          <div class="mono small dim" data-k="date"></div>
+        </div>
+        <dl class="ntp-state">
+          <div><dt>state</dt><dd data-k="state">no data</dd></div>
+          <div><dt>stratum</dt><dd data-k="stratum">no data</dd></div>
+          <div><dt>reference</dt><dd data-k="refid">no data</dd></div>
+          <div><dt>your clock</dt><dd data-k="you">measuring</dd></div>
+        </dl>
+      </div>
+      <div class="ntp-charts">
+        <figure class="chart">
+          <figcaption>Offset, last 3 hours, ns</figcaption>
+          <div class="chart-box series">
+            <div class="ylab" data-k="off-y"></div>
+            <div class="plot">
+              <svg data-k="off" viewBox="0 0 600 190" preserveAspectRatio="none" role="img" aria-label="Offset of ntp1's system clock to the GPSDO's pulse over the last 3 hours"></svg>
+              <div class="tip" data-k="off-tip" hidden></div>
+            </div>
+          </div>
+        </figure>
+        <div class="chart quality">
+          <div><span data-k="tfom">TFOM –</span><small data-k="tfom-note"></small></div>
+          <div><span data-k="ffom">FFOM –</span><small data-k="ffom-note"></small></div>
+          <div><span data-k="jitter">jitter –</span><small>pulse standard deviation</small></div>
+          <div><span data-k="reach">reach –</span><small>of the last 8 pulses used</small></div>
+        </div>
+        <figure class="chart">
+          <figcaption>GPSDO pulse to GPS, last 3 hours, ns</figcaption>
+          <div class="chart-box series">
+            <div class="ylab" data-k="phase-y"></div>
+            <div class="plot">
+              <svg data-k="phase" viewBox="0 0 600 190" preserveAspectRatio="none" role="img" aria-label="Phase of the GPSDO's pulse to GPS over the last 3 hours"></svg>
+              <div class="tip" data-k="phase-tip" hidden></div>
+            </div>
+          </div>
+        </figure>
+        <figure class="chart">
+          <figcaption data-k="sat-caption">Satellites, signal in dB-Hz</figcaption>
+          <div class="chart-box">
+            <svg data-k="sat" viewBox="0 0 380 190" role="img" aria-label="Signal of each tracked satellite, strongest first"></svg>
+            <div class="tip" data-k="sat-tip" hidden></div>
+          </div>
+        </figure>
+      </div>
+      <div class="ntp-groups">
+        <div>
+          <span class="eyebrow">Reference</span>
+          <dl class="kv3">
+            <dt>UCCM</dt><dd data-k="status"></dd>
+            <dt>GPS lock</dt><dd data-k="lock"></dd>
+            <dt>1PPS</dt><dd data-k="pps"></dd>
+            <dt>locked for</dt><dd data-k="locked"></dd>
+          </dl>
+        </div>
+        <div>
+          <span class="eyebrow">Server</span>
+          <dl class="kv3">
+            <dt>offset</dt><dd data-k="offset"></dd>
+            <dt>rms</dt><dd data-k="rms"></dd>
+            <dt>root dispersion</dt><dd data-k="disp"></dd>
+          </dl>
+        </div>
+        <div>
+          <span class="eyebrow">Requests</span>
+          <dl class="kv3">
+            <dt>per minute</dt><dd data-k="rate"></dd>
+            <dt>hardware timestamps</dt><dd data-k="hw"></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+    <div class="small mono" data-k="stamp" style="margin-top:10px"></div>
   </div>
+
+  <section class="wrap section">
+    <div class="cols">
+      <div class="label"><span class="eyebrow">Use it</span></div>
+      <div class="stack-lg">
+        <div class="use-host">
+          <code>{NTP_HOST}</code>
+          <span class="tag">IPv4</span><span class="tag">IPv6</span>
+          <span class="small dim">pool.ntp.org: <span class="nb">not listed yet</span></span>
+        </div>
+        <div class="cfg">
+          <figure>
+            <figcaption><span>chrony</span><span class="dim">/etc/chrony/chrony.conf</span><button type="button" class="copy" aria-label="Copy" title="Copy"><svg class="i-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-.5a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></svg><svg class="i-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg></button></figcaption>
+            <pre><code>server {NTP_HOST} iburst</code></pre>
+          </figure>
+          <figure>
+            <figcaption><span>systemd-timesyncd</span><span class="dim">/etc/systemd/timesyncd.conf</span><button type="button" class="copy" aria-label="Copy" title="Copy"><svg class="i-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-.5a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></svg><svg class="i-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg></button></figcaption>
+            <pre><code>[Time]
+NTP={NTP_HOST}</code></pre>
+          </figure>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <section class="wrap section">
     <div class="cols">
@@ -26,7 +124,7 @@ const NB = "not built yet";
         <dt>Reference</dt><dd>Samsung UCCM-LP: OCXO and a u-blox LEA-6T GPS receiver</dd>
         <dt>Timestamping</dt><dd>Intel i210, the PPS edge goes into SDP0</dd>
         <dt>Display</dt><dd>SSD1322 OLED, 256 × 64</dd>
-        <dt>Host</dt><dd>Raspberry Pi CM4 on the official IO board: <span class="nb">{NB}</span></dd>
+        <dt>Host</dt><dd>Raspberry Pi CM4 on the official IO board</dd>
         <dt>Front panel</dt><dd>3D-printed in ASA for U9 of the <a href="/vieta">Vieta rack</a>: <span class="nb">{NB}</span></dd>
       </dl>
     </div>
@@ -46,7 +144,7 @@ const NB = "not built yet";
         </div>
         <div>
           <h2 class="grp">Serving</h2>
-          <p>chrony also timestamps the NTP packets themselves in the i210's hardware, not in the kernel.</p>
+          <p>chrony also timestamps the NTP packets themselves in the i210's hardware, not in the kernel. Over IPv6 the server has its own address; over IPv4 every FPLNET edge forwards NTP on its address to it over the backbone, keeping the client's address.</p>
         </div>
         <div>
           <h2 class="grp">Holdover</h2>
@@ -56,3 +154,26 @@ const NB = "not built yet";
     </div>
   </section>
 </Base>
+
+<script>
+  import { startNtp } from "../scripts/ntp";
+  const root = document.getElementById("ntp");
+  if (root) startNtp(root);
+
+  document.querySelectorAll<HTMLButtonElement>(".cfg .copy").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const text = button.closest("figure")?.querySelector("pre")?.textContent ?? "";
+      try {
+        await navigator.clipboard.writeText(text + "\n");
+        button.classList.add("done");
+        button.title = "Copied";
+      } catch {
+        button.title = "Copy failed";
+      }
+      setTimeout(() => {
+        button.classList.remove("done");
+        button.title = "Copy";
+      }, 1500);
+    });
+  });
+</script>

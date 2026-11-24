@@ -16,6 +16,7 @@ table inet filter {
 		ct state invalid drop
 		meta l4proto { icmp, ipv6-icmp } accept
 		iifname "ntp0" ip daddr {{ vieta_hosts.ntp1.ipv4 }} ip saddr {{ site_network }} udp dport 123 accept
+		iifname "ntp0" ip6 daddr {{ ntp_v6 }} udp dport 123 accept
 		iifname "mgmt0" ip daddr {{ vieta_hosts['ntp1-mgmt'].ipv4 }} ip saddr {{ site_network }} tcp dport 22 accept
 		iifname "mgmt0" ip daddr {{ vieta_hosts['ntp1-mgmt'].ipv4 }} ip saddr @k8s_nodes tcp dport 9100 accept
 		meta pkttype { broadcast, multicast } counter name dropped drop

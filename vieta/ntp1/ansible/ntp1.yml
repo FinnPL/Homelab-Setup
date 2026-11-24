@@ -3,6 +3,9 @@
   become: true
   vars:
     inventory_vieta: "{{ (lookup('file', playbook_dir ~ '/../../../inventory/vieta.json') | from_json).inventory.vieta }}"
+    inventory_fplnet: "{{ (lookup('file', playbook_dir ~ '/../../../inventory/fplnet.json') | from_json).inventory.fplnet }}"
+    ntp_v6: "{{ (inventory_fplnet.siteServices.values() | selectattr('host', 'defined') | selectattr('host', 'equalto', 'ntp1') | first).address }}"
+    gw1: "{{ inventory_fplnet.routers['gw1-aah1'].uplink }}"
     vieta_hosts: "{{ inventory_vieta.hosts }}"
     lan: "{{ inventory_vieta.lan }}"
     lan_prefix: "{{ lan.network | split('/') | last }}"
@@ -14,7 +17,12 @@
     ntp1_reboot: true
     nics:
       - { name: mgmt0, mac: "{{ vieta_hosts['ntp1-mgmt'].mac }}", ipv4: "{{ vieta_hosts['ntp1-mgmt'].ipv4 }}" }
-      - { name: ntp0, mac: "{{ vieta_hosts.ntp1.mac }}", ipv4: "{{ vieta_hosts.ntp1.ipv4 }}", table: 123 }
+      - name: ntp0
+        mac: "{{ vieta_hosts.ntp1.mac }}"
+        ipv4: "{{ vieta_hosts.ntp1.ipv4 }}"
+        ipv6: "{{ ntp_v6 }}"
+        gateway6: "{{ gw1.v6 | split('/') | first }}"
+        table: 123
   pre_tasks:
     - name: Wait for SSH to become available
       wait_for_connection:

@@ -118,57 +118,54 @@ resource "cloudflare_dns_record" "ptr" {
   content = local.ptr_targets[each.key]
 }
 
-# fplnet.net: the edge anycast address over IPv6, every edge's provider address over IPv4 (no own v4).
+# Names the edges answer, no own IPv4: AAAA as given, one A per edge's provider address.
 locals {
   web_v6 = local.inventory.edgeAnycastAddress
 
-  # Each edge's uplink in hosts_v4
+  # Each edge's uplink name in hosts_v4
   edge_uplinks = {
     "er1.ams1" = "ens18.er1.ams1"
     "er1.dus1" = "ens18.er1.dus1"
     "er1.fra1" = "enp1s0.er1.fra1"
   }
   web_v4 = { for edge, uplink in local.edge_uplinks : uplink => local.hosts_v4[uplink] }
+
+  web_names = merge(
+    {
+      "fplnet.net"    = { v6 = local.web_v6, v4 = true, ttl = 300 }
+      "lg.fplnet.net" = { v6 = local.web_v6, v4 = true, ttl = 300 }
+      "v4.fplnet.net" = { v6 = null, v4 = true, ttl = 300 }
+      "v6.fplnet.net" = { v6 = local.web_v6, v4 = false, ttl = 300 }
+    },
+    { for name, s in local.inventory.siteServices : name => { v6 = s.address, v4 = true, ttl = 3600 } if endswith(name, ".fplnet.net") },
+  )
 }
 
 resource "cloudflare_dns_record" "web_aaaa" {
+  for_each = { for name, n in local.web_names : name => n if n.v6 != null }
+
   zone_id = data.cloudflare_zone.forward.id
-  name    = "fplnet.net"
+  name    = each.key
   type    = "AAAA"
-  ttl     = 300
-  content = local.web_v6
+  ttl     = each.value.ttl
+  content = each.value.v6
   proxied = false
 }
 
 resource "cloudflare_dns_record" "web_a" {
-  for_each = local.web_v4
+  for_each = {
+    for pair in setproduct([for name, n in local.web_names : name if n.v4], keys(local.web_v4)) : "${pair[0]} ${pair[1]}" => {
+      name = pair[0]
+      ip   = local.web_v4[pair[1]]
+      ttl  = local.web_names[pair[0]].ttl
+    }
+  }
 
   zone_id = data.cloudflare_zone.forward.id
-  name    = "fplnet.net"
+  name    = each.value.name
   type    = "A"
-  ttl     = 300
-  content = each.value
-  proxied = false
-}
-
-# fplnet.net/connection tests each address family on a name that has only that family.
-resource "cloudflare_dns_record" "web_v4_only" {
-  for_each = local.web_v4
-
-  zone_id = data.cloudflare_zone.forward.id
-  name    = "v4.fplnet.net"
-  type    = "A"
-  ttl     = 300
-  content = each.value
-  proxied = false
-}
-
-resource "cloudflare_dns_record" "web_v6_only" {
-  zone_id = data.cloudflare_zone.forward.id
-  name    = "v6.fplnet.net"
-  type    = "AAAA"
-  ttl     = 300
-  content = local.web_v6
+  ttl     = each.value.ttl
+  content = each.value.ip
   proxied = false
 }
 
@@ -184,42 +181,11 @@ resource "cloudflare_dns_record" "edge_a" {
 }
 
 # Advertises HTTP/3 and the ECH public key.
-resource "cloudflare_dns_record" "web_https" {
-  zone_id = data.cloudflare_zone.forward.id
-  name    = "fplnet.net"
-  type    = "HTTPS"
-  ttl     = 300
-  data = {
-    priority = 1
-    target   = "."
-    value    = "alpn=\"h3,h2\" ech=\"${trimspace(file("${path.module}/fplnet-net.echconfig"))}\""
-  }
-}
-
-# lg.fplnet.net
-resource "cloudflare_dns_record" "lg_aaaa" {
-  zone_id = data.cloudflare_zone.forward.id
-  name    = "lg.fplnet.net"
-  type    = "AAAA"
-  ttl     = 300
-  content = local.web_v6
-  proxied = false
-}
-
-resource "cloudflare_dns_record" "lg_a" {
-  for_each = local.web_v4
+resource "cloudflare_dns_record" "https" {
+  for_each = toset(["fplnet.net", "lg.fplnet.net"])
 
   zone_id = data.cloudflare_zone.forward.id
-  name    = "lg.fplnet.net"
-  type    = "A"
-  ttl     = 300
-  content = each.value
-  proxied = false
-}
-
-resource "cloudflare_dns_record" "lg_https" {
-  zone_id = data.cloudflare_zone.forward.id
-  name    = "lg.fplnet.net"
+  name    = each.key
   type    = "HTTPS"
   ttl     = 300
   data = {

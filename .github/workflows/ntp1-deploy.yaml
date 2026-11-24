@@ -10,6 +10,7 @@ on:
       - "vieta/ntp1/**"
       - "vieta/02-infrastructure/ansible/tasks/**"
       - "inventory/vieta.json"
+      - "inventory/fplnet.json"
       - "inventory/trust/**"
       - ".github/workflows/ntp1-deploy.yaml"
       - ".github/actions/vault-ssh-client-cert/**"
@@ -18,6 +19,7 @@ on:
       - "vieta/ntp1/**"
       - "vieta/02-infrastructure/ansible/tasks/**"
       - "inventory/vieta.json"
+      - "inventory/fplnet.json"
       - ".github/workflows/ntp1-deploy.yaml"
   workflow_dispatch:
 
