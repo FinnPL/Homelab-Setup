@@ -577,7 +577,7 @@ unifiExporter:
   enabled: true
   image:
     repository: ghcr.io/unpoller/unpoller
-    tag: v5.10.0
+    tag: v5.10.1
     pullPolicy: IfNotPresent
 
   verifySsl: false
