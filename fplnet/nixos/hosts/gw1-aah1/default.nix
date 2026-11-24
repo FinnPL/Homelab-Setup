@@ -8,7 +8,10 @@
   inherit (inventory) fplnet vieta;
   host = fplnet.routers.gw1-aah1;
   services = fplnet.siteServices;
-  siteServices = lib.concatLists (lib.mapAttrsToList (_: s: map (port: "${s.address} . ${toString port}") s.tcp) services);
+  pairs = address: ports: map (port: "${address} . ${toString port}") ports;
+  siteServices = lib.concatLists (lib.mapAttrsToList (_: s: pairs s.address (s.tcp or [])) services);
+  siteUdp = lib.concatLists (lib.mapAttrsToList (_: s: pairs s.address (s.udp or [])) services);
+  set = lib.concatStringsSep ", ";
   proxyPorts = lib.mapAttrsToList (_: s: "${s.address} . ${toString s.proxyPort}") (lib.filterAttrs (_: s: s ? proxyPort) services);
 in {
   imports = [
@@ -41,6 +44,9 @@ in {
         ''
         + lib.optionalString (proxyPorts != []) ''
           iifname "wg-er1-*" oifname "${host.uplink.interface}" ip6 saddr ${fplnet.prefixes.edges} ip6 daddr . tcp dport { ${lib.concatStringsSep ", " proxyPorts} } accept
+        ''
+        + lib.optionalString (siteUdp != []) ''
+          iifname "wg-er1-*" oifname "${host.uplink.interface}" ip6 daddr . udp dport { ${set siteUdp} } accept
         '';
     };
 

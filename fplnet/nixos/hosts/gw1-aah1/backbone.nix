@@ -8,6 +8,7 @@
     publicKey,
     endpoint,
     address,
+    siit,
   }: {
     netdevs."40-${name}" = {
       netdevConfig = {
@@ -29,6 +30,8 @@
     networks."40-${name}" = {
       matchConfig.Name = name;
       address = [address];
+      # Replies to IPv4 clients this edge translated (site-nat.nix) go back through it.
+      routes = [{Destination = siit;}];
       networkConfig = {
         IPv6AcceptRA = false;
         LinkLocalAddressing = "no";
@@ -45,6 +48,7 @@
     publicKey = routers.er1-dus1.wireguard;
     endpoint = "${address routers.er1-dus1.uplink.v4}:${toString dus1Link.port}";
     address = "${dus1Link.addresses.gw1-aah1}/127";
+    inherit (routers.er1-dus1) siit;
   };
 
   ams1 = tunnel {
@@ -52,6 +56,7 @@
     publicKey = routers.er1-ams1.wireguard;
     endpoint = "${address routers.er1-ams1.uplink.v4}:${toString ams1Link.port}";
     address = "${ams1Link.addresses.gw1-aah1}/127";
+    inherit (routers.er1-ams1) siit;
   };
 
   fra1 = tunnel {
@@ -59,6 +64,7 @@
     publicKey = routers.er1-fra1.wireguard;
     endpoint = "${address routers.er1-fra1.uplink.v4}:${toString fra1Link.port}";
     address = "${fra1Link.addresses.gw1-aah1}/127";
+    inherit (routers.er1-fra1) siit;
   };
 in {
   systemd.network = {

@@ -100,6 +100,18 @@ def check_fplnet(fp, vieta):
                 fail(f"{w}.prefix", "only edges own a /48")
         if loopback and prefix and loopback != prefix.network_address + 1:
             fail(f"{w}.loopback", f"{loopback} is not ::1 of {prefix}")
+        # Each edge maps every IPv4 client into its own /96 when it translates a host's service to IPv6;
+        # gw1 routes the replies back by it.
+        if edge:
+            siit = net(f"{w}.siit", r.get("siit"), 6, 96)
+            if siit and prefix:
+                backbone = ipaddress.ip_network((int(prefix.network_address) + (0x1000 << 64), 52))
+                if not siit.subnet_of(prefix):
+                    fail(f"{w}.siit", f"{siit} is outside {prefix}")
+                elif siit.subnet_of(backbone) or (loopback and loopback in siit):
+                    fail(f"{w}.siit", f"{siit} overlaps the backbone block or the loopback")
+        elif "siit" in r:
+            fail(f"{w}.siit", "only edges translate")
         if loopback:
             own.add(loopback)
 
@@ -207,18 +219,38 @@ def check_fplnet(fp, vieta):
             seen[v] = e
 
     pool = net("vieta.publicServicePool", vieta["publicServicePool"], 6, 64)
+    nodes = net("vieta.nodeNetwork", vieta["nodeNetwork"], 6, 64)
+    host_udp = {}
     for name, s in fp["siteServices"].items():
         w = f"siteServices.{name}"
-        if not name.endswith(".lippok.dev"):
-            fail(w, "only lippok.dev names")
         a = addr(f"{w}.address", s["address"], 6)
-        if a and not (a in site_anycast or (pool and a in pool)):
-            fail(f"{w}.address", f"{a} is in neither {site_anycast} nor {pool}")
-        tcp = s["tcp"]
-        if not tcp or not all(isinstance(t, int) and 0 < t < 65536 for t in tcp):
-            fail(f"{w}.tcp", f"{tcp!r} is not a list of ports")
+        if "host" in s:
+            h = vieta["hosts"].get(s["host"])
+            if not name.endswith(".fplnet.net"):
+                fail(w, "a host's service is named in fplnet.net")
+            if h is None:
+                fail(f"{w}.host", f"{s['host']!r} is not in vieta.hosts")
+            elif a and nodes and a != nodes.network_address + int(h["ipv4"].split(".")[3], 16):
+                fail(f"{w}.address", f"{s['host']} is at {nodes.network_address}{h['ipv4'].split('.')[3]}")
+        else:
+            if not name.endswith(".lippok.dev"):
+                fail(w, "only lippok.dev names")
+            if a and not (a in site_anycast or (pool and a in pool)):
+                fail(f"{w}.address", f"{a} is in neither {site_anycast} nor {pool}")
+        tcp, udp = s.get("tcp", []), s.get("udp", [])
+        if not tcp and not udp:
+            fail(w, "needs tcp or udp ports")
+        for proto, ports in (("tcp", tcp), ("udp", udp)):
+            if not all(isinstance(t, int) and 0 < t < 65536 for t in ports):
+                fail(f"{w}.{proto}", f"{ports!r} is not a list of ports")
         if "proxyPort" in s and not (isinstance(s["proxyPort"], int) and s["proxyPort"] not in tcp):
             fail(f"{w}.proxyPort", "must be a port not already in tcp")
+        # The edges forward a host's UDP port on their own IPv4, so two hosts cannot share one.
+        if "host" in s:
+            for port in udp:
+                if port in host_udp:
+                    fail(f"{w}.udp", f"{port} is already forwarded to {host_udp[port]}")
+                host_udp[port] = name
 
 
 def check_vieta(vieta):

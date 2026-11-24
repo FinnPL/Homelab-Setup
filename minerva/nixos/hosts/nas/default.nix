@@ -1,4 +1,5 @@
 {
+  config,
   inventory,
   lib,
   ...
@@ -14,7 +15,16 @@ in {
     ../../modules/monitoring.nix
   ];
 
+  services.chrony = {
+    enable = true;
+    servers = [];
+    extraConfig =
+      lib.concatMapStrings (address: "server ${address} iburst prefer\n") config.networking.timeServers
+      + "pool 0.nixos.pool.ntp.org iburst maxsources 3\n";
+  };
+
   networking = {
+    timeServers = [inventory.vieta.hosts.ntp1.ipv4];
     hostName = "nas";
     domain = "minerva.lippok.dev";
     hostId = "2fd3dd8a";

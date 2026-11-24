@@ -12,6 +12,7 @@ in {
     ../../modules/bgp-filters.nix
     ../../modules/kernel-routing.nix
     ../../modules/anti-spoofing.nix
+    ../../modules/site-nat.nix
     ../../modules/haproxy.nix
     ../../modules/fplnet-net.nix
     ../../modules/lippok-dev.nix

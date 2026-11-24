@@ -3,7 +3,10 @@ refclock PHC /dev/ptp-ntp0:extpps:pin=0 refid PPS poll 0 lock GPSS maxlockage 8 
 
 hwtimestamp ntp0
 bindaddress {{ vieta_hosts.ntp1.ipv4 }}
-allow {{ site_network }}
+bindaddress {{ ntp_v6 }}
+allow
+ratelimit interval 1 burst 16
+clientloglimit 16777216
 
 leapseclist /usr/share/zoneinfo/leap-seconds.list
 rtcsync

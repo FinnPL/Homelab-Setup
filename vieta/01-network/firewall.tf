@@ -2,6 +2,7 @@
 # - Default -> Athena only HTTPS (443), SMB (445), SSH (22)
 # - no other network reaches Athena (network isolation)
 # - Default -> Blocky (Athena LB) for DNS
+# - Default -> ntp1 for NTP
 # - Default -> JetKVM, all ports (HTTP UI and WebRTC video on UDP)
 # - only Athena reaches the AthenaLink VPN gateway (10.0.3.2)
 
@@ -60,6 +61,26 @@ resource "unifi_firewall_policy" "internal_to_blocky" {
     ips                = [local.blocky]
     port_matching_type = "SPECIFIC"
     port               = "53"
+  }
+}
+
+resource "unifi_firewall_policy" "internal_to_ntp1" {
+  name                 = "tf-allow-internal-to-ntp1"
+  action               = "ALLOW"
+  protocol             = "udp"
+  create_allow_respond = true
+
+  source = {
+    zone_id         = data.unifi_firewall_zone.internal.id
+    matching_target = "ANY"
+  }
+
+  destination = {
+    zone_id            = unifi_firewall_zone.athena_lan.id
+    matching_target    = "IP"
+    ips                = [local.ntp1]
+    port_matching_type = "SPECIFIC"
+    port               = "123"
   }
 }
 

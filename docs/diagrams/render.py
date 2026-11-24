@@ -537,7 +537,7 @@ def traffic() -> Svg:
     for i, (name, sub) in enumerate(clients):
         box(24, 118, i, i, [(name, "mono s b"), (sub, "xs i2")])
 
-    relays = [n.replace(".lippok.dev", "") for n in sorted(FPLNET["siteServices"])]
+    relays = [n.replace(".lippok.dev", "") for n in sorted(FPLNET["siteServices"]) if n.endswith(".lippok.dev")]
     box(160, 94, 2, 2, [("Cloudflare", "s b"), ("proxy and cache", "xs i2")])
     box(290, 88, 1, 3, [("HAProxy", "s b"), ("TCP 443", "xs i2"), ("routes by SNI", "xs i2")], "node-fplnet", True)
     box(404, 88, 0, 2, [("nginx", "s b"), ("TLS, HTTP/3", "xs i2"), ("static sites", "xs i2")], "node-fplnet", True)

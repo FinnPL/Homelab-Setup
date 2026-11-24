@@ -3,7 +3,7 @@
 # A = every edge, whose HAProxy passes the TLS stream by SNI over the backbone.
 locals {
   fplnet        = jsondecode(file("${path.module}/../../inventory/fplnet.json")).inventory.fplnet
-  site_services = local.fplnet.siteServices
+  site_services = { for name, s in local.fplnet.siteServices : name => s if endswith(name, ".lippok.dev") }
 
   edge_v4 = [for name, r in local.fplnet.routers : split("/", r.uplink.v4)[0] if startswith(name, "er1-")]
 

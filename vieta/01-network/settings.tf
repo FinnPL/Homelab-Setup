@@ -1,4 +1,10 @@
 resource "unifi_setting" "site" {
+  ntp = {
+    setting_preference = "manual"
+    ntp_server_1       = local.ntp1
+    ntp_server_2       = "time.cloudflare.com"
+  }
+
   # The gateway's own resolver (used by Athena and the management LAN)
   doh = {
     state = "custom"

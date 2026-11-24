@@ -155,6 +155,11 @@ in {
           expires -1;
           return 200 '{"ip":"$client_ip","family":$client_family,"edge":"$hostname","protocol":"$server_protocol","tls":"$ssl_protocol","cipher":"$ssl_cipher","group":"$ssl_curve","ech":"$ssl_ech_status","alpn":"$ssl_alpn_protocol","resumed":"$ssl_session_reused","early":"$ssl_early_data","rtt_us":"$proxy_protocol_tlv_0xe0"}\n';
         '';
+        "= /time".extraConfig = ''
+          default_type text/plain;
+          expires -1;
+          return 200 "$msec";
+        '';
         "= /api/ping".extraConfig = ''
           expires -1;
           return 204;

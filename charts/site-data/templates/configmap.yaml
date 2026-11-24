@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/name: site-data
 data:
   feed.py: |
-    # Writes site.json from the site:* recording rules every 15 s. On a failed query the old file
+    # Writes site.json from the site:* recording rules and ntp.json from ntp1's metrics every 15 s. On a failed query the old file
     # stays, so its "generated" time shows how stale it is.
     import json, os, time, urllib.parse, urllib.request
     from datetime import datetime, timezone
@@ -27,13 +27,16 @@ data:
         "site:nas_pool_online:bool": "nas_pool_online",
         "site:nas_free:bytes": "nas_free_bytes",
     }
-    QUERY = urllib.parse.urlencode({"query": '{__name__=~"site:.+"}'})
+    NTP_OUT = "/data/ntp.json"
+    J = '{job="ntp1-node"}'
+
+    def prom(path, **params):
+        with urllib.request.urlopen(f"{PROM}/api/v1/{path}?{urllib.parse.urlencode(params)}", timeout=10) as r:
+            return json.load(r)["data"]["result"]
 
     def read():
-        with urllib.request.urlopen(f"{PROM}/api/v1/query?{QUERY}", timeout=10) as r:
-            body = json.load(r)
         sites = {}
-        for series in body["data"]["result"]:
+        for series in prom("query", query='{__name__=~"site:.+"}'):
             field = FIELDS.get(series["metric"]["__name__"])
             site = series["metric"].get("site")
             if field and site:
@@ -41,16 +44,74 @@ data:
                 sites.setdefault(site, {})[field] = round(v, 4) if field.endswith("used") else int(v)
         return sites
 
+    # ntp.json for lippok.dev/ntp: only the fields listed here leave the cluster. Nothing that tracks
+    # temperature (oven, frequency, steering), no client counts, and the satellites' signal without
+    # PRN, position, elevation or azimuth.
+    NTP_VALUES = {
+        "up": f"up{J}",
+        "poll_age_s": f"time() - gpsdo_last_poll_timestamp_seconds{J}",
+        "pps_valid": f"gpsdo_pps_valid{J}",
+        "gps_available": f"gpsdo_gps_available{J}",
+        "holdover_s": f"gpsdo_holdover_seconds{J}",
+        "locked_s": "time() - max(max_over_time(timestamp("
+                    'gpsdo_status_info{job="ntp1-node", status!="Master"} or chrony_pps_selected{job="ntp1-node"} == 0'
+                    ' or up{job="ntp1-node"} == 0)[7d:1m]))',
+        "tfom": f"gpsdo_tfom{J}",
+        "ffom": f"gpsdo_ffom{J}",
+        "phase_s": f"gpsdo_phase_seconds{J}",
+        "sats_tracked": f"gpsdo_satellites_tracked{J}",
+        "sats_untracked": f"gpsdo_satellites_untracked{J}",
+        "stratum": f"chrony_tracking_stratum{J}",
+        "offset_s": f"chrony_tracking_system_offset_seconds{J}",
+        "rms_offset_s": f"chrony_tracking_rms_offset_seconds{J}",
+        "root_dispersion_s": f"chrony_tracking_root_dispersion_seconds{J}",
+        "pps_selected": f"chrony_pps_selected{J}",
+        "pps_stddev_s": f"chrony_pps_stddev_seconds{J}",
+        "pps_reach": f"chrony_pps_reach{J}",
+        "requests_per_min": f"sum(rate(chrony_server_ntp_packets_received_total{J}[5m])) * 60",
+        "hw_rx_share": 'increase(chrony_server_rx_timestamps_total{job="ntp1-node", source="hardware"}[1h])'
+                       f" / increase(chrony_server_ntp_packets_received_total{J}[1h])",
+    }
+    NTP_LABELS = {
+        "status": (f"gpsdo_status_info{J} == 1", "status"),
+        "lock": (f"gpsdo_lock_info{J} == 1", "state"),
+        "refid": (f"chrony_tracking_info{J} == 1", "refid"),
+    }
+
+    def ntp_read():
+        out = {}
+        for key, expr in NTP_VALUES.items():
+            r = prom("query", query=expr)
+            if r and r[0]["value"][1] not in ("NaN", "+Inf", "-Inf"):
+                out[key] = float(r[0]["value"][1])
+        for key, (expr, label) in NTP_LABELS.items():
+            r = prom("query", query=expr)
+            if r:
+                out[key] = r[0]["metric"].get(label)
+        out["cno"] = sorted((int(float(x["value"][1])) for x in prom("query", query=f"gpsdo_satellite_cno_dbhz{J}")), reverse=True)
+        end = time.time()
+        for key, expr in (("offset_3h", f"chrony_tracking_system_offset_seconds{J}"), ("phase_3h", f"gpsdo_phase_seconds{J}")):
+            r = prom("query_range", query=expr, start=end - 3 * 3600, end=end, step=30)
+            out[key] = [[int(t), float(v)] for t, v in r[0]["values"]] if r else []
+        return out
+
+    def write(path, data):
+        with open(path + ".tmp", "w") as f:
+            json.dump(data, f, separators=(",", ":"))
+        os.replace(path + ".tmp", path)
+
     while True:
+        try:
+            write(NTP_OUT, {"generated": datetime.now(timezone.utc).isoformat(timespec="seconds"), "ntp1": ntp_read()})
+        except Exception as e:
+            print(f"ntp query failed: {e}", flush=True)
         try:
             data = {
                 "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                 "source": SOURCE,
                 "sites": read(),
             }
-            with open(OUT + ".tmp", "w") as f:
-                json.dump(data, f, separators=(",", ":"))
-            os.replace(OUT + ".tmp", OUT)
+            write(OUT, data)
         except Exception as e:
             print(f"query failed: {e}", flush=True)
         time.sleep(15)
@@ -73,6 +134,12 @@ data:
       root /data;
       access_log off;
       location = /site.json {
+        add_header Access-Control-Allow-Origin $cors_origin always;
+        add_header Vary Origin always;
+        add_header Cache-Control "no-store" always;
+        default_type application/json;
+      }
+      location = /ntp.json {
         add_header Access-Control-Allow-Origin $cors_origin always;
         add_header Vary Origin always;
         add_header Cache-Control "no-store" always;

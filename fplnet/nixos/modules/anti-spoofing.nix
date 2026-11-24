@@ -29,6 +29,8 @@
   v6 = ["::" "fe80::/10" aggregate] ++ lib.filter (a: lib.hasInfix ":" a && !(lib.hasPrefix "2a0c:b641:f9" a)) hostAddresses;
   v4 = lib.filter (a: !(lib.hasInfix ":" a)) hostAddresses;
   set = lib.concatStringsSep ", ";
+  # Tayga writes translated packets with sources in this edge's /96 (site-nat.nix).
+  tayga = lib.optionalString config.services.tayga.enable ''iifname "${config.services.tayga.tunDevice}" accept'';
 in {
   networking.nftables.tables.anti-spoofing = {
     family = "inet";
@@ -44,6 +46,7 @@ in {
         iifname "lo" accept
         iifname "wg-er1-*" accept
         iifname "wg-gw1-*" accept
+        ${tayga}
         ip6 saddr { ${aggregate}, fc00::/7 } counter name own_source drop
       }
 
