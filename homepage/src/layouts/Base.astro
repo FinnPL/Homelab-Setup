@@ -42,7 +42,7 @@ const path = Astro.url.pathname.replace(/\.html$/, "").replace(/(^|\/)index$/, "
   <body>
     <header class="site-head">
       <div class="wrap">
-        <a class="brand" href="/" rel="me">{IDENTITY.shortName}</a>
+        <a class="brand" href="/" rel="me">{IDENTITY.name}</a>
         <nav class="nav">
           {NAV.map((grp) => (
             <span class="nav-grp">
