@@ -3,6 +3,8 @@ resource "unifi_setting" "site" {
     setting_preference = "manual"
     ntp_server_1       = local.ntp1
     ntp_server_2       = "time.cloudflare.com"
+    ntp_server_3       = "2.ubnt.pool.ntp.org"
+    ntp_server_4       = "3.ubnt.pool.ntp.org"
   }
 
   # The gateway's own resolver (used by Athena and the management LAN)
