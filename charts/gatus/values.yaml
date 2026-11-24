@@ -210,6 +210,20 @@ gatus:
             failure-threshold: 3
             success-threshold: 2
 
+      # A real NTP query: one client request
+      - name: "NTP"
+        group: "NTP"
+        url: "udp://{{ .Values.inventory.vieta.hosts.ntp1.ipv4 }}:123"
+        interval: 60s
+        body: "\x23\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
+        conditions:
+          - "[CONNECTED] == true"
+          - "len([BODY]) == 48"
+        alerts:
+          - type: discord
+            failure-threshold: 3
+            success-threshold: 2
+
       - name: "Router Vieta"
         group: "Routers"
         url: "icmp://{{ .Values.inventory.vieta.unifiController }}"
