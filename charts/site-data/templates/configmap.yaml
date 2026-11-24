@@ -69,8 +69,8 @@ data:
         "pps_stddev_s": f"chrony_pps_stddev_seconds{J}",
         "pps_reach": f"chrony_pps_reach{J}",
         "requests_per_min": f"sum(rate(chrony_server_ntp_packets_received_total{J}[5m])) * 60",
-        "hw_rx_share": 'increase(chrony_server_rx_timestamps_total{job="ntp1-node", source="hardware"}[1h])'
-                       f" / increase(chrony_server_ntp_packets_received_total{J}[1h])",
+        "hw_rx_share": 'sum(increase(chrony_server_rx_timestamps_total{job="ntp1-node", source="hardware"}[1h]))'
+                       f" / sum(increase(chrony_server_ntp_packets_received_total{J}[1h]))",
     }
     NTP_LABELS = {
         "status": (f"gpsdo_status_info{J} == 1", "status"),
