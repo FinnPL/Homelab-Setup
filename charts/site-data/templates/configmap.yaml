@@ -185,6 +185,7 @@ data:
         ("NAS", lambda e: e.get("group") == "NAS"),
         ("Authentik", lambda e: e.get("name") == "Authentik"),
         ("DNS Vieta", lambda e: e.get("name") == "DNS Vieta"),
+        ("NTP", lambda e: e.get("name") == "NTP"),
     ]
 
 

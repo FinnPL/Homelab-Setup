@@ -41,6 +41,12 @@ spec:
             - port: "53"
               protocol: UDP
     {{- include "np.dnsProxy" . | nindent 4 }}
+    - toCIDR:
+        - {{ .Values.inventory.vieta.hosts.ntp1.ipv4 }}/32
+      toPorts:
+        - ports:
+            - port: "123"
+              protocol: UDP
     - toFQDNs:
         - matchName: lippok.dev
         - matchName: fplnet.net

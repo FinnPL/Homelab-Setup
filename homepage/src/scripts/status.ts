@@ -2,7 +2,7 @@
 import { STATUS_DATA } from "../lib/net";
 
 // Rows with no check behind them yet are listed as such, not drawn as bars.
-const NOT_BUILT = ["DNS Minerva", "NTP"];
+const NOT_BUILT = ["DNS Minerva"];
 
 type StatusJson = {
   generated?: string;
