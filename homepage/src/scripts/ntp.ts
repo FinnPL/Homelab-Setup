@@ -220,7 +220,7 @@ function render(root: HTMLElement, generated: Date | null, n: Ntp | undefined, d
   put(root, "rms", unsigned(n.rms_offset_s));
   put(root, "disp", unsigned(n.root_dispersion_s));
   put(root, "rate", n.requests_per_min === undefined ? "no data" : n.requests_per_min.toFixed(1));
-  put(root, "hw", n.hw_rx_share === undefined ? "no requests" : (n.hw_rx_share * 100).toFixed(0) + " %");
+  put(root, "hw", n.hw_rx_share !== undefined ? (n.hw_rx_share * 100).toFixed(0) + " %" : n.requests_per_min ? "no data" : "no requests");
   draw.off(n.offset_3h);
   draw.phase(n.phase_3h);
   draw.sat(n.cno);
