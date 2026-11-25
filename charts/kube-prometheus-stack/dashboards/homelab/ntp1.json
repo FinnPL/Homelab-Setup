@@ -2781,8 +2781,8 @@
             "type": "prometheus",
             "uid": "${datasource}"
           },
-          "expr": "chrony_other_clients_ntp_packets{job=\"ntp1-node\"}",
-          "legendFormat": "held from other clients",
+          "expr": "rate(chrony_other_clients_ntp_packets_total{job=\"ntp1-node\"}[5m])*60",
+          "legendFormat": "from other clients",
           "refId": "C"
         }
       ],

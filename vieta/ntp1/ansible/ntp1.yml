@@ -125,6 +125,17 @@
         mode: "0644"
       notify: restart journald
 
+    - name: Run the CPU at a fixed clock
+      copy:
+        src: ntp1-cpufreq.conf
+        dest: /etc/tmpfiles.d/ntp1-cpufreq.conf
+        mode: "0644"
+      register: cpufreq
+
+    - name: Apply the CPU clock
+      command: systemd-tmpfiles --create /etc/tmpfiles.d/ntp1-cpufreq.conf
+      when: cpufreq.changed
+
     - name: Create the program directory
       file:
         path: /usr/local/lib/ntp1
