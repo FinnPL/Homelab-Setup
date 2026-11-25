@@ -2,7 +2,7 @@
 import Base from "../layouts/Base.astro";
 import { projects } from "../lib/projects";
 import { IDENTITY } from "../lib/identity";
-import { ASN, AGGREGATE, CONNECTION, LOOKING_GLASS } from "../lib/net";
+import { ASN, AGGREGATE, CONNECTION, LOOKING_GLASS, NTP_HOST } from "../lib/net";
 import { stamp } from "../lib/build";
 
 const { featured, fetchedAt } = await projects();
@@ -103,7 +103,7 @@ const shown = featured.filter((p) => p.home !== false);
       </a>
       <a class="card" href="/ntp">
         <h3>NTP</h3>
-        <div class="host">not public yet</div>
+        <div class="host">{NTP_HOST}</div>
         <p>Stratum 1 time from a GPS-disciplined oscillator. The PPS edge is timestamped by an Intel i210, chrony disciplines the clock to it.</p>
       </a>
     </div>

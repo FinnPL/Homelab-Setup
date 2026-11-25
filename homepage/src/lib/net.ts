@@ -21,6 +21,12 @@ export const STATUS_DATA = "https://site-data.relay.lippok.dev/status.json";
 export const NTP_DATA = "https://site-data.relay.lippok.dev/ntp.json";
 export const timeUrl = (e: EdgeId) => `https://${EDGES[e].name}.fplnet.net/time`;
 export const NTP_HOST = "ntp1.aah1.fplnet.net";
+export const NTP_POOL = [
+  { address: "2a0c:b641:f94:20::123", family: "IPv6", via: "ntp1.aah1" },
+  { address: "209.250.233.8", family: "IPv4", via: "er1.fra1" },
+  { address: "194.28.99.178", family: "IPv4", via: "er1.dus1" },
+];
+export const poolScores = (address: string) => `https://www.ntppool.org/scores/${address}`;
 export const DNS_CHECK = "https://dns-check.fplnet.net/api/ping";
 export const CONNECTION = "https://fplnet.net/connection";
 

@@ -1,9 +1,7 @@
 ---
 import Base from "../layouts/Base.astro";
 import { IDENTITY } from "../lib/identity";
-import { NTP_HOST } from "../lib/net";
-
-const NB = "not built yet";
+import { NTP_HOST, NTP_POOL, poolScores } from "../lib/net";
 ---
 
 <Base
@@ -100,8 +98,15 @@ const NB = "not built yet";
         <div class="use-host">
           <code>{NTP_HOST}</code>
           <span class="tag">IPv4</span><span class="tag">IPv6</span>
-          <span class="small dim">pool.ntp.org: <span class="nb">not listed yet</span></span>
         </div>
+        <dl class="deflist">
+          {NTP_POOL.map((s) => (
+            <>
+              <dt>pool.ntp.org, {s.family}</dt>
+              <dd><a href={poolScores(s.address)}><code>{s.address}</code></a> <span class="small dim">{s.via}</span></dd>
+            </>
+          ))}
+        </dl>
         <div class="cfg">
           <figure>
             <figcaption><span>chrony</span><span class="dim">/etc/chrony/chrony.conf</span><button type="button" class="copy" aria-label="Copy" title="Copy"><svg class="i-copy" viewBox="0 0 16 16" aria-hidden="true"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"/><path d="M10.5 3.5v-.5a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></svg><svg class="i-done" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8.5l3 3 7-7"/></svg></button></figcaption>
@@ -125,7 +130,6 @@ NTP={NTP_HOST}</code></pre>
         <dt>Timestamping</dt><dd>Intel i210, the PPS edge goes into SDP0</dd>
         <dt>Display</dt><dd>SSD1322 OLED, 256 × 64</dd>
         <dt>Host</dt><dd>Raspberry Pi CM4 on the official IO board</dd>
-        <dt>Front panel</dt><dd>3D-printed in ASA for U9 of the <a href="/vieta">Vieta rack</a>: <span class="nb">{NB}</span></dd>
       </dl>
     </div>
   </section>
