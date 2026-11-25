@@ -207,4 +207,22 @@ spec:
           for: 15m
           labels:
             severity: warning
+
+        - alert: FplnetGatewayTunnelPathChanged
+          annotations:
+            summary: "gw1-aah1 -> {{`{{ $labels.target }}`}}: mean RTT {{`{{ $value | humanizeDuration }}`}} above its 14-day low."
+            description: The provider hashes the tunnel's UDP flow onto one of several paths. A slower one is usually a one-way detour, which biases ntp1 by half of it for clients behind this edge (er1-fra1 via Erlangen, +1.6 ms). Pick a gatewayPort in inventory/fplnet.json whose tunnel RTT is in the fast class (wg set listen-port on gw1 tries one live).
+          expr: |
+            (
+              sum by (router, target) (rate(smokeping_response_duration_seconds_sum{job="fplnet-smokeping", router="gw1-aah1", target=~"er1.*"}[1h]))
+              / sum by (router, target) (rate(smokeping_response_duration_seconds_count{job="fplnet-smokeping", router="gw1-aah1", target=~"er1.*"}[1h]))
+            )
+            - quantile_over_time(0.05, (
+              sum by (router, target) (rate(smokeping_response_duration_seconds_sum{job="fplnet-smokeping", router="gw1-aah1", target=~"er1.*"}[1h]))
+              / sum by (router, target) (rate(smokeping_response_duration_seconds_count{job="fplnet-smokeping", router="gw1-aah1", target=~"er1.*"}[1h]))
+            )[14d:1h])
+            > 0.002
+          for: 3h
+          labels:
+            severity: warning
 {{- end }}

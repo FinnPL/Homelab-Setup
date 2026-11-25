@@ -5,6 +5,10 @@ _chrony can open, so this runs as _chrony, apart from gpsdo. Clients inside the 
 get one series each (named from the inventory); everyone else is summed, so a public server
 cannot grow a series per address. To still see a single abuser, every client, site or not, is
 ranked by its requests over the last five minutes, and the busiest few get a series by address.
+
+Each run asks chrony only for the clients that sent something since the last run and resets
+their counters (`clients -r -p 1`, filtered inside chronyd), so every row is a delta and the
+totals live here. A full dump of the client log cost showed up as noise in the clock.
 """
 
 import collections
@@ -52,40 +56,64 @@ def serverstats():
 
 
 def clients():
-    """(address, ntp packets, ntp dropped, log2 interval, seconds since the last request)."""
+    """Clients with requests since the last call, counters reset by it:
+    (address, ntp packets, ntp dropped, log2 interval, seconds since the last request)."""
     rows = []
-    for line in chronyc("-c", "clients").splitlines():
+    for line in chronyc("-c", "clients", "-r", "-p", "1").splitlines():
         f = line.split(",")
         if len(f) >= 6 and f[1].isdigit() and int(f[1]) > 0:
             rows.append((f[0], int(f[1]), int(f[2]), int(f[3]), int(f[5])))
     return rows
 
 
-class TopTalkers:
-    """Requests per client over the last TOP_WINDOW_S, from deltas of chrony's per-client counters.
+class Totals:
+    """What the reset counters add up to: per site client, the rest summed, and when each was last seen.
 
-    The first run only takes a baseline. A record chrony evicted and recreated (counter went
-    down) counts from zero again.
+    The first run returns everything chrony counted before (since its start, or since the last
+    reset of an earlier run), so it seeds the totals but not the request rates.
     """
 
-    def __init__(self):
-        self.last, self.last_time = None, None
+    def __init__(self, site):
+        self.site = site
+        self.first = True
+        self.last_time = None
         self.window = collections.deque()  # (start, end, {address: (packets, dropped)})
+        self.site_clients = {}             # address -> [packets, dropped, log2 interval, last request]
+        self.other = [0, 0]
+        self.seen = {}                     # address -> (in site, last request)
 
     def update(self, rows, now):
-        current = {address: (packets, dropped) for address, packets, dropped, _, _ in rows}
-        if self.last is not None:
-            delta = {}
-            for address, (packets, dropped) in current.items():
-                p0, d0 = self.last.get(address, (0, 0))
-                if packets < p0:
-                    p0, d0 = 0, 0
-                if packets > p0:
-                    delta[address] = (packets - p0, max(0, dropped - d0))
+        delta = {}
+        for address, packets, dropped, interval, ago in rows:
+            try:
+                in_site = ipaddress.ip_address(address) in self.site
+            except ValueError:
+                continue
+            last = now - ago if ago != NEVER else None
+            if in_site:
+                c = self.site_clients.setdefault(address, [0, 0, NO_INTERVAL, None])
+                c[0] += packets
+                c[1] += dropped
+                c[2] = interval
+                c[3] = last if last is not None else c[3]
+            else:
+                self.other[0] += packets
+                self.other[1] += dropped
+            if last is not None:
+                self.seen[address] = (in_site, last)
+            delta[address] = (packets, dropped)
+        if not self.first:
             self.window.append((self.last_time, now, delta))
-        self.last, self.last_time = current, now
+        self.first, self.last_time = False, now
         while self.window and now - self.window[0][1] > TOP_WINDOW_S:
             self.window.popleft()
+        self.seen = {a: v for a, v in self.seen.items() if now - v[1] < ACTIVE_S}
+
+    def active(self):
+        n = {"site": 0, "other": 0}
+        for in_site, _ in self.seen.values():
+            n["site" if in_site else "other"] += 1
+        return n
 
     def top(self):
         """[(address, requests per minute, dropped per minute)] of the TOP_N busiest clients."""
@@ -114,7 +142,7 @@ def client_labels(address, site, names):
     return labels + (f',name="{label_value(names[address])}"' if address in names else "")
 
 
-def render(stats, rows, top, site, names, now):
+def render(stats, totals, top, site, names):
     lines = []
     for label, name in COUNTERS.items():
         if label in stats:
@@ -128,26 +156,14 @@ def render(stats, rows, top, site, names, now):
                   "chrony_client_request_interval_seconds": "gauge",
                   "chrony_client_last_request_timestamp_seconds": "gauge"}
     series = {name: [] for name in per_client}
-    active = {"site": 0, "other": 0}
-    other_packets = other_dropped = other_records = 0
-    for address, packets, dropped, interval, ago in rows:
-        try:
-            in_site = ipaddress.ip_address(address) in site
-        except ValueError:
-            continue
-        seen = ago != NEVER
-        if seen and ago < ACTIVE_S:
-            active["site" if in_site else "other"] += 1
-        if not in_site:
-            other_packets, other_dropped, other_records = other_packets + packets, other_dropped + dropped, other_records + 1
-            continue
+    for address, (packets, dropped, interval, last) in sorted(totals.site_clients.items()):
         labels = f'client="{address}"' + (f',name="{label_value(names[address])}"' if address in names else "")
         series["chrony_client_ntp_packets_total"].append(f"{{{labels}}} {packets}")
         series["chrony_client_ntp_dropped_total"].append(f"{{{labels}}} {dropped}")
         if interval != NO_INTERVAL:
             series["chrony_client_request_interval_seconds"].append(f"{{{labels}}} {2.0 ** interval:g}")
-        if seen:
-            series["chrony_client_last_request_timestamp_seconds"].append(f"{{{labels}}} {now - ago:.0f}")
+        if last is not None:
+            series["chrony_client_last_request_timestamp_seconds"].append(f"{{{labels}}} {last:.0f}")
     for name, kind in per_client.items():
         if series[name]:
             lines.append(f"# TYPE {name} {kind}")
@@ -161,12 +177,10 @@ def render(stats, rows, top, site, names, now):
 
     lines += ["# HELP chrony_clients_active Clients with a request in the last hour.",
               "# TYPE chrony_clients_active gauge"]
-    lines += [f'chrony_clients_active{{scope="{scope}"}} {n}' for scope, n in active.items()]
-    lines += ["# HELP chrony_other_clients_records Client log records of clients outside the site network.",
-              "# TYPE chrony_other_clients_records gauge", f"chrony_other_clients_records {other_records}",
-              "# HELP chrony_other_clients_ntp_packets Requests held in those records (records age out, so not a counter).",
-              "# TYPE chrony_other_clients_ntp_packets gauge", f"chrony_other_clients_ntp_packets {other_packets}",
-              "# TYPE chrony_other_clients_ntp_dropped gauge", f"chrony_other_clients_ntp_dropped {other_dropped}"]
+    lines += [f'chrony_clients_active{{scope="{scope}"}} {n}' for scope, n in totals.active().items()]
+    lines += ["# HELP chrony_other_clients_ntp_packets_total Requests from clients outside the site network.",
+              "# TYPE chrony_other_clients_ntp_packets_total counter", f"chrony_other_clients_ntp_packets_total {totals.other[0]}",
+              "# TYPE chrony_other_clients_ntp_dropped_total counter", f"chrony_other_clients_ntp_dropped_total {totals.other[1]}"]
     return lines
 
 
@@ -182,13 +196,12 @@ def main():
         config = json.load(f)
     site = ipaddress.ip_network(config["site_network"])
     names = config["names"]
-    talkers = TopTalkers()
+    totals = Totals(site)
     while True:
         now = time.time()
         try:
-            rows = clients()
-            talkers.update(rows, now)
-            lines = render(serverstats(), rows, talkers.top(), site, names, now)
+            totals.update(clients(), now)
+            lines = render(serverstats(), totals, totals.top(), site, names)
             ok = 1
         except (subprocess.SubprocessError, OSError) as e:
             print(f"chronyc: {e}", flush=True)

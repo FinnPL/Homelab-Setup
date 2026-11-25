@@ -198,6 +198,16 @@ def check_fplnet(fp, vieta):
                 if port in ports.get(end, {}):
                     fail(f"{w}.port", f"{end} already listens on {port} for {ports[end][port]}")
                 ports.setdefault(end, {})[port] = key
+        if b.startswith("gw"):
+            gport = link.get("gatewayPort")
+            if not isinstance(gport, int) or not 1024 <= gport <= 65535:
+                fail(f"{w}.gatewayPort", f"{gport!r} is not a port")
+            elif gport in ports.get(b, {}):
+                fail(f"{w}.gatewayPort", f"{b} already listens on {gport} for {ports[b][gport]}")
+            else:
+                ports.setdefault(b, {})[gport] = key
+        elif "gatewayPort" in link:
+            fail(f"{w}.gatewayPort", "only a link to a gateway has one")
         prefix = ipaddress.ip_network(routers[a]["prefix"])
         # :1000::/52 of the owning edge's /48
         backbone = ipaddress.ip_network((int(prefix.network_address) + (0x1000 << 64), 52))
