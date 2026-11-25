@@ -126,6 +126,7 @@
         },
         "er1-dus1/gw1-aah1": {
           "port": 51822,
+          "gatewayPort": 51832,
           "addresses": {
             "er1-dus1": "2a0c:b641:f98:1000::",
             "gw1-aah1": "2a0c:b641:f98:1000::1"
@@ -140,6 +141,7 @@
         },
         "er1-ams1/gw1-aah1": {
           "port": 51822,
+          "gatewayPort": 51836,
           "addresses": {
             "er1-ams1": "2a0c:b641:f99:1000::",
             "gw1-aah1": "2a0c:b641:f99:1000::1"
@@ -147,6 +149,7 @@
         },
         "er1-fra1/gw1-aah1": {
           "port": 51822,
+          "gatewayPort": 51831,
           "addresses": {
             "er1-fra1": "2a0c:b641:f9a:1000::",
             "gw1-aah1": "2a0c:b641:f9a:1000::1"
