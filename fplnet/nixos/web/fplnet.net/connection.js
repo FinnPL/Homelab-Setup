@@ -134,5 +134,5 @@ async function timeEdges() {
 }
 
 describeConnection();
-document.querySelector("section.js").hidden = false;
+document.querySelector(".js").hidden = false;
 testFamily(4).then(() => testFamily(6)).then(timeEdges);

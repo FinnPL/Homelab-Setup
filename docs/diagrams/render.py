@@ -45,23 +45,23 @@ THEMES = {
         "vault": "#d9ab68", "vault_tint": "#1f1a10",
     },
 }
-# fplnet.net's own tokens (fplnet/nixos/web/fplnet.net/style.css), for the copies served there.
+# fplnet.net's own tokens (fplnet/nixos/web/fplnet.net/style.css, which follows lippok.dev), for the copies served there.
 FPLNET_NET = {
     "light": {
-        "bg": "#fbfbf9", "ink": "#1d1d1b", "ink2": "#66665f", "ink3": "#8f8f87",
-        "rule": "#deded8", "surface": "#f3f3ef",
-        "fplnet": "#1f5fbf", "fplnet_tint": "#edf2fb",
-        "vieta": "#1e7a3c", "vieta_tint": "#ecf5ef",
+        "bg": "#fbfaf8", "ink": "#17191d", "ink2": "#4a4f57", "ink3": "#797f89",
+        "rule": "#cfcbc3", "surface": "#f3f1ed",
+        "fplnet": "#2f4f8f", "fplnet_tint": "#eaeefa",
+        "vieta": "#2c6e4a", "vieta_tint": "#e5f0e9",
         "minerva": "#7b4fae", "minerva_tint": "#f5f0fa",
-        "vault": "#9a6200", "vault_tint": "#fbf4e4",
+        "vault": "#8a5a1a", "vault_tint": "#f7edda",
     },
     "dark": {
-        "bg": "#141413", "ink": "#e8e8e3", "ink2": "#9b9b93", "ink3": "#6f6f68",
-        "rule": "#3a3a36", "surface": "#1b1b1a",
-        "fplnet": "#7aa7ff", "fplnet_tint": "#161c28",
-        "vieta": "#5cc27d", "vieta_tint": "#142119",
+        "bg": "#111316", "ink": "#e8e6e1", "ink2": "#a9aeb6", "ink3": "#767c86",
+        "rule": "#363b43", "surface": "#191c21",
+        "fplnet": "#8fabe6", "fplnet_tint": "#1a2130",
+        "vieta": "#7cc39a", "vieta_tint": "#16241d",
         "minerva": "#c3a3ea", "minerva_tint": "#1d1726",
-        "vault": "#e0a640", "vault_tint": "#221c10",
+        "vault": "#d9ab68", "vault_tint": "#241c10",
     },
 }
 ROLES = ("fplnet", "vieta", "minerva", "vault")
