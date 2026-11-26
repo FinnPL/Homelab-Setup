@@ -255,9 +255,13 @@ def check_fplnet(fp, vieta):
                 fail(f"{w}.{proto}", f"{ports!r} is not a list of ports")
         if "proxyPort" in s and not (isinstance(s["proxyPort"], int) and s["proxyPort"] not in tcp):
             fail(f"{w}.proxyPort", "must be a port not already in tcp")
-        # The edges forward a host's UDP port on their own IPv4, so two hosts cannot share one.
+        # The edges forward a host's UDP port on their own IPv4, so two hosts cannot share one,
+        # and none may take a port the edge uses itself: HTTP/3 on 443, the backbone's WireGuard.
         if "host" in s:
+            edge_udp = {443} | {link["port"] for link in fp["links"].values() if "port" in link}
             for port in udp:
+                if port in edge_udp:
+                    fail(f"{w}.udp", f"{port} is used by the edges themselves")
                 if port in host_udp:
                     fail(f"{w}.udp", f"{port} is already forwarded to {host_udp[port]}")
                 host_udp[port] = name

@@ -133,11 +133,23 @@ spec:
           labels:
             severity: warning
 
-        - alert: Ntp1RequestsDropped
+        - alert: Ntp1SiteClientDropped
           annotations:
-            summary: "chrony on ntp1 dropped {{`{{ $value }}`}} NTP requests in 15 minutes."
-            description: chrony drops requests it rate limits or cannot log. See chronyc serverstats and chronyc clients on ntp1.
-          expr: increase(chrony_server_ntp_packets_dropped_total{job="ntp1-node"}[15m]) > 0
+            summary: "chrony on ntp1 dropped {{`{{ $value | humanize }}`}} requests from {{`{{ $labels.name }}`}} ({{`{{ $labels.client }}`}}) in 15 minutes."
+            description: chrony rate limits a client that sends more than a burst of 16 and then one request every 2 s (ratelimit interval 1 burst 16). A site client doing that polls far too often, for example a minpoll below 1 or two time daemons on one host.
+          expr: increase(chrony_client_ntp_dropped_total{job="ntp1-node"}[15m]) > 0
+          labels:
+            severity: warning
+
+        - alert: Ntp1PublicRequestsDropped
+          annotations:
+            summary: "chrony on ntp1 dropped {{`{{ $value | humanizePercentage }}`}} of public NTP requests over 30 minutes."
+            description: Rate limiting of single broken pool clients drops about 1 percent of public requests, at most 16 percent in a 30 minute window (7 days to 2026-11-26). A quarter or more is a flood from many addresses or far more pool load than ntp1 is set up for; single busy clients are in chrony_top_client_requests_per_minute.
+          expr: |
+            increase(chrony_other_clients_ntp_dropped_total{job="ntp1-node"}[30m])
+              / increase(chrony_other_clients_ntp_packets_total{job="ntp1-node"}[30m]) > 0.25
+            and increase(chrony_other_clients_ntp_packets_total{job="ntp1-node"}[30m]) > 500
+          for: 30m
           labels:
             severity: warning
 

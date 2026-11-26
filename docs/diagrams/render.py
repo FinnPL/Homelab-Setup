@@ -479,25 +479,57 @@ def delivery() -> Svg:
 
 # ---------------------------------------------------------------- 3. traffic
 
+def siit_suffix() -> str:
+    """The part of every edge's SIIT /96 after its own /48, e.g. :64::/96."""
+    suffixes = {r["siit"].removeprefix(r["prefix"].split("::")[0]) for _, r in edges()}
+    assert len(suffixes) == 1, f"edges disagree on the SIIT /96: {suffixes}"
+    return suffixes.pop()
+
+
 def traffic() -> Svg:
+    """Requests by transport (TCP, UDP), by where they end (on an edge, or relayed to a site) and by
+    IP version. Each arrow into FPLNET says what picks the destination: the TLS name (SNI), the UDP
+    port on an edge's IPv4 address, or the IPv6 address itself."""
     W = 960
     L = 52
-    # three classes of traffic, one label row each, then their lanes
+    # (group, subtitle, blocks); a block is (EDGE|SITE, rows); a row is
+    # (family, name, sub, picked by), or ("not offered", family, name, sub, why, why) for a path that does not exist
+    edge_v6 = short_v6(FPLNET["edgeAnycastAddress"])
+    host_net = short_v6(VIETA["nodeNetwork"])
     groups = [
-        ("EDGE ANYCAST", "fplnet", short_v6(FPLNET["edgeAnycastAddress"]), 3),
-        ("SITE ANYCAST", "vieta", "*.relay.lippok.dev", 2),
-        ("LAN", None, "*.lippok.dev", 1),
+        ("TCP services", "e.g. HTTP/1.1, HTTP/2", [
+            ("EDGE", [("IPv4 IPv6", "fplnet.net", f"any edge or {edge_v6}", "SNI"),
+                      ("IPv4 IPv6", "lippok.dev", "via Cloudflare", "SNI")]),
+            ("SITE", [("IPv4", "*.relay", "any edge ¹", "SNI"),
+                      ("IPv6", "*.relay", "own address ¹", "address")]),
+        ]),
+        ("UDP/QUIC services", "e.g. HTTP/3", [
+            ("EDGE", [("IPv4 IPv6", "fplnet.net", "HTTP/3", "port"),
+                      ("not offered", "IPv4 IPv6", "lippok.dev", "HTTP/3", "HTTP/3 to the origin", "not supported by Cloudflare")]),
+            ("SITE", [("IPv4", "*.relay", "any edge, not 443 ²", "port"),
+                      ("IPv6", "*.relay", "own address", "address")]),
+        ]),
     ]
-    tops, labels, y = [], [], 70
-    for name, role, sub, n in groups:
-        labels.append((y, name, role, sub))
+    tops, rows, heads, blocks, y = [], [], [], [], 70
+    for name, sub, bl in groups:
+        heads.append((y, name, sub))
         y += 18
-        for _ in range(n):
-            tops.append(y)
-            y += L
+        for kind, rs in bl:
+            first = len(tops)
+            for r in rs:
+                tops.append(y)
+                rows.append((kind, r))
+                y += L
+            blocks.append((kind, first, len(tops) - 1))
         y += 8
-    H = y + 6
-    s = Svg(W, H, "How requests reach the edges and the sites")
+    panel_bottom = y + 2
+    notes = [
+        ("¹", ["No ECH for site services yet: waiting for a mature ECH split mode, as the edge must decrypt ECH for SNI routing."]),
+        ("²", ["No HTTP/3 for site services yet: still looking for a mature router that passes QUIC on by SNI.",
+               "One that does SNI routing with ECH split mode for both TCP and UDP/QUIC would solve ¹ and ² together."]),
+    ]
+    H = panel_bottom + 20 + sum(len(lines) for _, lines in notes) * 18 + 8
+    s = Svg(W, H, "How requests reach the edges and the sites: TCP or UDP, edge or site, IPv4 or IPv6")
 
     def top(i):
         return tops[i]
@@ -505,13 +537,33 @@ def traffic() -> Svg:
     def mid(i):
         return tops[i] + 20
 
+    # columns: block label, family, client, picked by, the edges, the backbone, the sites
+    fx, cx, cw = 34, 90, 126
+    ex0, ex1 = 298, 556
+    bx0, bx1 = 564, 648
+    sx0, sx1 = 656, 944
+    hpx, hpw = 310, 90           # HAProxy
+    ngx, ngw = 420, 104          # nginx
+    wgx, wgw = 572, 68           # WireGuard
+    gwx, gww = 668, 82           # site gateway
+    dx, dw = 764, 168            # site destinations
+
     s.text(20, 40, "INTERNET", "xs b up i3")
-    s.rect(270, 16, 430, H - 32, "panel-fplnet", rx=12)
-    s.text(286, 40, "FPLNET AS" + str(FPLNET["asn"]), "xs b up t-fplnet")
-    s.rect(708, 16, 236, H - 32, "panel-vieta", rx=12)
-    s.text(724, 40, "SITES", "xs b up t-vieta")
-    for yy, name, role, sub in labels:
-        s.runs(24, yy + 6, [(name, f"xs b up t-{role}" if role else "xs b up i2"), ("   " + sub, "mono xs i2")])
+    s.rect(ex0, 16, ex1 - ex0, panel_bottom - 16, "panel-fplnet", rx=12)
+    s.runs(ex0 + 14, 40, [("EDGES", "xs b up t-fplnet"),
+                          ("   " + ", ".join(n.removeprefix("er1-") for n, _ in edges()), "mono xs i2")])
+    s.rect(bx0, 16, bx1 - bx0, panel_bottom - 16, "panel-fplnet", rx=12)
+    s.text((bx0 + bx1) / 2, 40, "BACKBONE", "xs b up t-fplnet", "middle")
+    s.rect(sx0, 16, sx1 - sx0, panel_bottom - 16, "panel-vieta", rx=12)
+    s.runs(sx0 + 14, 40, [("SITES", "xs b up t-vieta"), ("   " + ", ".join(x["name"] for x in SITES), "xs i2")])
+    for yy, name, sub in heads:
+        s.runs(20, yy + 6, [(name, "b"), ("   " + sub, "s i2")])
+    for kind, i0, i1 in blocks:
+        role = "fplnet" if kind == "EDGE" else "vieta"
+        y0, y1 = top(i0), top(i1) + 40
+        s.path(f"M28,{y0:g} L28,{y1:g}", f"ln-{role}")
+        s.raw(f'<text transform="translate(20 {(y0 + y1) / 2:g}) rotate(-90)" text-anchor="middle" '
+              f'class="xs b up t-{role}">{kind}</text>')
 
     def box(x, w, i0, i1, lines, cls="node", stack=False):
         """A box spanning lanes i0..i1; lines = [(text, cls), ...] centred."""
@@ -525,46 +577,83 @@ def traffic() -> Svg:
             s.text(x + w / 2, yy, t, c, "middle")
             yy += 15
 
-    anycast = short_v6(FPLNET["prefixes"]["siteAnycast"])
-    clients = [
-        ("fplnet.net", "HTTP/3 over UDP"),
-        ("fplnet.net", "HTTPS over TCP"),
-        ("lippok.dev", "HTTPS"),
-        ("*.relay", "IPv4 to any edge"),
-        ("*.relay", f"IPv6 to {anycast}"),
-        ("*.lippok.dev", "on the LAN"),
-    ]
-    for i, (name, sub) in enumerate(clients):
-        box(24, 118, i, i, [(name, "mono s b"), (sub, "xs i2")])
+    edge_tcp, site_tcp, edge_udp, site_udp = blocks
+    i_relay4, i_relay6 = site_tcp[1], site_tcp[1] + 1
+    i_udp4, i_udp6 = site_udp[1], site_udp[1] + 1
+    first_end = {}
+    for i in range(edge_tcp[1], edge_tcp[2] + 1):
+        first_end[i] = (hpx, "fplnet")
+    for i in range(edge_udp[1], edge_udp[2] + 1):
+        first_end[i] = (ngx, "fplnet")
+    first_end[i_relay4] = (hpx, "vieta")
+    first_end[i_relay6] = (wgx, "vieta")
+    first_end[i_udp4] = (hpx, "vieta")
+    first_end[i_udp6] = (wgx, "vieta")
 
-    relays = [n.replace(".lippok.dev", "") for n in sorted(FPLNET["siteServices"]) if n.endswith(".lippok.dev")]
-    box(160, 94, 2, 2, [("Cloudflare", "s b"), ("proxy and cache", "xs i2")])
-    box(290, 88, 1, 3, [("HAProxy", "s b"), ("TCP 443", "xs i2"), ("routes by SNI", "xs i2")], "node-fplnet", True)
-    box(404, 88, 0, 2, [("nginx", "s b"), ("TLS, HTTP/3", "xs i2"), ("static sites", "xs i2")], "node-fplnet", True)
-    box(518, 166, 1, 1, [("looking glass", "s b"), ("bird-lg-go, BIRD", "xs i2")], "node-fplnet", True)
-    box(518, 74, 3, 4, [("WireGuard", "s b"), ("backbone", "xs i2")])
-    box(610, 76, 3, 4, [("gw1-aah1", "mono xs b"), ("gw1-fbg1", "mono xs b"), ("port allowlist", "xs i2")], "node-fplnet")
-    box(722, 210, 3, 4, [("relay services", "s b")] + [(r, "mono xs") for r in relays] + [("Cilium BGP, one /128 each", "xs i2")], "node-vieta")
-    box(722, 210, 5, 5, [("Gateway (Envoy)", "s b"), ("LAN VIP, HTTPRoute", "xs i2")], "node-vieta")
+    def tags(i, family, cls="chip", dim=""):
+        """One tag per IP family, stacked when both share the row."""
+        fams = family.split()
+        for k, f in enumerate(fams):
+            h = 24 if len(fams) == 1 else 17
+            chip(s, fx, mid(i) - h / 2 + (k - (len(fams) - 1) / 2) * 21, f, cls, ("s b" if len(fams) == 1 else "xs b") + dim,
+                 h=h, size=12 if len(fams) == 1 else 11, mono=False, w=50)
 
-    f = ("ln-fplnet", "fplnet")
-    harrow(s, 142, 403, mid(0), *f)
-    pill(s, 216, mid(0), "UDP 443", "pill", "xs i2")
-    harrow(s, 142, 289, mid(1), *f)
-    harrow(s, 388, 403, mid(1))
-    harrow(s, 502, 517, mid(1))
-    harrow(s, 142, 159, mid(2))
-    harrow(s, 254, 289, mid(2), *f)
-    harrow(s, 388, 403, mid(2))
-    harrow(s, 142, 289, mid(3), *f)
-    harrow(s, 388, 517, mid(3))
-    pill(s, 452, mid(3), "PROXY v2", "pill-fplnet", "xs i2")
-    harrow(s, 142, 517, mid(4), *f)
-    m34 = (mid(3) + mid(4)) / 2
-    harrow(s, 592, 609, m34)
-    harrow(s, 686, 721, m34, "ln-vieta", "vieta")
-    s.path(f"M142,{mid(5):g} L721,{mid(5):g}", "ln-vieta dash", "vieta")
-    pill(s, 440, mid(5), "Cilium L2 on the LAN, no edge", "pill", "xs i2")
+    for i, (kind, r) in enumerate(rows):
+        if r[0] == "not offered":
+            _, family, name, sub, why, where = r
+            tags(i, family, "ghost", " i3")
+            box(cx, cw, i, i, [(name, "mono s b i3"), (sub, "xs i3")], "ghost")
+            s.path(f"M{cx + cw:g},{mid(i):g} L{hpx - 1:g},{mid(i):g}", "ghost")
+            pill(s, 258, mid(i), "not offered", "pill", "xs i3")
+            box(hpx, ngx + ngw - hpx, i, i, [(why, "s i3"), (where, "xs i3")], "ghost")
+            continue
+        family, name, sub, by = r
+        tags(i, family)
+        box(cx, cw, i, i, [(name, "mono s b"), (sub, "xs i2")])
+        end, role = first_end[i]
+        harrow(s, cx + cw, end - 1, mid(i), f"ln-{role}", role)
+        pill(s, 258, mid(i), "by " + by, "pill", "xs b")
+
+    box(hpx, hpw, edge_tcp[1], i_relay4, [("HAProxy", "s b"), ("TCP 443", "xs i2"), ("reads SNI", "xs i2")], "node-fplnet", True)
+    box(ngx, ngw, edge_tcp[1], edge_tcp[2], [("nginx", "s b"), ("TLS, static sites", "xs i2"), ("looking glass", "xs i2")], "node-fplnet", True)
+    box(ngx, ngw, edge_udp[1], edge_udp[1], [("nginx", "s b"), ("HTTP/3, UDP 443", "xs i2")], "node-fplnet", True)
+    box(hpx, ngx + ngw - hpx, i_udp4, i_udp4, [("DNAT by port, Tayga SIIT", "s b"),
+                                               (f"client IPv4 into the edge's {siit_suffix()}", "xs i2")], "node-fplnet", True)
+    box(wgx, wgw, i_relay4, i_udp6, [("WireGuard", "s b"), ("tunnels", "xs i2"), ("edge to site", "xs i2")])
+    box(gwx, gww, i_relay4, i_udp6, [(x["gw"], "mono xs b") for x in SITES] + [("site gateway", "xs i2"), ("port allowlist", "xs i2"),
+                                                                             ("return via", "xs i2"), ("entry edge", "xs i2")], "node-vieta")
+    # one place for every site service: TCP and UDP can each land in the cluster or on a host
+    top_y, bot_y = top(i_relay4), top(i_udp6) + 40
+    s.rect(dx, top_y, dw, bot_y - top_y, "node-vieta", rx=7)
+    s.text(dx + dw / 2, top_y + 22, "site services", "s b", "middle")
+    half = (bot_y - top_y - 34) / 2
+    for k, (title, sub1, sub2) in enumerate([
+        ("Kubernetes", "one /128 per Service", "via Cilium BGP"),
+        ("hosts", "own address in", host_net),
+    ]):
+        cy = top_y + 34 + half * k + half / 2
+        s.rect(dx + 12, cy - 30, dw - 24, 60, "chip-vieta", rx=7)
+        s.text(dx + dw / 2, cy - 10, title, "s b", "middle")
+        s.text(dx + dw / 2, cy + 6, sub1, "xs i2", "middle")
+        s.text(dx + dw / 2, cy + 21, sub2, "xs i2" if k == 0 else "mono xs i2", "middle")
+
+    for i in range(edge_tcp[1], edge_tcp[2] + 1):
+        harrow(s, hpx + hpw + 8, ngx - 1, mid(i), "ln-fplnet", "fplnet")
+    harrow(s, hpx + hpw + 8, wgx - 1, mid(i_relay4), "ln-vieta", "vieta")
+    pill(s, 490, mid(i_relay4), "unopened, PROXY v2", "pill", "xs i2")
+    pill(s, 430, mid(i_relay6), "routed, unopened", "pill", "xs i2")
+    harrow(s, ngx + ngw + 8, wgx - 1, mid(i_udp4), "ln-vieta", "vieta")
+    pill(s, 430, mid(i_udp6), "routed, unopened", "pill", "xs i2")
+    for a, b in ((i_relay4, i_relay6), (i_udp4, i_udp6)):
+        m = (mid(a) + mid(b)) / 2
+        harrow(s, wgx + wgw, gwx - 1, m, "ln-vieta", "vieta")
+        harrow(s, gwx + gww, dx - 1, m, "ln-vieta", "vieta")
+    yy = panel_bottom + 26
+    for mark, lines in notes:
+        s.text(20, yy, mark, "s i2")
+        for line in lines:
+            s.text(30, yy, line, "s i2")
+            yy += 18
     return s
 
 
