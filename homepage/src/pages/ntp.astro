@@ -148,7 +148,7 @@ NTP={NTP_HOST}</code></pre>
         </div>
         <div>
           <h2 class="grp">Serving</h2>
-          <p>chrony also timestamps the NTP packets themselves in the i210's hardware, not in the kernel. Over IPv6 the server has its own address; over IPv4 every FPLNET edge forwards NTP on its address to it over the backbone, keeping the client's address.</p>
+          <p>chrony also timestamps the NTP packets themselves in the i210's hardware, not in the kernel. Over IPv6 the server has its own address; over IPv4 every FPLNET edge translates NTP on its address to IPv6 (stateless SIIT, the client's IPv4 address written into the source) and sends it over the backbone, so the server still sees each client by its own address.</p>
         </div>
         <div>
           <h2 class="grp">Holdover</h2>

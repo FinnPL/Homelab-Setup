@@ -74,7 +74,8 @@ Photos, hardware and the live app inventory: [lippok.dev/vieta](https://lippok.d
 - **Default deny** in both directions. Every allow lives in `charts/network-policies`.
 - **A new service** is `charts/<name>/`, `vieta/apps/<name>.yaml` and its network policy. A database, a Vault secret and a route are one template each ([`charts/gatus/templates`](charts/gatus/templates)).
 - **Rack:** a 10" mini rack, Pis powered over PoE, 3D-printed mounts; parts, layout and power in [`vieta/physical-setup.md`](vieta/physical-setup.md).
-- **Planned:** a GPSDO for a stratum 1 NTP server ([lippok.dev/ntp](https://lippok.dev/ntp)), and a TrueNAS box replacing the NFS LXC, with democratic-csi for ZFS-backed volumes.
+- **ntp1-aah1:** a GPS stratum 1 NTP server on a Raspberry Pi CM4. A GPSDO's pulse is timestamped by an Intel i210 NIC, and chrony serves the time with hardware timestamps, in the NTP pool over IPv6 and, through the edges, over IPv4 ([lippok.dev/ntp](https://lippok.dev/ntp), code in [`vieta/ntp1`](vieta/ntp1)).
+- **Planned:** a TrueNAS box replacing the NFS LXC, with democratic-csi for ZFS-backed volumes.
 
 <br clear="right">
 
@@ -84,7 +85,7 @@ Prefixes, peering and BGP communities on [fplnet.net](https://fplnet.net); live 
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/traffic-dark.svg">
-  <img width="100%" alt="Three classes of traffic. Edge anycast: on the nearest edge HAProxy takes TCP 443 and hands fplnet.net and lippok.dev (through Cloudflare) to nginx, HTTP/3 reaches nginx directly over UDP. Site anycast: *.relay names over IPv4 pass HAProxy unopened with PROXY v2, over IPv6 they are routed to the site anycast prefix; both cross the WireGuard backbone to a site gateway and reach the relay services in the cluster. LAN: *.lippok.dev reaches the cluster's Gateway without any edge." src="docs/diagrams/traffic-light.svg">
+  <img width="100%" alt="Requests split three ways: TCP or UDP/QUIC, answered on an edge or relayed to a site, and IPv4 or IPv6. TCP services to the edges: fplnet.net over IPv4 to any edge or IPv6 to f91::80, and lippok.dev over either family via Cloudflare, picked by SNI in HAProxy and served by nginx. TCP to *.relay at the sites: over IPv4 a TLS name is picked by SNI and passed unopened with PROXY v2 over the WireGuard backbone; over IPv6 the service's own address is routed. UDP/QUIC services to the edges: HTTP/3 for fplnet.net goes to nginx on UDP 443 over either family; lippok.dev gets no HTTP/3 to the edges, because Cloudflare does not support HTTP/3 to an origin. UDP to *.relay at the sites: over IPv4 a service's port on an edge's address, any port but 443, is DNATed into Tayga SIIT, which writes the client's IPv4 address into the edge's :64::/96; over IPv6 the service's own address is routed. At each site the gateway (gw1-aah1, gw1-fbg1) admits only listed ports and sends replies back through the edge they came in on. Behind it, a site service is either a Kubernetes Service with its own /128 via Cilium BGP or a host with its own address in f94:20::/64, and TCP and UDP can each reach either. No ECH for site services yet: waiting for a mature ECH split mode, as the edge must decrypt ECH for SNI routing. No HTTP/3 for site services yet: still looking for a mature router that passes QUIC on by SNI; one that does SNI routing with ECH split mode for both TCP and UDP/QUIC would solve both." src="docs/diagrams/traffic-light.svg">
 </picture>
 
 | Prefix | Use | Announced by |
@@ -93,11 +94,14 @@ Prefixes, peering and BGP communities on [fplnet.net](https://fplnet.net); live 
 | `2a0c:b641:f92::/48` | site anycast: `dns.relay`, `site-data.relay` | every edge holding a route from a site gateway |
 | `2a0c:b641:f94::/48` | Vieta: nodes, pods, public services | every edge with iBGP to gw1-aah1 |
 | `2a0c:b641:f95::/48` | Minerva: nodes, pods, public services | every edge with iBGP to gw1-fbg1 |
-| `2a0c:b641:f98::/48`, `f99`, `f9a` | er1-dus1, er1-ams1, er1-fra1 | its own edge |
+| `2a0c:b641:f98::/48`, `f99`, `f9a` | er1-dus1, er1-ams1, er1-fra1; `:64::/96` of each holds the IPv4 clients it translates | its own edge |
 
 - **Routing:** BIRD 3, import filters after the NLNOG guide, RPKI origin validation from two Routinators, BCP 38 source filtering, receive limits on every session.
 - **Rollout:** deploy-rs, one router at a time; each waits until its BGP sessions are back up.
 - **Keys:** WireGuard and BGP secrets stay in Vault and reach a router right before its switch.
+- **IPv4 by name or port:** each edge has one IPv4 address, so HAProxy routes TCP by SNI and UDP goes by port. IPv6 is routed by address.
+- **UDP over IPv4:** the edge DNATs the port into Tayga SIIT, which maps the client into the edge's `:64::/96`, so the backbone stays IPv6-only ([`site-nat.nix`](fplnet/nixos/modules/site-nat.nix)).
+- **Symmetric paths:** replies leave through the edge a connection came in on, and gw1-aah1 dials each edge from a fixed port, so the return path stays the same.
 - **DNS relay:** Blocky filters, Unbound validates and forwards over DoT through a VPN, so the upstream resolver never sees who asked. The full path is on [lippok.dev/dns](https://lippok.dev/dns).
 
 ## Minerva

@@ -131,8 +131,8 @@ function seriesChart(root: HTMLElement, key: string, minScale: number) {
   return (series: [number, number][] | undefined) => {
     pts = series ?? [];
     const peak = Math.max(0, ...pts.map((p) => Math.abs(p[1]) * 1e9));
-    const step = minScale / 2;
-    scale = Math.max(minScale, Math.ceil(peak / step) * step);
+    const decade = 10 ** Math.floor(Math.log10(Math.max(peak, minScale)));
+    scale = Math.max(minScale, [1, 2, 5, 10].map((m) => m * decade).find((v) => v >= peak)!);
     grid.replaceChildren();
     ylab.replaceChildren();
     for (const v of [-scale, -scale / 2, 0, scale / 2, scale]) {
@@ -298,7 +298,7 @@ function showOffset(you: HTMLElement, m: Measured | null) {
 }
 
 export async function startNtp(root: HTMLElement) {
-  const draw: Draw = { off: seriesChart(root, "off", 100), phase: seriesChart(root, "phase", 20), sat: satChart(root) };
+  const draw: Draw = { off: seriesChart(root, "off", 10), phase: seriesChart(root, "phase", 20), sat: satChart(root) };
   load(root, draw);
   setInterval(() => load(root, draw), 15000);
 
